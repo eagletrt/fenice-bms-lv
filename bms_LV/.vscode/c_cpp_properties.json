@@ -1,0 +1,23 @@
+{
+  "configurations": [
+    {
+      "name": "STM32",
+      "includePath": [
+        "Drivers/CMSIS/Device/ST/STM32F7xx/Include",
+        "Drivers/CMSIS/Include",
+        "Drivers/STM32F7xx_HAL_Driver/Inc",
+        "Drivers/STM32F7xx_HAL_Driver/Inc/Legacy",
+        "Inc",
+        "Middlewares/Third_Party/FatFs/src"
+      ],
+      "defines": [
+        "STM32F767xx",
+        "USE_HAL_DRIVER"
+      ],
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "c11",
+      "cppStandard": "c++11"
+    }
+  ],
+  "version": 4
+}

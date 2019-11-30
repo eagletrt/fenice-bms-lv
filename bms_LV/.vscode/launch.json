@@ -1,0 +1,19 @@
+{
+  "configurations": [
+    {
+      "showDevDebugOutput": true,
+      "cwd": "${workspaceRoot}",
+      "executable": "./build/ACU_Nucleo_VSC.elf",
+      "name": "Debug STM32",
+      "request": "launch",
+      "type": "cortex-debug",
+      "servertype": "openocd",
+      "preLaunchTask": "Build STM",
+      "device": "stlink",
+      "configFiles": [
+        "interface/stlink-v2-1.cfg",
+        "target/stm32f7x.cfg"
+      ]
+    }
+  ]
+}
