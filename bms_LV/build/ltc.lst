@@ -1,0 +1,153 @@
+ARM GAS  /tmp/cctzNkeV.s 			page 1
+
+
+   1              		.cpu cortex-m7
+   2              		.eabi_attribute 28, 1
+   3              		.eabi_attribute 20, 1
+   4              		.eabi_attribute 21, 1
+   5              		.eabi_attribute 23, 3
+   6              		.eabi_attribute 24, 1
+   7              		.eabi_attribute 25, 1
+   8              		.eabi_attribute 26, 1
+   9              		.eabi_attribute 30, 1
+  10              		.eabi_attribute 34, 1
+  11              		.eabi_attribute 18, 4
+  12              		.file	"ltc.c"
+  13              		.text
+  14              	.Ltext0:
+  15              		.cfi_sections	.debug_frame
+  16              		.section	.text.set_pins,"ax",%progbits
+  17              		.align	1
+  18              		.global	set_pins
+  19              		.syntax unified
+  20              		.thumb
+  21              		.thumb_func
+  22              		.fpu fpv5-d16
+  24              	set_pins:
+  25              	.LFB141:
+  26              		.file 1 "Src/ltc.c"
+   1:Src/ltc.c     **** 
+   2:Src/ltc.c     **** #include "ltc.h"
+   3:Src/ltc.c     **** /*
+   4:Src/ltc.c     **** * default sample frequency -> 7kHz
+   5:Src/ltc.c     **** * 670 us needed to synchronize
+   6:Src/ltc.c     **** * 
+   7:Src/ltc.c     **** */
+   8:Src/ltc.c     **** 
+   9:Src/ltc.c     **** void set_pins(GPIO_TypeDef pinx, uint8_t pinn)
+  10:Src/ltc.c     **** {
+  27              		.loc 1 10 0
+  28              		.cfi_startproc
+  29              		@ args = 44, pretend = 16, frame = 0
+  30              		@ frame_needed = 0, uses_anonymous_args = 0
+  31              		@ link register save eliminated.
+  32              	.LVL0:
+  33 0000 84B0     		sub	sp, sp, #16
+  34              	.LCFI0:
+  35              		.cfi_def_cfa_offset 16
+  36 0002 8DE80F00 		stm	sp, {r0, r1, r2, r3}
+  11:Src/ltc.c     **** }
+  37              		.loc 1 11 0
+  38 0006 04B0     		add	sp, sp, #16
+  39              	.LCFI1:
+  40              		.cfi_def_cfa_offset 0
+  41 0008 7047     		bx	lr
+  42              		.cfi_endproc
+  43              	.LFE141:
+  45              		.section	.text.init,"ax",%progbits
+  46              		.align	1
+  47              		.global	init
+  48              		.syntax unified
+ARM GAS  /tmp/cctzNkeV.s 			page 2
+
+
+  49              		.thumb
+  50              		.thumb_func
+  51              		.fpu fpv5-d16
+  53              	init:
+  54              	.LFB142:
+  12:Src/ltc.c     **** 
+  13:Src/ltc.c     **** void init()
+  14:Src/ltc.c     **** {
+  55              		.loc 1 14 0
+  56              		.cfi_startproc
+  57              		@ args = 0, pretend = 0, frame = 0
+  58              		@ frame_needed = 0, uses_anonymous_args = 0
+  59              		@ link register save eliminated.
+  60 0000 7047     		bx	lr
+  61              		.cfi_endproc
+  62              	.LFE142:
+  64              		.section	.text.read_voltages,"ax",%progbits
+  65              		.align	1
+  66              		.global	read_voltages
+  67              		.syntax unified
+  68              		.thumb
+  69              		.thumb_func
+  70              		.fpu fpv5-d16
+  72              	read_voltages:
+  73              	.LFB143:
+  15:Src/ltc.c     **** }
+  16:Src/ltc.c     **** 
+  17:Src/ltc.c     **** void read_voltages()
+  18:Src/ltc.c     **** {
+  74              		.loc 1 18 0
+  75              		.cfi_startproc
+  76              		@ args = 0, pretend = 0, frame = 0
+  77              		@ frame_needed = 0, uses_anonymous_args = 0
+  78              		@ link register save eliminated.
+  79 0000 7047     		bx	lr
+  80              		.cfi_endproc
+  81              	.LFE143:
+  83              		.section	.text.read_temperatures,"ax",%progbits
+  84              		.align	1
+  85              		.global	read_temperatures
+  86              		.syntax unified
+  87              		.thumb
+  88              		.thumb_func
+  89              		.fpu fpv5-d16
+  91              	read_temperatures:
+  92              	.LFB144:
+  19:Src/ltc.c     **** }
+  20:Src/ltc.c     **** 
+  21:Src/ltc.c     **** void read_temperatures()
+  22:Src/ltc.c     **** {
+  93              		.loc 1 22 0
+  94              		.cfi_startproc
+  95              		@ args = 0, pretend = 0, frame = 0
+  96              		@ frame_needed = 0, uses_anonymous_args = 0
+  97              		@ link register save eliminated.
+  98 0000 7047     		bx	lr
+  99              		.cfi_endproc
+ARM GAS  /tmp/cctzNkeV.s 			page 3
+
+
+ 100              	.LFE144:
+ 102              		.comm	CS_LTCn,1,1
+ 103              		.comm	CS_LTCx,40,4
+ 104              		.text
+ 105              	.Letext0:
+ 106              		.file 2 "/usr/include/newlib/machine/_default_types.h"
+ 107              		.file 3 "/usr/include/newlib/sys/_stdint.h"
+ 108              		.file 4 "Drivers/CMSIS/Include/core_cm7.h"
+ 109              		.file 5 "Drivers/CMSIS/Device/ST/STM32F7xx/Include/system_stm32f7xx.h"
+ 110              		.file 6 "Drivers/CMSIS/Device/ST/STM32F7xx/Include/stm32f767xx.h"
+ 111              		.file 7 "Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h"
+ 112              		.file 8 "Inc/ltc.h"
+ARM GAS  /tmp/cctzNkeV.s 			page 4
+
+
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 ltc.c
+     /tmp/cctzNkeV.s:17     .text.set_pins:0000000000000000 $t
+     /tmp/cctzNkeV.s:24     .text.set_pins:0000000000000000 set_pins
+     /tmp/cctzNkeV.s:46     .text.init:0000000000000000 $t
+     /tmp/cctzNkeV.s:53     .text.init:0000000000000000 init
+     /tmp/cctzNkeV.s:65     .text.read_voltages:0000000000000000 $t
+     /tmp/cctzNkeV.s:72     .text.read_voltages:0000000000000000 read_voltages
+     /tmp/cctzNkeV.s:84     .text.read_temperatures:0000000000000000 $t
+     /tmp/cctzNkeV.s:91     .text.read_temperatures:0000000000000000 read_temperatures
+                            *COM*:0000000000000001 CS_LTCn
+                            *COM*:0000000000000028 CS_LTCx
+                     .debug_frame:0000000000000010 $d
+
+NO UNDEFINED SYMBOLS
