@@ -77,6 +77,7 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
 
+  void user_pwm_setvalue(uint32_t, TIM_HandleTypeDef *, uint32_t);
   int CAN_Read_Message(canStruct *);
 
 /* USER CODE END EFP */

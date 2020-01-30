@@ -3,7 +3,7 @@
     {
       "showDevDebugOutput": true,
       "cwd": "${workspaceRoot}",
-      "executable": "./build/ACU_Nucleo_VSC.elf",
+      "executable": "./build/bms_LV.elf",
       "name": "Debug STM32",
       "request": "launch",
       "type": "cortex-debug",

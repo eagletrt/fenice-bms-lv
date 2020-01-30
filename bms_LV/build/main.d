@@ -32,7 +32,7 @@ build/main.o: Src/main.c Inc/main.h \
  Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_tim_ex.h \
  Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart.h \
  Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h \
- Inc/pid_controller.h
+ Inc/pid_controller.h Inc/ltc.h
 
 Inc/main.h:
 
@@ -107,3 +107,5 @@ Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart.h:
 Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal_uart_ex.h:
 
 Inc/pid_controller.h:
+
+Inc/ltc.h:
