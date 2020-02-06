@@ -5,7 +5,7 @@
 #include "inttypes.h"
 #include <stm32f7xx_hal.h>
 
-void init_ltc();
+void LTC_init(SPI_HandleTypeDef *hspi, uint8_t _address);
 void read_voltages();
 void read_temperatures();
 void set_pins(GPIO_TypeDef *pinx, uint8_t pinn);
@@ -50,5 +50,35 @@ static const uint16_t crcTable[256] = {
 
 GPIO_TypeDef *CS_LTCx;
 uint8_t CS_LTCn;
+
+typedef struct ltc_struct{
+	SPI_HandleTypeDef *spi;
+	uint8_t address;
+	#define WRCFG 0b00000000001 // Write Configuration Register Group
+	#define RDCFG 0b00000000010 // Read Configuration Register Group
+	#define RDCVA 0b00000000100 // Read Cell Voltage Register Group A
+	#define RDCVB 0b00000000110 // Read Cell Voltage Register Group B
+	#define RDSTATA 0b00000010000 // Read Status Register Group A
+	#define RDSTATB 0b00000010010 // Read Status Register Group B
+	#define RDSID 0b00000101100 // Read Serial ID Register Group
+
+	//--- ADC SPEED ---//
+	#define MD422 0b00 // LTC ADC speed = 422Hz
+	#define MD27K 0b01 // LTC ADC speed = 27KHz
+	#define MD7K  0b10 // LTC ADC speed = 7KHz (default)
+	#define MD26  0b11 // LTC ADC speed = 26Hz
+
+	//--- CELLS ---//
+	#define CELL1 0b001 // CELL 1 code
+	#define CELL2 0b010 // CELL 2 code
+	#define CELL3 0b011 // CELL 3 code
+	#define CELL4 0b100 // CELL 4 code
+	#define CELL5 0b101 // CELL 5 code
+	#define CELL6 0b110 // CELL 6 code
+	#define ALL_CELLS 0b000 // ALL CELL code
+
+}ltc_struct;
+
+uint16_t get_ADCV_CC(uint8_t Ncell);
 
 #endif /* LTC_H_ */
