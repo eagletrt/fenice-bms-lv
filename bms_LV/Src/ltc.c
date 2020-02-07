@@ -5,34 +5,79 @@
 * 670 us needed to synchronize
 * 
 */
-ltc_struct ltc;
+
 
 uint16_t get_ADCV_CC(uint8_t Ncell){
 	if(Ncell > 6 || Ncell < 1) Ncell = 0;
 	return(0x260 | (MD7K << 7) | Ncell);
 }
-void set_pins(GPIO_TypeDef *pinx, uint8_t pinn)
+
+void LTC_init(ltc_struct* _ltc, SPI_HandleTypeDef *hspi, uint8_t _address, GPIO_TypeDef *pinx, uint8_t pinn)
 {
-    CS_LTCx = pinx;
-    CS_LTCn = pinn;
+	_ltc->address = _address;
+	_ltc->spi = hspi;
+	_ltc->CS_LTCx = pinx;
+    _ltc->CS_LTCn = pinn;
 }
 
-void LTC_init(SPI_HandleTypeDef *hspi, uint8_t _address)
-{
-	ltc.address = _address;
-	ltc.spi = hspi;
-}
-
-void read_voltages()
-{
+bool ltc_read_STATUS(ltc_struct* _ltc){
+	bool ret = true;
+	bool pec;
 	uint8_t cmd[4];
 	uint16_t CC;
 	uint16_t cmd_pec;
 	uint8_t data[8];
 
-	CC = get_ADCV_CC(0);
+	CC = RDSTATA;
 	cmd[0] = (uint8_t)0x80 | // Address Command mode
-		(ltc.address << 3) | // LTC address 
+		(_ltc->address << 3) | // LTC address 
+		(CC >> 8);			 // Send 3 most significant bit of CC
+	cmd[1] = (uint8_t)(CC);  // Send the other 8 bit of CC
+
+	cmd_pec = _pec15(2, cmd); // Calculate the PEC
+	cmd[2] = (uint8_t)(cmd_pec >> 8);
+	cmd[3] = (uint8_t)(cmd_pec);
+	
+	ltc6810_wakeup_idle(_ltc);
+	spi_enable_cs(_ltc);
+	if(HAL_SPI_Transmit(_ltc->spi, cmd, 4, 100) == HAL_OK){
+		HAL_SPI_Receive(_ltc->spi, data, 8, 100);
+	}else{
+		ret = false;
+	}
+	spi_disable_cs(_ltc);
+
+	pec = (_pec15(6, data) == (uint16_t)(data[6] * 256 + data[7]));
+
+	if (pec) {
+		_ltc->STATUS_SC = data[0]*256 + data[1];
+		_ltc->STATUS_ITMP = data[2]*256 + data[3];
+		_ltc->STATUS_VA = data[4]*256 + data[5];
+	}else{
+		ret = false;
+	}
+	return ret;
+}
+
+/**
+ * @brief		This function is used to read volteges.
+ *
+ * @param		_ltc	LTC struct
+ * @retval		True if there aren't errors
+ */
+bool read_voltages(ltc_struct* _ltc)
+{
+	bool ret = true;
+	bool pec;
+	uint8_t cmd[4];
+	uint16_t CC;
+	uint16_t cmd_pec;
+	uint8_t data[8];
+
+	//--- Send start ADC conversion ---//
+	CC = get_ADCV_CC(ALL_CELLS);
+	cmd[0] = (uint8_t)0x80 | // Address Command mode
+		(_ltc->address << 3) | // LTC address 
 		(CC >> 8);			 // Send 3 most significant bit of CC
 	cmd[1] = (uint8_t)(CC);  // Send the other 8 bit of CC
 
@@ -40,12 +85,93 @@ void read_voltages()
 	cmd[2] = (uint8_t)(cmd_pec >> 8);
 	cmd[3] = (uint8_t)(cmd_pec);
 
-	ltc6810_wakeup_idle(ltc.spi);
+	ltc6810_wakeup_idle(_ltc);
+	spi_enable_cs(_ltc);
+	if(HAL_SPI_Transmit(_ltc->spi, cmd, 4, 100) != HAL_OK){
+		ret = false;
+	}
+	spi_disable_cs(_ltc);
+	//--- END --//
 
-	spi_enable_cs(ltc.spi);
-	HAL_SPI_Transmit(ltc.spi, cmd, 4, 100);
-	HAL_SPI_Receive(ltc.spi, data, 8, 100);
-	spi_disable_cs(ltc.spi);
+	HAL_Delay(2); //TODO: change waiting mode in interrupt -> it's only to test (ADC takes 1.2ms)
+
+	//--- READ GROUP A VOLTAGES ---//
+	CC = RDCVA; // Read voltages from group A 
+	cmd[0] = (uint8_t)0x80 | // Address Command mode
+		(_ltc->address << 3) | // LTC address 
+		(CC >> 8);			 // Send 3 most significant bit of CC
+	cmd[1] = (uint8_t)(CC);  // Send the other 8 bit of CC
+
+	cmd_pec = _pec15(2, cmd); // Calculate the PEC
+	cmd[2] = (uint8_t)(cmd_pec >> 8);
+	cmd[3] = (uint8_t)(cmd_pec);
+
+	ltc6810_wakeup_idle(_ltc);
+	spi_enable_cs(_ltc);
+	if(HAL_SPI_Transmit(_ltc->spi, cmd, 4, 100) == HAL_OK){
+		HAL_SPI_Receive(_ltc->spi, data, 8, 100);
+	}else{
+		ret = false;
+	}
+	spi_disable_cs(_ltc);
+
+	pec = (_pec15(6, data) == (uint16_t)(data[6] * 256 + data[7]));
+
+	if (pec) {
+		uint8_t cell = 0;  // Counts the cell inside the register
+		for (cell = 0; cell < 3; cell++) {
+			_ltc->voltage[cell] = _convert_voltage(&data[2 * cell]);
+		}
+	}else{
+		ret = false;
+	}
+	//--- END ---//
+
+	//--- READ GROUP B VOLTAGES ---//
+	CC = RDCVB; // Read voltages from group A 
+	cmd[0] = (uint8_t)0x80 | // Address Command mode
+		(_ltc->address << 3) | // LTC address 
+		(CC >> 8);			 // Send 3 most significant bit of CC
+	cmd[1] = (uint8_t)(CC);  // Send the other 8 bit of CC
+
+	cmd_pec = _pec15(2, cmd); // Calculate the PEC
+	cmd[2] = (uint8_t)(cmd_pec >> 8);
+	cmd[3] = (uint8_t)(cmd_pec);
+
+	ltc6810_wakeup_idle(_ltc);
+	spi_enable_cs(_ltc);
+	if(HAL_SPI_Transmit(_ltc->spi, cmd, 4, 100) == HAL_OK){
+		HAL_SPI_Receive(_ltc->spi, data, 8, 100);
+	}else{
+		ret = false;
+	}
+	spi_disable_cs(_ltc);
+
+	pec = (_pec15(6, data) == (uint16_t)(data[6] * 256 + data[7]));
+
+	if (pec) {
+		uint8_t cell = 0;  // Counts the cell inside the register
+		for (cell = 0; cell < 3; cell++) {
+			_ltc->voltage[cell+3] = _convert_voltage(&data[2 * cell]);
+		}
+	}else{
+		ret = false;
+	}
+	//--- END ---//
+
+	return ret;
+}
+
+/**
+ * @brief	This function is used to convert the 2 byte raw data from the
+ * 				LTC68xx to a 16 bit unsigned integer
+ *
+ * @param 	v_data	Raw data bytes
+ *
+ * @retval	Voltage [mV]
+ */
+uint16_t _convert_voltage(uint8_t v_data[]) {
+	return v_data[0] + (v_data[1] << 8);
 }
 
 void read_temperatures()
@@ -53,21 +179,21 @@ void read_temperatures()
 	
 }
 
-void ltc6810_wakeup_idle(SPI_HandleTypeDef *hspi)
+void ltc6810_wakeup_idle(ltc_struct* _ltc)
 {
     uint8_t data = 0xFF;
-    spi_enable_cs(hspi);
-    HAL_SPI_Transmit(hspi, &data, 1, 1);
-    spi_disable_cs(hspi);
+    spi_enable_cs(_ltc);
+    HAL_SPI_Transmit(_ltc->spi, &data, 1, 1);
+    spi_disable_cs(_ltc);
 }
-void spi_enable_cs(SPI_HandleTypeDef *spi) {
-	HAL_GPIO_WritePin(CS_LTCx, CS_LTCn, GPIO_PIN_RESET);
-	while ((spi->State != HAL_SPI_STATE_READY) && (spi->State != HAL_SPI_STATE_ERROR));
+void spi_enable_cs(ltc_struct* _ltc) {
+	HAL_GPIO_WritePin(_ltc->CS_LTCx, _ltc->CS_LTCn, GPIO_PIN_RESET);
+	while ((_ltc->spi->State != HAL_SPI_STATE_READY) && (_ltc->spi->State != HAL_SPI_STATE_ERROR));
 }
 
-void spi_disable_cs(SPI_HandleTypeDef *spi) {
-	while ((spi->State != HAL_SPI_STATE_READY) && (spi->State != HAL_SPI_STATE_ERROR));
-	HAL_GPIO_WritePin(CS_LTCx, CS_LTCn, GPIO_PIN_SET);
+void spi_disable_cs(ltc_struct* _ltc) {
+	while ((_ltc->spi->State != HAL_SPI_STATE_READY) && (_ltc->spi->State != HAL_SPI_STATE_ERROR));
+	HAL_GPIO_WritePin(_ltc->CS_LTCx, _ltc->CS_LTCn, GPIO_PIN_SET);
 }
 
 uint16_t _pec15(uint8_t len, uint8_t data[]) {
