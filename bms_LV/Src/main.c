@@ -28,6 +28,7 @@
 #include "ltc.h"
 #include "stdio.h"
 #include "string.h"
+#include "can.h"
 
 /* USER CODE END Includes */
 
@@ -91,6 +92,7 @@ UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
 ltc_struct ltc;
+extern canStruct can1, can3;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -112,9 +114,6 @@ static void MX_NVIC_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
-canStruct can;
-uint8_t CAN_initialization(canStruct *can);
 
 /* USER CODE END 0 */
 
@@ -186,9 +185,11 @@ int main(void)
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3, GPIO_PIN_SET);
   HAL_Delay(1000);
 
-  can.hcan = &hcan1;
+  can1.rx0_interrupt = CAN1_RX0_IRQn;
+	can1.tx_interrupt = CAN1_TX_IRQn;
+	can1.hcan = &hcan1;
 
-  CAN_initialization(&can);
+	can_init();
 
   LTC_init(&ltc, &hspi2, 0, GPIOD, GPIO_PIN_4); //init function of LTC_6810
   // user_pwm_setvalue(100, &htim4, TIM_CHANNEL_1);
@@ -208,11 +209,7 @@ int main(void)
     HAL_UART_Transmit(&huart4, (uint8_t*)txt, strlen(txt), 10);
     HAL_Delay(1000);
 
-    if (can.recieved_flag == 1)
-    {
-      CAN_Read_Message(&can);
-      can.recieved_flag = 0;
-    }
+    CAN_Read_Message();
   }
   /* USER CODE END 3 */
 }
@@ -776,125 +773,79 @@ void loading()
   HAL_Delay(delay);
 }
 
-int CAN_Read_Message(canStruct *can)
+int CAN_Read_Message()
 {
-  switch (can->rx_id)
-  {
-  case INV_LEFT_ASK_ID:
-    if (can->dataRx[0] == 0x4A)
-    { // Inverter left temperature
-      // invLeftTemp = can->dataRx[1] + (can->dataRx[2] << 8);
-      // inverterLeftTemp = (invLeftTemp - 15797) / 112.12;
-    }
-    else if (can->dataRx[0] == 0x49)
-    { // Motor left temperature
-      // motLeftTemp = can->dataRx[1] + (can->dataRx[2] << 8);
-      // motorLeftTemp = (motLeftTemp - 9394) / 55.10;
-    }
-    break;
-  case INV_RIGHT_ASK_ID:
-    if (can->dataRx[0] == 0x4A)
-    { // Inverter right temperature
-      // invRightTemp = can->dataRx[1] + (can->dataRx[2] << 8);
-      // inverterRightTemp = (invLeftTemp - 15797) / 112.12;
-    }
-    else if (can->dataRx[0] == 0x49)
-    { // Motor right temperature
-      // motRightTemp = can->dataRx[1] + (can->dataRx[2] << 8);
-      // motorRightTemp = (motLeftTemp - 9394) / 55.10;
-    }
-    break;
-  case STEER_ASK_ID:
-    if (can->dataRx[0] == 0)
+  if (fifoRxDataCAN_pop(&can1)){
+    switch (can1.rx_id)
     {
-      // overridePID = RxData[1]; // 1 - override PID
-    }
-    else if (can->dataRx[0] == 1)
-    {
-      // overridePID = RxData[1];
-      // pumpRequest = RxData[2];
-    }
-    else if (can->dataRx[0] == 2)
-    {
-      // overridePID = RxData[1];
-      // fanRequest = RxData[2];
-    }
-    else if (can->dataRx[0] == 3 && can->dataRx[1] == 1)
-    {
-      // overridePID = 2;
-    }
-    break;
-  case ACC_TEMP_ASK_ID:
-    if (can->dataRx[0] == 6)
-    { // Little endian
-      // tmpHvAvgTemp = can->dataRx[5] + (can->dataRx[4] << 8);
-      // hvAvgTemp = tmpHvAvgTemp / 100.0;
-    }
-    else if (can->dataRx[0] == 6)
-    {
-      // tmpHvMaxTemp = can->dataRx[7] + (can->dataRx[6] << 8);
-      // hvMaxTemp = tmpHvMaxTemp / 100.0;
-    }
-    break;
-  case ECU_ASK_ID:
-    break;
-  case BMS_LV_ASK_ID:
-    break;
+    case INV_LEFT_ASK_ID:
+      if (can1.dataRx[0] == 0x4A)
+      { // Inverter left temperature
+        // invLeftTemp = can->dataRx[1] + (can->dataRx[2] << 8);
+        // inverterLeftTemp = (invLeftTemp - 15797) / 112.12;
+      }
+      else if (can1.dataRx[0] == 0x49)
+      { // Motor left temperature
+        // motLeftTemp = can->dataRx[1] + (can->dataRx[2] << 8);
+        // motorLeftTemp = (motLeftTemp - 9394) / 55.10;
+      }
+      break;
+    case INV_RIGHT_ASK_ID:
+      if (can1.dataRx[0] == 0x4A)
+      { // Inverter right temperature
+        // invRightTemp = can->dataRx[1] + (can->dataRx[2] << 8);
+        // inverterRightTemp = (invLeftTemp - 15797) / 112.12;
+      }
+      else if (can1.dataRx[0] == 0x49)
+      { // Motor right temperature
+        // motRightTemp = can->dataRx[1] + (can->dataRx[2] << 8);
+        // motorRightTemp = (motLeftTemp - 9394) / 55.10;
+      }
+      break;
+    case STEER_ASK_ID:
+      if (can1.dataRx[0] == 0)
+      {
+        // overridePID = RxData[1]; // 1 - override PID
+      }
+      else if (can1.dataRx[0] == 1)
+      {
+        // overridePID = RxData[1];
+        // pumpRequest = RxData[2];
+      }
+      else if (can1.dataRx[0] == 2)
+      {
+        // overridePID = RxData[1];
+        // fanRequest = RxData[2];
+      }
+      else if (can1.dataRx[0] == 3 && can1.dataRx[1] == 1)
+      {
+        // overridePID = 2;
+      }
+      break;
+    case ACC_TEMP_ASK_ID:
+      if (can1.dataRx[0] == 6)
+      { // Little endian
+        // tmpHvAvgTemp = can->dataRx[5] + (can->dataRx[4] << 8);
+        // hvAvgTemp = tmpHvAvgTemp / 100.0;
+      }
+      else if (can1.dataRx[0] == 6)
+      {
+        // tmpHvMaxTemp = can->dataRx[7] + (can->dataRx[6] << 8);
+        // hvMaxTemp = tmpHvMaxTemp / 100.0;
+      }
+      break;
+    case ECU_ASK_ID:
+      break;
+    case BMS_LV_ASK_ID:
+      break;
 
-  default:
-    break;
-  }
-  return 0;
-}
-
-void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
-{
-  if (hcan == can.hcan)
-  {
-    if (HAL_CAN_GetRxFifoFillLevel(can.hcan, CAN_RX_FIFO0) != 0)
-    {
-      CAN_RxHeaderTypeDef header;
-
-      HAL_CAN_GetRxMessage(can.hcan, CAN_RX_FIFO0, &header,
-                           can.dataRx);
-
-      can.rx_id = header.StdId;
-      can.rx_size = header.DLC;
-      can.recieved_flag = 1;
+    default:
+      break;
     }
+    return 0;
   }
 }
 
-uint8_t CAN_initialization(canStruct *can)
-{
-  // CAN filter initialization
-  can->canFilter.FilterMode = CAN_FILTERMODE_IDMASK;
-  can->canFilter.FilterIdLow = 0;
-  can->canFilter.FilterIdHigh = 0;
-  can->canFilter.FilterMaskIdHigh = 0;
-  can->canFilter.FilterMaskIdLow = 0;
-  can->canFilter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
-  can->canFilter.FilterBank = 0;
-  can->canFilter.FilterScale = CAN_FILTERSCALE_16BIT;
-  can->canFilter.FilterActivation = ENABLE;
-
-  // CAN filter configuration
-  can->configFilter_status = HAL_CAN_ConfigFilter(can->hcan, &can->canFilter);
-
-  can->activateNotif_status =
-      HAL_CAN_ActivateNotification(can->hcan, CAN2_RX0_IRQn);
-  can->activateNotif_status =
-      HAL_CAN_ActivateNotification(can->hcan, CAN2_RX1_IRQn);
-
-  // CAN start
-  can->canStart_status = HAL_CAN_Start(can->hcan);
-
-  if (can->configFilter_status == HAL_OK &&
-      can->activateNotif_status == HAL_OK && can->canStart_status == HAL_OK)
-    return 0; // no errors occurred
-  else
-    return 1;
-}
 /* USER CODE END 4 */
 
 /**

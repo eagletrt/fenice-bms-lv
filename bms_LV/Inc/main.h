@@ -38,26 +38,6 @@ extern "C" {
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
 
-  typedef struct
-  {
-    int rx_size;
-    int tx_size;
-
-    int recieved_flag;
-    int rx_id;
-
-    uint8_t dataTx[8];
-    uint8_t dataRx[8];
-
-    CAN_HandleTypeDef *hcan;
-    CAN_FilterTypeDef canFilter;
-
-    HAL_StatusTypeDef configFilter_status;
-    HAL_StatusTypeDef activateNotif_status;
-    HAL_StatusTypeDef canStart_status;
-
-  } canStruct;
-
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
@@ -78,7 +58,6 @@ void Error_Handler(void);
 /* USER CODE BEGIN EFP */
 
   void user_pwm_setvalue(uint32_t, TIM_HandleTypeDef *, uint32_t);
-  int CAN_Read_Message(canStruct *);
 
 /* USER CODE END EFP */
 
