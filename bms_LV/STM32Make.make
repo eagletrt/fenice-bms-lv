@@ -60,6 +60,7 @@ Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_tim_ex.c \
 Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_uart.c \
 Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_uart_ex.c \
 Src/can.c \
+Src/current_sensor.c \
 Src/ltc.c \
 Src/main.c \
 Src/pid_controller.c \

@@ -1,11 +1,14 @@
 
 #include "ltc.h"
+#include "string.h"
+#include "stdio.h"
 /*
 * default sample frequency -> 7kHz
 * 670 us needed to synchronize
 * 
 */
-
+extern char txt[100];
+extern UART_HandleTypeDef huart4;
 
 uint16_t get_ADCV_CC(uint8_t Ncell){
 	if(Ncell > 6 || Ncell < 1) Ncell = 0;
@@ -38,14 +41,22 @@ bool ltc_read_STATUS(ltc_struct* _ltc){
 	cmd[2] = (uint8_t)(cmd_pec >> 8);
 	cmd[3] = (uint8_t)(cmd_pec);
 	
+	sprintf(txt, "Trasmesso: %d, %d, %d, %d\r\n", cmd[0], cmd[1], cmd[2], cmd[3]);
+	HAL_UART_Transmit(&huart4, (uint8_t*)txt, strlen(txt), 10);
+
 	ltc6810_wakeup_idle(_ltc);
 	spi_enable_cs(_ltc);
 	if(HAL_SPI_Transmit(_ltc->spi, cmd, 4, 100) == HAL_OK){
 		HAL_SPI_Receive(_ltc->spi, data, 8, 100);
 	}else{
+		sprintf(txt, "Errore nella trasmissione\r\n");
+		HAL_UART_Transmit(&huart4, (uint8_t*)txt, strlen(txt), 10);
 		ret = false;
 	}
 	spi_disable_cs(_ltc);
+
+	sprintf(txt, "Ricevuto: %d, %d, %d, %d, %d, %d, %d, %d\r\n", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]);
+	HAL_UART_Transmit(&huart4, (uint8_t*)txt, strlen(txt), 10);
 
 	pec = (_pec15(6, data) == (uint16_t)(data[6] * 256 + data[7]));
 
@@ -54,6 +65,8 @@ bool ltc_read_STATUS(ltc_struct* _ltc){
 		_ltc->STATUS_ITMP = data[2]*256 + data[3];
 		_ltc->STATUS_VA = data[4]*256 + data[5];
 	}else{
+		sprintf(txt, "PEC sbagliata\r\n");
+		HAL_UART_Transmit(&huart4, (uint8_t*)txt, strlen(txt), 10);
 		ret = false;
 	}
 	return ret;
