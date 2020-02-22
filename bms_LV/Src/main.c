@@ -92,6 +92,7 @@ UART_HandleTypeDef huart4;
 UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
+#define DEBUG_SENSOR_CURRENT true
 ltc_struct ltc;
 extern canStruct can1, can3;
 char txt[100];
@@ -225,12 +226,12 @@ int main(void)
     sprintf(txt, "Status: %d %d %d", ltc.STATUS_SC, ltc.STATUS_ITMP, ltc.STATUS_VA);
     HAL_UART_Transmit(&huart4, (uint8_t *)txt, strlen(txt), 10);*/
 
-    user_pwm_setvalue(count % 1000, &htim4, TIM_CHANNEL_2); //1000 = 0.5ms
+    //user_pwm_setvalue(count % 1000, &htim4, TIM_CHANNEL_2); //1000 = 0.5ms
     //user_pwm_setvalue(count % 1000, &htim2, TIM_CHANNEL_1);
-    user_pwm_setvalue(count % 1000, &htim3, TIM_CHANNEL_1);
-    count++;
+    //user_pwm_setvalue(count % 1000, &htim3, TIM_CHANNEL_1);
+    //count++;
 
-    HAL_Delay(10);
+    //HAL_Delay(10);
 
     CAN_Read_Message();
   }
@@ -763,8 +764,11 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc){
       current = getCurrent(volt);
       push_into_array(current);
       current = mean_current();
-      sprintf(txt, "Current: %lu\r\n" , current);
-      HAL_UART_Transmit(&huart4, (uint8_t *)txt, strlen(txt), 10);
+      if(DEBUG_SENSOR_CURRENT == true){
+        sprintf(txt, "Current from sensor: %lu\r\n" , current);
+        HAL_UART_Transmit(&huart4, (uint8_t *)txt, strlen(txt), 10);
+      }
+      
     }
   }
   HAL_ADC_Start_IT(&hadc1);
