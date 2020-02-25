@@ -13,6 +13,7 @@
 #define RDSTATA 0b00000010000 // Read Status Register Group A
 #define RDSTATB 0b00000010010 // Read Status Register Group B
 #define RDSID 0b00000101100 // Read Serial ID Register Group
+#define ADSTAT_TMP 0b10011101010 // Start internal temperature sample
 
 //--- ADC SPEED ---//
 #define MD422 0b00 // LTC ADC speed = 422Hz
@@ -38,6 +39,8 @@ typedef struct ltc_struct{
 	uint16_t voltage[LTC6810_N_CELL];
 	GPIO_TypeDef *CS_LTCx;
 	uint8_t CS_LTCn;
+	uint32_t SERIAL_ID_H;
+	uint32_t SERIAL_ID_L;
 	uint16_t STATUS_SC;
 	uint16_t STATUS_ITMP;
 	uint16_t STATUS_VA;
@@ -47,6 +50,7 @@ typedef struct ltc_struct{
 void LTC_init(ltc_struct* _ltc, SPI_HandleTypeDef *hspi, uint8_t _address, GPIO_TypeDef *pinx, uint8_t pinn);
 bool read_voltages(ltc_struct* _ltc);
 bool ltc_read_STATUS(ltc_struct* _ltc);
+bool ltc_read_ID(ltc_struct* _ltc);
 void read_temperatures();
 void ltc6810_wakeup_idle(ltc_struct* _ltc);
 uint16_t _pec15(uint8_t len, uint8_t data[]);

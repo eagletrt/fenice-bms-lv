@@ -8,6 +8,7 @@
 * 
 */
 extern char txt[100];
+extern bool DEBUG_LTC;
 extern UART_HandleTypeDef huart4;
 
 uint16_t get_ADCV_CC(uint8_t Ncell){
@@ -22,7 +23,57 @@ void LTC_init(ltc_struct* _ltc, SPI_HandleTypeDef *hspi, uint8_t _address, GPIO_
 	_ltc->CS_LTCx = pinx;
     _ltc->CS_LTCn = pinn;
 }
+bool ltc_read_ID(ltc_struct* _ltc){
+	bool ret = true;
+	bool pec;
+	uint8_t cmd[4];
+	uint16_t CC;
+	uint16_t cmd_pec;
+	uint8_t data[8];
 
+	CC = RDSID;
+	cmd[0] = (uint8_t)0x80 | // Address Command mode
+		(_ltc->address << 3) | // LTC address 
+		(CC >> 8);			 // Send 3 most significant bit of CC
+	cmd[1] = (uint8_t)(CC);
+	cmd_pec = _pec15(2, cmd); // Calculate the PEC
+	cmd[2] = (uint8_t)(cmd_pec >> 8);
+	cmd[3] = (uint8_t)(cmd_pec);
+	ltc6810_wakeup_idle(_ltc);
+	spi_enable_cs(_ltc);
+	if(HAL_SPI_Transmit(_ltc->spi, cmd, 4, 100) == HAL_OK){
+		if(DEBUG_LTC == true){
+			sprintf(txt, "Trasmesso RDSID: %d, %d, %d, %d\r\n", cmd[0], cmd[1], cmd[2], cmd[3]);
+			HAL_UART_Transmit(&huart4, (uint8_t*)txt, strlen(txt), 100);
+		}
+		HAL_SPI_Receive(_ltc->spi, data, 8, 100);
+		if(DEBUG_LTC == true){
+			sprintf(txt, "Ricevuto: %d, %d, %d, %d, %d, %d, %d, %d\r\n", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]);
+			HAL_UART_Transmit(&huart4, (uint8_t*)txt, strlen(txt), 100);
+		}
+	}else{
+		if(DEBUG_LTC == true){
+			sprintf(txt, "Errore nella trasmissione\r\n");
+			HAL_UART_Transmit(&huart4, (uint8_t*)txt, strlen(txt), 10);
+		}
+		ret = false;
+	}
+	spi_disable_cs(_ltc);
+
+	pec = (_pec15(6, data) == (uint16_t)(data[6] * 256 + data[7]));
+
+	if (pec) {
+		_ltc->SERIAL_ID_L = data[0] + (data[1]<<8) + (data[2]<<16) + (data[3]<<24);
+		_ltc->SERIAL_ID_H = data[4] + (data[5]<<8);
+	}else{
+		if(DEBUG_LTC == true){
+			sprintf(txt, "PEC sbagliata\r\n");
+			HAL_UART_Transmit(&huart4, (uint8_t*)txt, strlen(txt), 10);\
+		}
+		ret = false;
+	}
+	return ret;
+}
 bool ltc_read_STATUS(ltc_struct* _ltc){
 	bool ret = true;
 	bool pec;
@@ -30,6 +81,33 @@ bool ltc_read_STATUS(ltc_struct* _ltc){
 	uint16_t CC;
 	uint16_t cmd_pec;
 	uint8_t data[8];
+
+	CC = ADSTAT_TMP;
+	cmd[0] = (uint8_t)0x80 | // Address Command mode
+		(_ltc->address << 3) | // LTC address 
+		(CC >> 8);			 // Send 3 most significant bit of CC
+	cmd[1] = (uint8_t)(CC);
+	cmd_pec = _pec15(2, cmd); // Calculate the PEC
+	cmd[2] = (uint8_t)(cmd_pec >> 8);
+	cmd[3] = (uint8_t)(cmd_pec);
+
+	ltc6810_wakeup_idle(_ltc);
+	spi_enable_cs(_ltc);
+	if(HAL_SPI_Transmit(_ltc->spi, cmd, 4, 100) == HAL_OK){
+		if(DEBUG_LTC == true){
+			sprintf(txt, "Trasmesso ADSTAT_TMP: %d, %d, %d, %d\r\n", cmd[0], cmd[1], cmd[2], cmd[3]);
+			HAL_UART_Transmit(&huart4, (uint8_t*)txt, strlen(txt), 10);
+		}
+	}else{
+		if(DEBUG_LTC == true){
+			sprintf(txt, "Errore nella trasmissione\r\n");
+			HAL_UART_Transmit(&huart4, (uint8_t*)txt, strlen(txt), 10);
+		}
+		ret = false;
+	}
+	spi_disable_cs(_ltc);
+
+	HAL_Delay(10);
 
 	CC = RDSTATA;
 	cmd[0] = (uint8_t)0x80 | // Address Command mode
@@ -41,22 +119,29 @@ bool ltc_read_STATUS(ltc_struct* _ltc){
 	cmd[2] = (uint8_t)(cmd_pec >> 8);
 	cmd[3] = (uint8_t)(cmd_pec);
 	
-	sprintf(txt, "Trasmesso: %d, %d, %d, %d\r\n", cmd[0], cmd[1], cmd[2], cmd[3]);
-	HAL_UART_Transmit(&huart4, (uint8_t*)txt, strlen(txt), 10);
+	
+	
 
 	ltc6810_wakeup_idle(_ltc);
 	spi_enable_cs(_ltc);
 	if(HAL_SPI_Transmit(_ltc->spi, cmd, 4, 100) == HAL_OK){
+		if(DEBUG_LTC == true){
+			sprintf(txt, "Trasmesso RDSTATA: %d, %d, %d, %d\r\n", cmd[0], cmd[1], cmd[2], cmd[3]);
+			HAL_UART_Transmit(&huart4, (uint8_t*)txt, strlen(txt), 10);
+		}
 		HAL_SPI_Receive(_ltc->spi, data, 8, 100);
 	}else{
-		sprintf(txt, "Errore nella trasmissione\r\n");
-		HAL_UART_Transmit(&huart4, (uint8_t*)txt, strlen(txt), 10);
+		if(DEBUG_LTC == true){
+			sprintf(txt, "Errore nella trasmissione\r\n");
+			HAL_UART_Transmit(&huart4, (uint8_t*)txt, strlen(txt), 10);
+		}
 		ret = false;
 	}
 	spi_disable_cs(_ltc);
-
-	sprintf(txt, "Ricevuto: %d, %d, %d, %d, %d, %d, %d, %d\r\n", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]);
-	HAL_UART_Transmit(&huart4, (uint8_t*)txt, strlen(txt), 10);
+	if(DEBUG_LTC == true){
+		sprintf(txt, "Ricevuto: %d, %d, %d, %d, %d, %d, %d, %d\r\n", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]);
+		HAL_UART_Transmit(&huart4, (uint8_t*)txt, strlen(txt), 10);
+	}
 
 	pec = (_pec15(6, data) == (uint16_t)(data[6] * 256 + data[7]));
 
@@ -65,8 +150,10 @@ bool ltc_read_STATUS(ltc_struct* _ltc){
 		_ltc->STATUS_ITMP = data[2]*256 + data[3];
 		_ltc->STATUS_VA = data[4]*256 + data[5];
 	}else{
-		sprintf(txt, "PEC sbagliata\r\n");
-		HAL_UART_Transmit(&huart4, (uint8_t*)txt, strlen(txt), 10);
+		if(DEBUG_LTC == true){
+			sprintf(txt, "PEC sbagliata\r\n");
+			HAL_UART_Transmit(&huart4, (uint8_t*)txt, strlen(txt), 10);\
+		}
 		ret = false;
 	}
 	return ret;
@@ -102,9 +189,17 @@ bool read_voltages(ltc_struct* _ltc)
 	spi_enable_cs(_ltc);
 	if(HAL_SPI_Transmit(_ltc->spi, cmd, 4, 100) != HAL_OK){
 		ret = false;
+		if(DEBUG_LTC == true){
+			sprintf(txt, "Errore nella trasmissione\r\n");
+			HAL_UART_Transmit(&huart4, (uint8_t*)txt, strlen(txt), 10);
+		}
 	}
 	spi_disable_cs(_ltc);
 	//--- END --//
+	if(DEBUG_LTC == true){
+		sprintf(txt, "Trasmesso: %d, %d, %d, %d\r\n", cmd[0], cmd[1], cmd[2], cmd[3]);
+		HAL_UART_Transmit(&huart4, (uint8_t*)txt, strlen(txt), 10);
+	}
 
 	HAL_Delay(2); //TODO: change waiting mode in interrupt -> it's only to test (ADC takes 1.2ms)
 
@@ -122,9 +217,21 @@ bool read_voltages(ltc_struct* _ltc)
 	ltc6810_wakeup_idle(_ltc);
 	spi_enable_cs(_ltc);
 	if(HAL_SPI_Transmit(_ltc->spi, cmd, 4, 100) == HAL_OK){
+		if(DEBUG_LTC == true){
+			sprintf(txt, "Trasmesso: %d, %d, %d, %d\r\n", cmd[0], cmd[1], cmd[2], cmd[3]);
+			HAL_UART_Transmit(&huart4, (uint8_t*)txt, strlen(txt), 10);
+		}
 		HAL_SPI_Receive(_ltc->spi, data, 8, 100);
+		if(DEBUG_LTC == true){
+			sprintf(txt, "Ricevuto: %d, %d, %d, %d, %d, %d, %d, %d\r\n", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]);
+			HAL_UART_Transmit(&huart4, (uint8_t*)txt, strlen(txt), 10);
+		}
 	}else{
 		ret = false;
+		if(DEBUG_LTC == true){
+			sprintf(txt, "Errore nella trasmissione\r\n");
+			HAL_UART_Transmit(&huart4, (uint8_t*)txt, strlen(txt), 10);
+		}
 	}
 	spi_disable_cs(_ltc);
 
@@ -137,6 +244,8 @@ bool read_voltages(ltc_struct* _ltc)
 		}
 	}else{
 		ret = false;
+		// sprintf(txt, "PEC sbagliata\r\n");
+		// HAL_UART_Transmit(&huart4, (uint8_t*)txt, strlen(txt), 10);
 	}
 	//--- END ---//
 
@@ -154,9 +263,21 @@ bool read_voltages(ltc_struct* _ltc)
 	ltc6810_wakeup_idle(_ltc);
 	spi_enable_cs(_ltc);
 	if(HAL_SPI_Transmit(_ltc->spi, cmd, 4, 100) == HAL_OK){
+		if(DEBUG_LTC == true){
+			sprintf(txt, "Trasmesso: %d, %d, %d, %d\r\n", cmd[0], cmd[1], cmd[2], cmd[3]);
+			HAL_UART_Transmit(&huart4, (uint8_t*)txt, strlen(txt), 10);
+		}
 		HAL_SPI_Receive(_ltc->spi, data, 8, 100);
+		if(DEBUG_LTC == true){
+			sprintf(txt, "Ricevuto: %d, %d, %d, %d, %d, %d, %d, %d\r\n", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]);
+			HAL_UART_Transmit(&huart4, (uint8_t*)txt, strlen(txt), 10);
+		}
 	}else{
 		ret = false;
+		if(DEBUG_LTC == true){
+			sprintf(txt, "Errore nella trasmissione\r\n");
+			HAL_UART_Transmit(&huart4, (uint8_t*)txt, strlen(txt), 10);	
+		}
 	}
 	spi_disable_cs(_ltc);
 
@@ -169,6 +290,11 @@ bool read_voltages(ltc_struct* _ltc)
 		}
 	}else{
 		ret = false;
+		if(DEBUG_LTC == true){
+			sprintf(txt, "PEC sbagliata\r\n");
+			HAL_UART_Transmit(&huart4, (uint8_t*)txt, strlen(txt), 10);
+		}
+
 	}
 	//--- END ---//
 

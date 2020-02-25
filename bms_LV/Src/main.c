@@ -92,7 +92,8 @@ UART_HandleTypeDef huart4;
 UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
-#define DEBUG_SENSOR_CURRENT true
+const bool DEBUG_SENSOR_CURRENT = false;
+const bool DEBUG_LTC = true;
 ltc_struct ltc;
 extern canStruct can1, can3;
 char txt[100];
@@ -220,18 +221,22 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     //loading();
-    /*
-    ltc_read_STATUS(&ltc);
+    
+    
     char txt[100];
-    sprintf(txt, "Status: %d %d %d", ltc.STATUS_SC, ltc.STATUS_ITMP, ltc.STATUS_VA);
-    HAL_UART_Transmit(&huart4, (uint8_t *)txt, strlen(txt), 10);*/
-
+    ltc_read_ID(&ltc);
+    // ltc_read_STATUS(&ltc);
+    // sprintf(txt, "Status: %d %d %d\r\n", ltc.STATUS_SC, ltc.STATUS_ITMP, ltc.STATUS_VA);
+    // HAL_UART_Transmit(&huart4, (uint8_t *)txt, strlen(txt), 10);
+    // read_voltages(&ltc);
+    // sprintf(txt, "Voltages: %d %d %d %d %d\r\n", ltc.voltage[0], ltc.voltage[1], ltc.voltage[2], ltc.voltage[3], ltc.voltage[4], ltc.voltage[5]);
+    // HAL_UART_Transmit(&huart4, (uint8_t *)txt, strlen(txt), 10);
     //user_pwm_setvalue(count % 1000, &htim4, TIM_CHANNEL_2); //1000 = 0.5ms
     //user_pwm_setvalue(count % 1000, &htim2, TIM_CHANNEL_1);
     //user_pwm_setvalue(count % 1000, &htim3, TIM_CHANNEL_1);
     //count++;
 
-    //HAL_Delay(10);
+    HAL_Delay(10);
 
     CAN_Read_Message();
   }
@@ -310,6 +315,9 @@ static void MX_NVIC_Init(void)
   /* CAN1_RX0_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(CAN1_RX0_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
+  /* CAN1_TX_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(CAN1_TX_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(CAN1_TX_IRQn);
 }
 
 /**
@@ -418,11 +426,11 @@ static void MX_SPI2_Init(void)
   hspi2.Instance = SPI2;
   hspi2.Init.Mode = SPI_MODE_MASTER;
   hspi2.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi2.Init.DataSize = SPI_DATASIZE_4BIT;
+  hspi2.Init.DataSize = SPI_DATASIZE_8BIT;
   hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi2.Init.NSS = SPI_NSS_SOFT;
-  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
