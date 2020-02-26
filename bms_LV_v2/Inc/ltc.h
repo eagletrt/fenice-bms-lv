@@ -13,7 +13,8 @@
 #define RDSTATA 0b00000010000 // Read Status Register Group A
 #define RDSTATB 0b00000010010 // Read Status Register Group B
 #define RDSID 0b00000101100 // Read Serial ID Register Group
-#define ADSTAT 0b10011101000 // Start internal status sample
+#define ADSTAT 0b10011101010 // Start internal status sample
+#define ADCVSOC 0b10101110111
 
 //--- ADC SPEED ---//
 #define MD422 0b00 // LTC ADC speed = 422Hz
@@ -52,6 +53,7 @@ bool read_voltages(ltc_struct* _ltc);
 bool ltc_read_STATUS(ltc_struct* _ltc);
 bool ltc_read_ID(ltc_struct* _ltc);
 bool ltc_read_conf_reg(ltc_struct* _ltc);
+bool ltc_set_REFON(ltc_struct* _ltc);
 void read_temperatures();
 void ltc6810_wakeup_idle(ltc_struct* _ltc);
 uint16_t _pec15(uint8_t len, uint8_t data[]);

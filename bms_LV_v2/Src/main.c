@@ -64,13 +64,11 @@ CAN_HandleTypeDef hcan1;
 
 SPI_HandleTypeDef hspi2;
 
-TIM_HandleTypeDef htim3;
-
 UART_HandleTypeDef huart4;
 
 /* USER CODE BEGIN PV */
 const bool DEBUG_SENSOR_CURRENT = false;
-const bool DEBUG_LTC = true;
+const bool DEBUG_LTC = false;
 ltc_struct ltc;
 extern canStruct can1, can3;
 char txt[100];
@@ -83,7 +81,6 @@ static void MX_GPIO_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_CAN1_Init(void);
 static void MX_SPI2_Init(void);
-static void MX_TIM3_Init(void);
 static void MX_UART4_Init(void);
 static void MX_NVIC_Init(void);
 /* USER CODE BEGIN PFP */
@@ -127,7 +124,6 @@ int main(void)
   MX_ADC1_Init();
   MX_CAN1_Init();
   MX_SPI2_Init();
-  MX_TIM3_Init();
   MX_UART4_Init();
 
   /* Initialize interrupts */
@@ -136,7 +132,7 @@ int main(void)
   //ERROR_LED
   for (int i = 0; i < 9; i++)
   {
-    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_7);
+    HAL_GPIO_TogglePin(LED_ERR_GPIO_Port, LED_ERR_Pin);
     HAL_Delay(100);
   }
 
@@ -171,11 +167,19 @@ int main(void)
   while (1)
   {
     //char txt[100];
+    // read_voltages(&ltc);
+    //ltc_read_conf_reg(&ltc);
+    //HAL_Delay(1000);
+
+    //ltc_set_REFON(&ltc);
+    //HAL_Delay(1000);
+    
     read_voltages(&ltc);
-    // ltc_read_conf_reg(&ltc);
-    // ltc_read_ID(&ltc);
-    // ltc_read_STATUS(&ltc);
-    HAL_Delay(1000);
+    sprintf(txt, "%d %d %d %d %d %d\r\n", ltc.voltage[0] , ltc.voltage[1] , ltc.voltage[2] , ltc.voltage[3] ,ltc.voltage[4] ,ltc.voltage[5]);
+    HAL_UART_Transmit(&huart4, (uint8_t*)txt, strlen(txt), 10);
+    //ltc_read_ID(&ltc);
+    //ltc_read_STATUS(&ltc);
+    HAL_Delay(2000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -372,7 +376,7 @@ static void MX_SPI2_Init(void)
   hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi2.Init.NSS = SPI_NSS_SOFT;
-  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
+  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_32;
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -386,55 +390,6 @@ static void MX_SPI2_Init(void)
   /* USER CODE BEGIN SPI2_Init 2 */
 
   /* USER CODE END SPI2_Init 2 */
-
-}
-
-/**
-  * @brief TIM3 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_TIM3_Init(void)
-{
-
-  /* USER CODE BEGIN TIM3_Init 0 */
-
-  /* USER CODE END TIM3_Init 0 */
-
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
-  TIM_OC_InitTypeDef sConfigOC = {0};
-
-  /* USER CODE BEGIN TIM3_Init 1 */
-
-  /* USER CODE END TIM3_Init 1 */
-  htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 0;
-  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 0;
-  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 0;
-  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN TIM3_Init 2 */
-
-  /* USER CODE END TIM3_Init 2 */
-  HAL_TIM_MspPostInit(&htim3);
 
 }
 
@@ -489,7 +444,17 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(LED_ERR_GPIO_Port, LED_ERR_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(SPI2_CS_GPIO_Port, SPI2_CS_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : LED_ERR_Pin */
+  GPIO_InitStruct.Pin = LED_ERR_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(LED_ERR_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : SPI2_CS_Pin */
   GPIO_InitStruct.Pin = SPI2_CS_Pin;
@@ -520,7 +485,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc){
   HAL_ADC_Start_IT(&hadc1);
 
 }
-void user_pwm_setvalue(uint32_t value, TIM_HandleTypeDef *htim, uint32_t Channel)
+/*void user_pwm_setvalue(uint32_t value, TIM_HandleTypeDef *htim, uint32_t Channel)
 {
   HAL_TIM_PWM_Stop(htim, Channel);
 
@@ -532,7 +497,7 @@ void user_pwm_setvalue(uint32_t value, TIM_HandleTypeDef *htim, uint32_t Channel
 
   HAL_TIM_PWM_ConfigChannel(htim, &sConfigOC, Channel);
   HAL_TIM_PWM_Start(htim, Channel);
-}
+}*/
 
 void loading()
 {

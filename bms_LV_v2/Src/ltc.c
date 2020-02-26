@@ -23,6 +23,59 @@ void LTC_init(ltc_struct* _ltc, SPI_HandleTypeDef *hspi, uint8_t _address, GPIO_
 	_ltc->CS_LTCx = pinx;
     _ltc->CS_LTCn = pinn;
 }
+bool ltc_set_REFON(ltc_struct* _ltc){
+	bool ret = true;
+	uint16_t pec;
+	uint8_t cmd[4];
+	uint16_t CC;
+	uint16_t cmd_pec;
+	uint8_t data[12];
+	uint8_t payload[8];
+
+	CC = WRCFG;
+
+	cmd[0] = (uint8_t)0x80 | // Address Command mode
+		(_ltc->address << 3) | // LTC address 
+		(CC >> 8);			 // Send 3 most significant bit of CC
+	cmd[1] = (uint8_t)(CC);
+	cmd_pec = _pec15(2, cmd); // Calculate the PEC
+	cmd[2] = (uint8_t)(cmd_pec >> 8);
+	cmd[3] = (uint8_t)(cmd_pec);
+
+	data[0] = cmd[0];
+	data[1] = cmd[1];
+	data[2] = cmd[2];
+	data[3] = cmd[3];
+	data[4] = 0x04;
+	payload[0] = data[4];
+	data[5] = 0x00;
+	payload[1] = data[5];
+	data[6] = 0x00;
+	payload[2] = data[6];
+	data[7] = 0x00;
+	payload[3] = data[7];
+	data[8] = 0x00;
+	payload[4] = data[8];
+	data[9] = 0x00;
+	payload[5] = data[9];
+	pec = _pec15(6, payload);
+	data[10] = (uint8_t)(pec >> 8);
+	data[11] = (uint8_t)(pec);
+	ltc6810_wakeup_idle(_ltc);
+	spi_enable_cs(_ltc);
+	if(HAL_SPI_Transmit(_ltc->spi, data, 12, 100) == HAL_OK){
+		if(DEBUG_LTC == true){
+			sprintf(txt, "Trasmesso CMD: %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d\r\n", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11] );
+			HAL_UART_Transmit(&huart4, (uint8_t*)txt, strlen(txt), 100);
+		}
+	}else{
+		ret = false;
+	}
+	spi_disable_cs(_ltc);
+
+	return ret;
+
+}
 bool ltc_read_conf_reg(ltc_struct* _ltc){
 	bool ret = true;
 	bool pec;
@@ -228,9 +281,9 @@ bool read_voltages(ltc_struct* _ltc)
 
 	//--- Send start ADC conversion ---//
 	CC = get_ADCV_CC(ALL_CELLS);
-	cmd[0] = (uint8_t)0x80 | // Address Command mode
+	cmd[0] = (uint8_t)(0x80 | // Address Command mode
 		(_ltc->address << 3) | // LTC address 
-		(CC >> 8);			 // Send 3 most significant bit of CC
+		(CC >> 8));			 // Send 3 most significant bit of CC
 	cmd[1] = (uint8_t)(CC);  // Send the other 8 bit of CC
 
 	cmd_pec = _pec15(2, cmd); // Calculate the PEC
@@ -246,8 +299,9 @@ bool read_voltages(ltc_struct* _ltc)
 			HAL_UART_Transmit(&huart4, (uint8_t*)txt, strlen(txt), 10);
 		}
 	}
-	HAL_Delay(10); //TODO: change waiting mode in interrupt -> it's only to test (ADC takes 1.2ms)
+	HAL_Delay(5);
 	spi_disable_cs(_ltc);
+	HAL_Delay(10); //TODO: change waiting mode in interrupt -> it's only to test (ADC takes 1.2ms)
 	//--- END --//
 	if(DEBUG_LTC == true){
 		sprintf(txt, "Trasmesso: %d, %d, %d, %d\r\n", cmd[0], cmd[1], cmd[2], cmd[3]);
@@ -257,9 +311,9 @@ bool read_voltages(ltc_struct* _ltc)
 	
 	//--- READ GROUP A VOLTAGES ---//
 	CC = RDCVA; // Read voltages from group A 
-	cmd[0] = (uint8_t)0x80 | // Address Command mode
+	cmd[0] = (uint8_t)(0x80 | // Address Command mode
 		(_ltc->address << 3) | // LTC address 
-		(CC >> 8);			 // Send 3 most significant bit of CC
+		(CC >> 8));			 // Send 3 most significant bit of CC
 	cmd[1] = (uint8_t)(CC);  // Send the other 8 bit of CC
 
 	cmd_pec = _pec15(2, cmd); // Calculate the PEC
@@ -269,11 +323,11 @@ bool read_voltages(ltc_struct* _ltc)
 	ltc6810_wakeup_idle(_ltc);
 	spi_enable_cs(_ltc);
 	if(HAL_SPI_Transmit(_ltc->spi, cmd, 4, 100) == HAL_OK){
+		HAL_SPI_Receive(_ltc->spi, data, 8, 100);
 		if(DEBUG_LTC == true){
 			sprintf(txt, "Trasmesso: %d, %d, %d, %d\r\n", cmd[0], cmd[1], cmd[2], cmd[3]);
 			HAL_UART_Transmit(&huart4, (uint8_t*)txt, strlen(txt), 10);
 		}
-		HAL_SPI_Receive(_ltc->spi, data, 8, 100);
 		if(DEBUG_LTC == true){
 			sprintf(txt, "Ricevuto: %d, %d, %d, %d, %d, %d, %d, %d\r\n", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]);
 			HAL_UART_Transmit(&huart4, (uint8_t*)txt, strlen(txt), 10);
@@ -315,11 +369,12 @@ bool read_voltages(ltc_struct* _ltc)
 	ltc6810_wakeup_idle(_ltc);
 	spi_enable_cs(_ltc);
 	if(HAL_SPI_Transmit(_ltc->spi, cmd, 4, 100) == HAL_OK){
+		HAL_SPI_Receive(_ltc->spi, data, 8, 100);
+		spi_disable_cs(_ltc);
 		if(DEBUG_LTC == true){
 			sprintf(txt, "Trasmesso: %d, %d, %d, %d\r\n", cmd[0], cmd[1], cmd[2], cmd[3]);
 			HAL_UART_Transmit(&huart4, (uint8_t*)txt, strlen(txt), 10);
 		}
-		HAL_SPI_Receive(_ltc->spi, data, 8, 100);
 		if(DEBUG_LTC == true){
 			sprintf(txt, "Ricevuto: %d, %d, %d, %d, %d, %d, %d, %d\r\n", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]);
 			HAL_UART_Transmit(&huart4, (uint8_t*)txt, strlen(txt), 10);
@@ -371,10 +426,10 @@ void read_temperatures()
 
 void ltc6810_wakeup_idle(ltc_struct* _ltc)
 {
-    uint8_t data[6] = {0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};
+    uint8_t data[] = {0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};
     spi_enable_cs(_ltc);
-    HAL_SPI_Transmit(_ltc->spi, data, 6, 1);
-    spi_disable_cs(_ltc);
+    HAL_SPI_Transmit(_ltc->spi, data, 6, 10);
+	spi_disable_cs(_ltc);
 }
 void spi_enable_cs(ltc_struct* _ltc) {
 	HAL_GPIO_WritePin(_ltc->CS_LTCx, _ltc->CS_LTCn, GPIO_PIN_RESET);
