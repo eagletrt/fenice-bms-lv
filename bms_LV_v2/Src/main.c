@@ -64,6 +64,8 @@ CAN_HandleTypeDef hcan1;
 
 SPI_HandleTypeDef hspi2;
 
+TIM_HandleTypeDef htim4;
+
 UART_HandleTypeDef huart4;
 
 /* USER CODE BEGIN PV */
@@ -73,6 +75,8 @@ ltc_struct ltc;
 extern canStruct can1, can3;
 char txt[100];
 ADC_ChannelConfTypeDef UserAdcConfig = {0};
+
+uint8_t cont_ms, cont_dec, cont_sec, cont_min, cont_hours;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -82,6 +86,7 @@ static void MX_ADC1_Init(void);
 static void MX_CAN1_Init(void);
 static void MX_SPI2_Init(void);
 static void MX_UART4_Init(void);
+static void MX_TIM4_Init(void);
 static void MX_NVIC_Init(void);
 /* USER CODE BEGIN PFP */
 
@@ -125,6 +130,7 @@ int main(void)
   MX_CAN1_Init();
   MX_SPI2_Init();
   MX_UART4_Init();
+  MX_TIM4_Init();
 
   /* Initialize interrupts */
   MX_NVIC_Init();
@@ -144,7 +150,13 @@ int main(void)
   can1.tx_interrupt = CAN1_TX_IRQn;
   can1.hcan = &hcan1;
 
-  can_init();
+  if(can_init() == true){
+    sprintf(txt,"CAN initializated\r\n");
+    HAL_UART_Transmit(&huart4,(uint8_t*)txt, strlen(txt), 10);
+  }else{
+    sprintf(txt,"CAN initializated failed\r\n");
+    HAL_UART_Transmit(&huart4,(uint8_t*)txt, strlen(txt), 10);
+  }
 
   LTC_init(&ltc, &hspi2, 0, GPIOD, GPIO_PIN_4);  //init function of LTC_6810
 
@@ -264,6 +276,9 @@ static void MX_NVIC_Init(void)
   /* ADC_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(ADC_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(ADC_IRQn);
+  /* TIM4_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(TIM4_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(TIM4_IRQn);
 }
 
 /**
@@ -394,6 +409,51 @@ static void MX_SPI2_Init(void)
 }
 
 /**
+  * @brief TIM4 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM4_Init(void)
+{
+
+  /* USER CODE BEGIN TIM4_Init 0 */
+
+  /* USER CODE END TIM4_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM4_Init 1 */
+
+  /* USER CODE END TIM4_Init 1 */
+  htim4.Instance = TIM4;
+  htim4.Init.Prescaler = 108;
+  htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim4.Init.Period = 999;
+  htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim4, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM4_Init 2 */
+
+  /* USER CODE END TIM4_Init 2 */
+
+}
+
+/**
   * @brief UART4 Initialization Function
   * @param None
   * @retval None
@@ -485,6 +545,34 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc){
   HAL_ADC_Start_IT(&hadc1);
 
 }
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
+  if(htim == &htim4){
+    cont_ms++;
+    if(cont_ms == 100){
+      cont_ms = 0;
+      cont_dec++;
+      can1.tx_id = 0x97;
+      can1.dataTx[0] = ltc.voltage[0]>>8;
+      can1.dataTx[1] = (uint8_t)ltc.voltage[1];
+      can1.tx_size = 2;
+      CAN_Send(&can1);
+      if(cont_dec == 10){
+        cont_dec = 0;
+        cont_sec++;
+        if(cont_sec == 60){
+          cont_sec = 0;
+          cont_min++;
+          if(cont_min == 60){
+            cont_min = 0;
+            cont_hours++;
+          }
+        }
+      }
+    }
+  }
+}
+
 /*void user_pwm_setvalue(uint32_t value, TIM_HandleTypeDef *htim, uint32_t Channel)
 {
   HAL_TIM_PWM_Stop(htim, Channel);

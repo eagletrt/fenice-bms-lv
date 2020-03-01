@@ -3,19 +3,22 @@
 canStruct can1, can3;
 extern CAN_HandleTypeDef hcan1;
 
-void can_init()
+bool can_init()
 {
+	bool ret = false;
 	if (CAN_initialization(&can1))
 	{
+		ret = true;
 		//report_error_can1();
 	}
 	/*
 	if(CAN_initialization(&can3)){
 		report_error_can3();
 	}*/
+	return ret;
 }
 
-uint8_t CAN_initialization(canStruct *can)
+bool CAN_initialization(canStruct *can)
 {
 	// CAN filter initialization
 	can->canFilter.FilterMode = CAN_FILTERMODE_IDMASK;
@@ -43,9 +46,9 @@ uint8_t CAN_initialization(canStruct *can)
 	can->canStart_status = HAL_CAN_Start(can->hcan);
 
 	if (can->configFilter_status == HAL_OK && can->activateNotif_status == HAL_OK && can->canStart_status == HAL_OK)
-		return 0; // no errors occurred
+		return false; // no errors occurred
 	else
-		return 1;
+		return true;
 }
 
 uint8_t CAN_Send(canStruct *can)

@@ -2,6 +2,7 @@
 #define __CAN_H__
 
 #include "stm32f7xx_hal.h"
+#include "stdbool.h"
 
 #define fifoLength 100
 
@@ -54,8 +55,8 @@ typedef struct {
 
 } canStruct;
 
-void can_init();
-uint8_t CAN_initialization(canStruct *can);
+bool can_init();
+bool CAN_initialization(canStruct *can);
 uint8_t CAN_Send(canStruct *);
 uint8_t CAN_Send_IT(canStruct *can);
 uint8_t fifoRxDataCAN_pop(canStruct *);
