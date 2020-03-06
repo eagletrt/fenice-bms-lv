@@ -35,8 +35,13 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 
-//PC7   -> LED Error
-//PC6   -> Relay
+/* ----------------------------------- ERRORS ---------------------------------*/
+
+int BMS_ON_REQUEST = 1;
+int BMS_IS_ON = 0;
+
+int UNDER_VOLTAGE = 0;
+int OVER_TEMPERATURE = 0;
 
 //Pump
 //PD13  -> PWM  -> Pump1
@@ -45,12 +50,6 @@
 //Radiator
 //PC0   -> ADC  -> Radiator1
 //PC1   -> ADC  -> Radiator2
-
-//SPI2
-//PB14  -> Miso -> LTC6810-2
-//PB15  -> Mosi -> LTC6810-2
-//PD3   -> SCK  -> LTC6810-2
-//PD4   -> CS   -> LTC6810-2
 
 /* ---------------- ID ------------------- */
 #define BMS_LV_ASK_ID 0xFF     // Foo Fighters
@@ -91,9 +90,18 @@ TIM_HandleTypeDef htim7;
 UART_HandleTypeDef huart4;
 
 /* USER CODE BEGIN PV */
+const bool DEBUG_CAN_SEND = false;
 const bool DEBUG_VALUES = true;
 const bool DEBUG_SENSOR_CURRENT = false;
 const bool DEBUG_LTC = false;
+
+const uint32_t ERR_LED_BLINK_error_MSEC = 100;
+const uint32_t ERR_LED_BLINK_overT_ON_MSEC = 800;
+const uint32_t ERR_LED_BLINK_overT_OFF_MSEC = 200;
+const uint32_t ERR_LED_BLINK_underV_ON_MSEC = 100;
+const uint32_t ERR_LED_BLINK_underV_OFF_MSEC = 900;
+
+int prev_toggle_msec = 0;
 
 // cooling system PWM
 pwm_struct lv_pwm;
@@ -114,9 +122,14 @@ temperatures_struct pump_temp;
 ltc_struct ltc;
 extern canStruct can1, can3;
 
+// ERROR LED
+LED_STATE led_state;
+
 char txt[100];
 ADC_ChannelConfTypeDef UserAdcConfig = {0};
 uint8_t cont_ms, cont_dec, cont_sec, cont_min, cont_hours;
+
+uint32_t over_temp_start_msec, under_volt_start_msec;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -185,7 +198,7 @@ int main(void)
   MX_NVIC_Init();
   /* USER CODE BEGIN 2 */
 
-  sprintf(txt, "\r\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+  sprintf(txt, "\r\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
   HAL_UART_Transmit(&huart4, (uint8_t *)txt, strlen(txt), 10);
 
   //ERROR_LED
@@ -253,7 +266,7 @@ int main(void)
   hv_pid.setpoint = hv_temp.desired;
   pump_pid.setpoint = pump_temp.desired;
 
-  lv_temp.value = 50;
+  lv_temp.value = 65;
   hv_temp.value = 50;
   pump_temp.value = 50;
 
@@ -292,6 +305,9 @@ int main(void)
       lv_pwm.value = lv_pid.output;
       hv_pwm.value = hv_pid.output;
       pump_pwm.value = pump_pid.output;
+
+      check_over_temperature();
+      check_under_voltage();
     }
 
     if (currentTick % 200 == 0)
@@ -305,6 +321,10 @@ int main(void)
     {
       if (DEBUG_VALUES)
       {
+        sprintf(txt, "\r\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+        HAL_UART_Transmit(&huart4, (uint8_t *)txt, strlen(txt), 10);
+        sprintf(txt, "BMS_IS_ON: %d, overT: %d, underV: %d\r\n", BMS_IS_ON, OVER_TEMPERATURE, UNDER_VOLTAGE);
+        HAL_UART_Transmit(&huart4, (uint8_t *)txt, strlen(txt), 10);
         sprintf(txt, "PID outputs lv: %d hv: %d pump: %d\r\n", (int)PIDOutputGet(&lv_pid), (int)PIDOutputGet(&hv_pid), (int)PIDOutputGet(&pump_pid));
         HAL_UART_Transmit(&huart4, (uint8_t *)txt, strlen(txt), 10);
         sprintf(txt, "Voltages %d %d %d %d %d %d\r\n", ltc.voltage[0], ltc.voltage[1], ltc.voltage[2], ltc.voltage[3], ltc.voltage[4], ltc.voltage[5]);
@@ -317,11 +337,40 @@ int main(void)
 
     if (previous_millis != currentTick)
     {
-      send_CAN_data(currentTick);
+      int sent = send_CAN_data(currentTick);
       previous_millis = currentTick;
-      sprintf(txt, "Current from sensor: %lu\r\n", get_current());
-      HAL_UART_Transmit(&huart4, (uint8_t *)txt, strlen(txt), 10);
+      if (sent != 0 && DEBUG_CAN_SEND)
+      {
+        sprintf(txt, "Sent message: %d\r\n", sent);
+        HAL_UART_Transmit(&huart4, (uint8_t *)txt, strlen(txt), 10);
+      }
     }
+
+    if (BMS_IS_ON)
+    {
+      HAL_GPIO_WritePin(RELAY_GPIO_Port, RELAY_Pin, GPIO_PIN_SET);
+      led_state = ON;
+    }
+    else
+    {
+      HAL_GPIO_WritePin(RELAY_GPIO_Port, RELAY_Pin, GPIO_PIN_RESET);
+      if (UNDER_VOLTAGE)
+      {
+        led_state = BLINK_underV;
+        if (OVER_TEMPERATURE)
+          led_state = BLINK_error;
+      }
+      else
+      {
+        if (OVER_TEMPERATURE)
+          led_state = BLINK_overT;
+        else
+          led_state = OFF;
+      }
+    }
+
+    BMS_ON_OFF();
+    write_error_led(led_state);
 
     /* USER CODE END WHILE */
 
@@ -847,17 +896,17 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(LED_ERR_GPIO_Port, LED_ERR_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, RELAY_Pin | LED_ERR_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(SPI2_CS_GPIO_Port, SPI2_CS_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : LED_ERR_Pin */
-  GPIO_InitStruct.Pin = LED_ERR_Pin;
+  /*Configure GPIO pins : RELAY_Pin LED_ERR_Pin */
+  GPIO_InitStruct.Pin = RELAY_Pin | LED_ERR_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(LED_ERR_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pin : SPI2_CS_Pin */
   GPIO_InitStruct.Pin = SPI2_CS_Pin;
@@ -883,6 +932,114 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
     }
     HAL_ADC_Start_IT(&hadc1);
   }
+}
+
+void write_error_led()
+{
+  switch (led_state)
+  {
+  case ON:
+    HAL_GPIO_WritePin(LED_ERR_GPIO_Port, LED_ERR_Pin, GPIO_PIN_SET);
+    break;
+
+  case BLINK_error:
+    if (HAL_GetTick() - prev_toggle_msec > ERR_LED_BLINK_error_MSEC)
+    {
+      HAL_GPIO_TogglePin(LED_ERR_GPIO_Port, LED_ERR_Pin);
+      prev_toggle_msec = HAL_GetTick();
+    }
+    break;
+
+  case BLINK_overT:
+    if (HAL_GPIO_ReadPin(LED_ERR_GPIO_Port, LED_ERR_Pin))
+    {
+      if (HAL_GetTick() - prev_toggle_msec > ERR_LED_BLINK_overT_ON_MSEC)
+      {
+        HAL_GPIO_TogglePin(LED_ERR_GPIO_Port, LED_ERR_Pin);
+        prev_toggle_msec = HAL_GetTick();
+      }
+    }
+    else
+    {
+      if (HAL_GetTick() - prev_toggle_msec > ERR_LED_BLINK_overT_OFF_MSEC)
+      {
+        HAL_GPIO_TogglePin(LED_ERR_GPIO_Port, LED_ERR_Pin);
+        prev_toggle_msec = HAL_GetTick();
+      }
+    }
+    break;
+
+  case BLINK_underV:
+    if (HAL_GPIO_ReadPin(LED_ERR_GPIO_Port, LED_ERR_Pin))
+    {
+      if (HAL_GetTick() - prev_toggle_msec > ERR_LED_BLINK_underV_ON_MSEC)
+      {
+        HAL_GPIO_TogglePin(LED_ERR_GPIO_Port, LED_ERR_Pin);
+        prev_toggle_msec = HAL_GetTick();
+      }
+    }
+    else
+    {
+      if (HAL_GetTick() - prev_toggle_msec > ERR_LED_BLINK_underV_OFF_MSEC)
+      {
+        HAL_GPIO_TogglePin(LED_ERR_GPIO_Port, LED_ERR_Pin);
+        prev_toggle_msec = HAL_GetTick();
+      }
+    }
+    break;
+
+  case OFF:
+    HAL_GPIO_WritePin(LED_ERR_GPIO_Port, LED_ERR_Pin, GPIO_PIN_RESET);
+    break;
+
+  default:
+    HAL_GPIO_WritePin(LED_ERR_GPIO_Port, LED_ERR_Pin, GPIO_PIN_RESET);
+    break;
+  }
+}
+
+void check_under_voltage()
+{
+  if (get_min_voltage(&ltc) < 10)
+  {
+    UNDER_VOLTAGE = 1;
+  }
+  else
+  {
+    UNDER_VOLTAGE = 0;
+  }
+}
+
+void check_over_temperature()
+{
+  if (lv_temp.value > lv_temp.max_temp)
+  {
+    OVER_TEMPERATURE = 1;
+  }
+  else
+  {
+    OVER_TEMPERATURE = 0;
+  }
+}
+
+int BMS_ON_OFF()
+{
+  if (BMS_ON_REQUEST == 1)
+  {
+    if (!OVER_TEMPERATURE && !UNDER_VOLTAGE)
+    {
+      BMS_IS_ON = 1;
+    }
+    else
+    {
+      BMS_IS_ON = 0;
+    }
+  }
+  else
+  {
+    BMS_IS_ON = 0;
+  }
+  return BMS_IS_ON;
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
@@ -920,16 +1077,21 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   }
 }
 
-send_CAN_data(uint32_t tick)
+int send_CAN_data(uint32_t tick)
 {
-  if (tick % 200)
+  int message_sent = 0;
+
+  if (tick % 200 == 0)
   {
     can1.tx_id = 0x97;
     can1.dataTx[0] = ltc.voltage[0] >> 8;
     can1.dataTx[1] = (uint8_t)ltc.voltage[1];
     can1.tx_size = 2;
     CAN_Send(&can1);
+    message_sent = 1;
   }
+
+  return message_sent;
 }
 
 void loading()

@@ -484,10 +484,6 @@ uint16_t _convert_voltage(uint8_t v_data[])
 	return v_data[0] + (v_data[1] << 8);
 }
 
-void read_temperatures()
-{
-}
-
 void ltc6810_wakeup_idle(ltc_struct *_ltc)
 {
 	uint8_t data[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
@@ -523,4 +519,26 @@ uint16_t _pec15(uint8_t len, uint8_t data[])
 	}
 	// The CRC15 has a 0 in the LSB so the final value must be multiplied by 2
 	return (remainder * 2);
+}
+
+uint16_t get_min_voltage(ltc_struct *_ltc)
+{
+	uint16_t min = 65536;
+	for (int i = 0; i < LTC6810_N_CELL; i++)
+	{
+		if (_ltc->voltage[i] < min)
+			min = _ltc->voltage[i];
+	}
+	return 15;
+}
+
+uint16_t get_mean_voltage(ltc_struct *_ltc)
+{
+	uint64_t mean = 0;
+
+	for (int i = 0; i < LTC6810_N_CELL; i++)
+	{
+		mean += _ltc->voltage[i];
+	}
+	return (mean / LTC6810_N_CELL);
 }

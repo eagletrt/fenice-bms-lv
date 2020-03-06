@@ -61,6 +61,13 @@ extern "C"
   int CAN_Read_Message();
   int send_CAN_data(uint32_t);
 
+  void check_under_voltage();
+  void check_over_temperature();
+
+  int BMS_ON_OFF();
+
+  void write_error_led();
+
   typedef struct temperatures_struct
   {
     uint32_t value;
@@ -69,6 +76,16 @@ extern "C"
     uint32_t desired;
     uint32_t max_temp;
   } temperatures_struct;
+
+  typedef enum
+  {
+    ON,
+    OFF,
+    BLINK_error,
+    BLINK_underV,
+    BLINK_overT,
+    BLINK_both
+  } LED_STATE;
 
 /* USER CODE END EFP */
 
@@ -83,6 +100,8 @@ extern "C"
 #define Pump2_GPIO_Port GPIOD
 #define Pump1_Pin GPIO_PIN_13
 #define Pump1_GPIO_Port GPIOD
+#define RELAY_Pin GPIO_PIN_6
+#define RELAY_GPIO_Port GPIOC
 #define LED_ERR_Pin GPIO_PIN_7
 #define LED_ERR_GPIO_Port GPIOC
 #define SPI2_CS_Pin GPIO_PIN_4
