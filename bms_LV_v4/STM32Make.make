@@ -66,9 +66,14 @@ Middlewares/Third_Party/FatFs/src/ff.c \
 Middlewares/Third_Party/FatFs/src/ff_gen_drv.c \
 Middlewares/Third_Party/FatFs/src/option/syscall.c \
 Src/bsp_driver_sd.c \
+Src/can.c \
+Src/current_sensor.c \
 Src/fatfs.c \
 Src/fatfs_platform.c \
+Src/ltc.c \
 Src/main.c \
+Src/pid_controller.c \
+Src/pwm.c \
 Src/sd_diskio.c \
 Src/stm32f7xx_hal_msp.c \
 Src/stm32f7xx_it.c \
@@ -218,13 +223,13 @@ $(BUILD_DIR):
 # flash
 #######################################
 flash: $(BUILD_DIR)/$(TARGET).elf
-	openocd -f interface/stlink-v2-1.cfg  -f target/stm32f7x.cfg -c "program $(BUILD_DIR)/$(TARGET).elf verify reset exit"
+	openocd -f interface/stlink.cfg  -f target/stm32f7x.cfg -c "program $(BUILD_DIR)/$(TARGET).elf verify reset exit"
 
 #######################################
 # erase
 #######################################
 erase: $(BUILD_DIR)/$(TARGET).elf
-	openocd -f interface/stlink-v2-1.cfg -f target/stm32f7x.cfg -c "init; reset halt; stm32f7x mass_erase 0; exit"
+	openocd -f interface/stlink.cfg -f target/stm32f7x.cfg -c "init; reset halt; stm32f7x mass_erase 0; exit"
 
 #######################################
 # clean up

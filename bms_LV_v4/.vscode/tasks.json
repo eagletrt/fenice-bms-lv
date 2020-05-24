@@ -29,6 +29,21 @@
       "problemMatcher": [
         "$gcc"
       ]
+    },
+    {
+      "label": "Build Clean STM",
+      "type": "process",
+      "command": "${command:stm32-for-vscode.cleanBuild}",
+      "options": {
+        "cwd": "${workspaceRoot}"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [
+        "$gcc"
+      ]
     }
   ]
 }

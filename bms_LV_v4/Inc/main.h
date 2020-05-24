@@ -56,6 +56,37 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
+  void user_pwm_setvalue(uint32_t, TIM_HandleTypeDef *, uint32_t);
+  int CAN_Read_Message();
+  int send_CAN_data(uint32_t);
+
+  void check_under_voltage();
+  void check_over_temperature();
+
+  int BMS_ON_OFF();
+
+  void write_error_led();
+
+  void print_uart(char *);
+
+  typedef struct temperatures_struct
+  {
+    uint32_t value;
+
+    uint32_t prev_value;
+    uint32_t desired;
+    uint32_t max_temp;
+  } temperatures_struct;
+
+  typedef enum
+  {
+    ON,
+    OFF,
+    BLINK_error,
+    BLINK_underV,
+    BLINK_overT,
+    BLINK_both
+  } LED_STATE;
 
 /* USER CODE END EFP */
 
@@ -72,7 +103,7 @@ void Error_Handler(void);
 #define FAN3_HV_GPIO_Port GPIOA
 #define T_BATT2_Pin GPIO_PIN_7
 #define T_BATT2_GPIO_Port GPIOA
-#define RELAY_Pin GPIO_PIN_4
+#define RELAY_Pin GPIO_PIN_5
 #define RELAY_GPIO_Port GPIOC
 #define T_DCDC12_Pin GPIO_PIN_0
 #define T_DCDC12_GPIO_Port GPIOB

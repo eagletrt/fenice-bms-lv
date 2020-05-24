@@ -18,14 +18,14 @@
   */
 /* USER CODE END Header */
 
-/* Note: code generation based on sd_diskio_template.c v2.1.1 as "Use dma template" is disabled. */
+/* Note: code generation based on sd_diskio_template_bspv1.c v2.1.4 
+   as "Use dma template" is disabled. */
 
 /* USER CODE BEGIN firstSection */
 /* can be used to modify / undefine following code or add new definitions */
 /* USER CODE END firstSection*/
 
 /* Includes ------------------------------------------------------------------*/
-
 #include "ff_gen_drv.h"
 #include "sd_diskio.h"
 
@@ -52,6 +52,7 @@
 /* #define DISABLE_SD_INIT */
 /* USER CODE END disableSDInit */
 
+/* Private variables ---------------------------------------------------------*/
 /* Disk status */
 static volatile DSTATUS Stat = STA_NOINIT;
 
@@ -61,10 +62,10 @@ DSTATUS SD_initialize (BYTE);
 DSTATUS SD_status (BYTE);
 DRESULT SD_read (BYTE, BYTE*, DWORD, UINT);
 #if _USE_WRITE == 1
-  DRESULT SD_write (BYTE, const BYTE*, DWORD, UINT);
+DRESULT SD_write (BYTE, const BYTE*, DWORD, UINT);
 #endif /* _USE_WRITE == 1 */
 #if _USE_IOCTL == 1
-  DRESULT SD_ioctl (BYTE, BYTE, void*);
+DRESULT SD_ioctl (BYTE, BYTE, void*);
 #endif  /* _USE_IOCTL == 1 */
 
 const Diskio_drvTypeDef  SD_Driver =
@@ -118,6 +119,7 @@ Stat = STA_NOINIT;
 #else
   Stat = SD_CheckStatus(lun);
 #endif
+
   return Stat;
 }
 
@@ -191,7 +193,7 @@ DRESULT SD_write(BYTE lun, const BYTE *buff, DWORD sector, UINT count)
 
   return res;
 }
-#endif /* _USE_WRITE == 1 */  
+#endif /* _USE_WRITE == 1 */
 
 /* USER CODE BEGIN beforeIoctlSection */
 /* can be used to modify previous code / undefine following code / add new code */
