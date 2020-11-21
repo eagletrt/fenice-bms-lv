@@ -1,0 +1,173 @@
+ARM GAS  /tmp/cczTReuI.s 			page 1
+
+
+   1              		.cpu cortex-m7
+   2              		.eabi_attribute 28, 1
+   3              		.eabi_attribute 20, 1
+   4              		.eabi_attribute 21, 1
+   5              		.eabi_attribute 23, 3
+   6              		.eabi_attribute 24, 1
+   7              		.eabi_attribute 25, 1
+   8              		.eabi_attribute 26, 1
+   9              		.eabi_attribute 30, 1
+  10              		.eabi_attribute 34, 1
+  11              		.eabi_attribute 18, 4
+  12              		.file	"fatfs.c"
+  13              		.text
+  14              	.Ltext0:
+  15              		.cfi_sections	.debug_frame
+  16              		.section	.text.MX_FATFS_Init,"ax",%progbits
+  17              		.align	1
+  18              		.global	MX_FATFS_Init
+  19              		.arch armv7e-m
+  20              		.syntax unified
+  21              		.thumb
+  22              		.thumb_func
+  23              		.fpu fpv5-d16
+  25              	MX_FATFS_Init:
+  26              	.LFB141:
+  27              		.file 1 "Src/fatfs.c"
+   1:Src/fatfs.c   **** /**
+   2:Src/fatfs.c   ****   ******************************************************************************
+   3:Src/fatfs.c   ****   * @file   fatfs.c
+   4:Src/fatfs.c   ****   * @brief  Code for fatfs applications
+   5:Src/fatfs.c   ****   ******************************************************************************
+   6:Src/fatfs.c   ****   * @attention
+   7:Src/fatfs.c   ****   *
+   8:Src/fatfs.c   ****   * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
+   9:Src/fatfs.c   ****   * All rights reserved.</center></h2>
+  10:Src/fatfs.c   ****   *
+  11:Src/fatfs.c   ****   * This software component is licensed by ST under Ultimate Liberty license
+  12:Src/fatfs.c   ****   * SLA0044, the "License"; You may not use this file except in compliance with
+  13:Src/fatfs.c   ****   * the License. You may obtain a copy of the License at:
+  14:Src/fatfs.c   ****   *                             www.st.com/SLA0044
+  15:Src/fatfs.c   ****   *
+  16:Src/fatfs.c   ****   ******************************************************************************
+  17:Src/fatfs.c   ****   */
+  18:Src/fatfs.c   **** 
+  19:Src/fatfs.c   **** #include "fatfs.h"
+  20:Src/fatfs.c   **** 
+  21:Src/fatfs.c   **** uint8_t retSD;    /* Return value for SD */
+  22:Src/fatfs.c   **** char SDPath[4];   /* SD logical drive path */
+  23:Src/fatfs.c   **** FATFS SDFatFS;    /* File system object for SD logical drive */
+  24:Src/fatfs.c   **** FIL SDFile;       /* File object for SD */
+  25:Src/fatfs.c   **** 
+  26:Src/fatfs.c   **** /* USER CODE BEGIN Variables */
+  27:Src/fatfs.c   **** 
+  28:Src/fatfs.c   **** /* USER CODE END Variables */    
+  29:Src/fatfs.c   **** 
+  30:Src/fatfs.c   **** void MX_FATFS_Init(void) 
+  31:Src/fatfs.c   **** {
+ARM GAS  /tmp/cczTReuI.s 			page 2
+
+
+  28              		.loc 1 31 1 view -0
+  29              		.cfi_startproc
+  30              		@ args = 0, pretend = 0, frame = 0
+  31              		@ frame_needed = 0, uses_anonymous_args = 0
+  32 0000 08B5     		push	{r3, lr}
+  33              	.LCFI0:
+  34              		.cfi_def_cfa_offset 8
+  35              		.cfi_offset 3, -8
+  36              		.cfi_offset 14, -4
+  32:Src/fatfs.c   ****   /*## FatFS: Link the SD driver ###########################*/
+  33:Src/fatfs.c   ****   retSD = FATFS_LinkDriver(&SD_Driver, SDPath);
+  37              		.loc 1 33 3 view .LVU1
+  38              		.loc 1 33 11 is_stmt 0 view .LVU2
+  39 0002 0349     		ldr	r1, .L3
+  40 0004 0348     		ldr	r0, .L3+4
+  41 0006 FFF7FEFF 		bl	FATFS_LinkDriver
+  42              	.LVL0:
+  43              		.loc 1 33 9 view .LVU3
+  44 000a 034B     		ldr	r3, .L3+8
+  45 000c 1870     		strb	r0, [r3]
+  34:Src/fatfs.c   **** 
+  35:Src/fatfs.c   ****   /* USER CODE BEGIN Init */
+  36:Src/fatfs.c   ****   /* additional user code for init */     
+  37:Src/fatfs.c   ****   /* USER CODE END Init */
+  38:Src/fatfs.c   **** }
+  46              		.loc 1 38 1 view .LVU4
+  47 000e 08BD     		pop	{r3, pc}
+  48              	.L4:
+  49              		.align	2
+  50              	.L3:
+  51 0010 00000000 		.word	SDPath
+  52 0014 00000000 		.word	SD_Driver
+  53 0018 00000000 		.word	retSD
+  54              		.cfi_endproc
+  55              	.LFE141:
+  57              		.section	.text.get_fattime,"ax",%progbits
+  58              		.align	1
+  59              		.global	get_fattime
+  60              		.syntax unified
+  61              		.thumb
+  62              		.thumb_func
+  63              		.fpu fpv5-d16
+  65              	get_fattime:
+  66              	.LFB142:
+  39:Src/fatfs.c   **** 
+  40:Src/fatfs.c   **** /**
+  41:Src/fatfs.c   ****   * @brief  Gets Time from RTC 
+  42:Src/fatfs.c   ****   * @param  None
+  43:Src/fatfs.c   ****   * @retval Time in DWORD
+  44:Src/fatfs.c   ****   */
+  45:Src/fatfs.c   **** DWORD get_fattime(void)
+  46:Src/fatfs.c   **** {
+  67              		.loc 1 46 1 is_stmt 1 view -0
+  68              		.cfi_startproc
+  69              		@ args = 0, pretend = 0, frame = 0
+  70              		@ frame_needed = 0, uses_anonymous_args = 0
+  71              		@ link register save eliminated.
+ARM GAS  /tmp/cczTReuI.s 			page 3
+
+
+  47:Src/fatfs.c   ****   /* USER CODE BEGIN get_fattime */
+  48:Src/fatfs.c   ****   return 0;
+  72              		.loc 1 48 3 view .LVU6
+  49:Src/fatfs.c   ****   /* USER CODE END get_fattime */  
+  50:Src/fatfs.c   **** }
+  73              		.loc 1 50 1 is_stmt 0 view .LVU7
+  74 0000 0020     		movs	r0, #0
+  75 0002 7047     		bx	lr
+  76              		.cfi_endproc
+  77              	.LFE142:
+  79              		.comm	SDFile,560,4
+  80              		.comm	SDFatFS,560,4
+  81              		.comm	SDPath,4,4
+  82              		.comm	retSD,1,1
+  83              		.text
+  84              	.Letext0:
+  85              		.file 2 "Middlewares/Third_Party/FatFs/src/integer.h"
+  86              		.file 3 "/home/alex/Mass Storage/ARM-GCC/arm-none-eabi/include/machine/_default_types.h"
+  87              		.file 4 "/home/alex/Mass Storage/ARM-GCC/arm-none-eabi/include/sys/_stdint.h"
+  88              		.file 5 "Drivers/CMSIS/Include/core_cm7.h"
+  89              		.file 6 "Drivers/CMSIS/Device/ST/STM32F7xx/Include/system_stm32f7xx.h"
+  90              		.file 7 "Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h"
+  91              		.file 8 "/home/alex/Mass Storage/ARM-GCC/lib/gcc/arm-none-eabi/9.3.1/include/stddef.h"
+  92              		.file 9 "/home/alex/Mass Storage/ARM-GCC/arm-none-eabi/include/sys/_types.h"
+  93              		.file 10 "/home/alex/Mass Storage/ARM-GCC/arm-none-eabi/include/sys/reent.h"
+  94              		.file 11 "/home/alex/Mass Storage/ARM-GCC/arm-none-eabi/include/sys/lock.h"
+  95              		.file 12 "/home/alex/Mass Storage/ARM-GCC/arm-none-eabi/include/stdlib.h"
+  96              		.file 13 "Middlewares/Third_Party/FatFs/src/ff.h"
+  97              		.file 14 "Middlewares/Third_Party/FatFs/src/diskio.h"
+  98              		.file 15 "Middlewares/Third_Party/FatFs/src/ff_gen_drv.h"
+  99              		.file 16 "Inc/sd_diskio.h"
+ 100              		.file 17 "Inc/fatfs.h"
+ARM GAS  /tmp/cczTReuI.s 			page 4
+
+
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 fatfs.c
+     /tmp/cczTReuI.s:17     .text.MX_FATFS_Init:0000000000000000 $t
+     /tmp/cczTReuI.s:25     .text.MX_FATFS_Init:0000000000000000 MX_FATFS_Init
+     /tmp/cczTReuI.s:51     .text.MX_FATFS_Init:0000000000000010 $d
+                            *COM*:0000000000000004 SDPath
+                            *COM*:0000000000000001 retSD
+     /tmp/cczTReuI.s:58     .text.get_fattime:0000000000000000 $t
+     /tmp/cczTReuI.s:65     .text.get_fattime:0000000000000000 get_fattime
+                            *COM*:0000000000000230 SDFile
+                            *COM*:0000000000000230 SDFatFS
+
+UNDEFINED SYMBOLS
+FATFS_LinkDriver
+SD_Driver

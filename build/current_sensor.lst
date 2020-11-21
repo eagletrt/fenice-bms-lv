@@ -1,0 +1,360 @@
+ARM GAS  /tmp/cchzyTou.s 			page 1
+
+
+   1              		.cpu cortex-m7
+   2              		.eabi_attribute 28, 1
+   3              		.eabi_attribute 20, 1
+   4              		.eabi_attribute 21, 1
+   5              		.eabi_attribute 23, 3
+   6              		.eabi_attribute 24, 1
+   7              		.eabi_attribute 25, 1
+   8              		.eabi_attribute 26, 1
+   9              		.eabi_attribute 30, 1
+  10              		.eabi_attribute 34, 1
+  11              		.eabi_attribute 18, 4
+  12              		.file	"current_sensor.c"
+  13              		.text
+  14              	.Ltext0:
+  15              		.cfi_sections	.debug_frame
+  16              		.section	.text.get_current,"ax",%progbits
+  17              		.align	1
+  18              		.global	get_current
+  19              		.arch armv7e-m
+  20              		.syntax unified
+  21              		.thumb
+  22              		.thumb_func
+  23              		.fpu fpv5-d16
+  25              	get_current:
+  26              	.LFB141:
+  27              		.file 1 "Src/current_sensor.c"
+   1:Src/current_sensor.c **** #include "current_sensor.h"
+   2:Src/current_sensor.c **** 
+   3:Src/current_sensor.c **** #define LEN_ARRAY 100
+   4:Src/current_sensor.c **** uint32_t array_val[LEN_ARRAY];
+   5:Src/current_sensor.c **** uint32_t current_val = 0;
+   6:Src/current_sensor.c **** 
+   7:Src/current_sensor.c **** uint32_t get_current()
+   8:Src/current_sensor.c **** {
+  28              		.loc 1 8 1 view -0
+  29              		.cfi_startproc
+  30              		@ args = 0, pretend = 0, frame = 0
+  31              		@ frame_needed = 0, uses_anonymous_args = 0
+  32              		@ link register save eliminated.
+   9:Src/current_sensor.c ****     return current_val;
+  33              		.loc 1 9 5 view .LVU1
+  10:Src/current_sensor.c **** }
+  34              		.loc 1 10 1 is_stmt 0 view .LVU2
+  35 0000 014B     		ldr	r3, .L2
+  36 0002 1868     		ldr	r0, [r3]
+  37 0004 7047     		bx	lr
+  38              	.L3:
+  39 0006 00BF     		.align	2
+  40              	.L2:
+  41 0008 00000000 		.word	.LANCHOR0
+  42              		.cfi_endproc
+  43              	.LFE141:
+  45              		.section	.text.push_into_array,"ax",%progbits
+  46              		.align	1
+  47              		.global	push_into_array
+  48              		.syntax unified
+  49              		.thumb
+ARM GAS  /tmp/cchzyTou.s 			page 2
+
+
+  50              		.thumb_func
+  51              		.fpu fpv5-d16
+  53              	push_into_array:
+  54              	.LVL0:
+  55              	.LFB142:
+  11:Src/current_sensor.c **** 
+  12:Src/current_sensor.c **** void push_into_array(uint32_t val)
+  13:Src/current_sensor.c **** {
+  56              		.loc 1 13 1 is_stmt 1 view -0
+  57              		.cfi_startproc
+  58              		@ args = 0, pretend = 0, frame = 0
+  59              		@ frame_needed = 0, uses_anonymous_args = 0
+  60              		@ link register save eliminated.
+  14:Src/current_sensor.c ****     for (int i = LEN_ARRAY - 1; i > 0; i--)
+  61              		.loc 1 14 5 view .LVU4
+  62              	.LBB2:
+  63              		.loc 1 14 10 view .LVU5
+  64              		.loc 1 14 14 is_stmt 0 view .LVU6
+  65 0000 6323     		movs	r3, #99
+  66              	.LVL1:
+  67              		.loc 1 14 33 is_stmt 1 view .LVU7
+  68              		.loc 1 14 5 is_stmt 0 view .LVU8
+  69 0002 002B     		cmp	r3, #0
+  70 0004 0EDD     		ble	.L11
+  71              	.LBE2:
+  13:Src/current_sensor.c ****     for (int i = LEN_ARRAY - 1; i > 0; i--)
+  72              		.loc 1 13 1 view .LVU9
+  73 0006 10B4     		push	{r4}
+  74              	.LCFI0:
+  75              		.cfi_def_cfa_offset 4
+  76              		.cfi_offset 4, -4
+  77              	.L6:
+  78              	.LBB3:
+  15:Src/current_sensor.c ****     {
+  16:Src/current_sensor.c ****         array_val[i] = array_val[i - 1];
+  79              		.loc 1 16 9 is_stmt 1 discriminator 3 view .LVU10
+  80              		.loc 1 16 36 is_stmt 0 discriminator 3 view .LVU11
+  81 0008 5A1E     		subs	r2, r3, #1
+  82              		.loc 1 16 33 discriminator 3 view .LVU12
+  83 000a 0849     		ldr	r1, .L12
+  84 000c 51F82240 		ldr	r4, [r1, r2, lsl #2]
+  85              		.loc 1 16 22 discriminator 3 view .LVU13
+  86 0010 41F82340 		str	r4, [r1, r3, lsl #2]
+  14:Src/current_sensor.c ****     {
+  87              		.loc 1 14 40 is_stmt 1 discriminator 3 view .LVU14
+  88              	.LVL2:
+  14:Src/current_sensor.c ****     {
+  89              		.loc 1 14 41 is_stmt 0 discriminator 3 view .LVU15
+  90 0014 1346     		mov	r3, r2
+  14:Src/current_sensor.c ****     {
+  91              		.loc 1 14 33 is_stmt 1 discriminator 3 view .LVU16
+  14:Src/current_sensor.c ****     {
+  92              		.loc 1 14 5 is_stmt 0 discriminator 3 view .LVU17
+  93 0016 002A     		cmp	r2, #0
+  94 0018 F6DC     		bgt	.L6
+  95              	.LBE3:
+  17:Src/current_sensor.c ****     }
+ARM GAS  /tmp/cchzyTou.s 			page 3
+
+
+  18:Src/current_sensor.c ****     array_val[0] = val;
+  96              		.loc 1 18 5 is_stmt 1 view .LVU18
+  97              		.loc 1 18 18 is_stmt 0 view .LVU19
+  98 001a 044B     		ldr	r3, .L12
+  99 001c 1860     		str	r0, [r3]
+  19:Src/current_sensor.c **** }
+ 100              		.loc 1 19 1 view .LVU20
+ 101 001e 5DF8044B 		ldr	r4, [sp], #4
+ 102              	.LCFI1:
+ 103              		.cfi_restore 4
+ 104              		.cfi_def_cfa_offset 0
+ 105 0022 7047     		bx	lr
+ 106              	.LVL3:
+ 107              	.L11:
+  18:Src/current_sensor.c **** }
+ 108              		.loc 1 18 5 is_stmt 1 view .LVU21
+  18:Src/current_sensor.c **** }
+ 109              		.loc 1 18 18 is_stmt 0 view .LVU22
+ 110 0024 014B     		ldr	r3, .L12
+ 111              	.LVL4:
+  18:Src/current_sensor.c **** }
+ 112              		.loc 1 18 18 view .LVU23
+ 113 0026 1860     		str	r0, [r3]
+ 114 0028 7047     		bx	lr
+ 115              	.L13:
+ 116 002a 00BF     		.align	2
+ 117              	.L12:
+ 118 002c 00000000 		.word	array_val
+ 119              		.cfi_endproc
+ 120              	.LFE142:
+ 122              		.section	.text.calc_current,"ax",%progbits
+ 123              		.align	1
+ 124              		.global	calc_current
+ 125              		.syntax unified
+ 126              		.thumb
+ 127              		.thumb_func
+ 128              		.fpu fpv5-d16
+ 130              	calc_current:
+ 131              	.LVL5:
+ 132              	.LFB143:
+  20:Src/current_sensor.c **** 
+  21:Src/current_sensor.c **** uint32_t calc_current(uint32_t adcVAL)
+  22:Src/current_sensor.c **** {
+ 133              		.loc 1 22 1 is_stmt 1 view -0
+ 134              		.cfi_startproc
+ 135              		@ args = 0, pretend = 0, frame = 0
+ 136              		@ frame_needed = 0, uses_anonymous_args = 0
+ 137              		@ link register save eliminated.
+  23:Src/current_sensor.c ****     uint32_t ADC_voltages;
+ 138              		.loc 1 23 5 view .LVU25
+  24:Src/current_sensor.c ****     ADC_voltages = (uint32_t)((adcVAL * (Vcc * 1024 / RESOLUTION)) / 1024);
+ 139              		.loc 1 24 5 view .LVU26
+ 140              		.loc 1 24 39 is_stmt 0 view .LVU27
+ 141 0000 40F23933 		movw	r3, #825
+ 142 0004 03FB00F0 		mul	r0, r3, r0
+ 143              	.LVL6:
+ 144              		.loc 1 24 18 view .LVU28
+ARM GAS  /tmp/cchzyTou.s 			page 4
+
+
+ 145 0008 820A     		lsrs	r2, r0, #10
+ 146              	.LVL7:
+  25:Src/current_sensor.c ****     if (ADC_voltages >= REFERENCE_VOLTAGE)
+ 147              		.loc 1 25 5 is_stmt 1 view .LVU29
+ 148              		.loc 1 25 8 is_stmt 0 view .LVU30
+ 149 000a 064B     		ldr	r3, .L17
+ 150 000c 9842     		cmp	r0, r3
+ 151 000e 05D9     		bls	.L15
+  26:Src/current_sensor.c ****         ADC_voltages = ADC_voltages - REFERENCE_VOLTAGE;
+ 152              		.loc 1 26 9 is_stmt 1 view .LVU31
+ 153              		.loc 1 26 22 is_stmt 0 view .LVU32
+ 154 0010 A2F27263 		subw	r3, r2, #1650
+ 155              	.LVL8:
+ 156              	.L16:
+  27:Src/current_sensor.c ****     else
+  28:Src/current_sensor.c ****         ADC_voltages = REFERENCE_VOLTAGE - ADC_voltages;
+  29:Src/current_sensor.c ****     return ADC_voltages = (uint32_t)(100 * ADC_voltages);
+ 157              		.loc 1 29 5 is_stmt 1 view .LVU33
+  30:Src/current_sensor.c **** }
+ 158              		.loc 1 30 1 is_stmt 0 view .LVU34
+ 159 0014 6420     		movs	r0, #100
+ 160 0016 00FB03F0 		mul	r0, r0, r3
+ 161              	.LVL9:
+ 162              		.loc 1 30 1 view .LVU35
+ 163 001a 7047     		bx	lr
+ 164              	.LVL10:
+ 165              	.L15:
+  28:Src/current_sensor.c ****     return ADC_voltages = (uint32_t)(100 * ADC_voltages);
+ 166              		.loc 1 28 9 is_stmt 1 view .LVU36
+  28:Src/current_sensor.c ****     return ADC_voltages = (uint32_t)(100 * ADC_voltages);
+ 167              		.loc 1 28 22 is_stmt 0 view .LVU37
+ 168 001c 40F27263 		movw	r3, #1650
+ 169 0020 9B1A     		subs	r3, r3, r2
+ 170              	.LVL11:
+  28:Src/current_sensor.c ****     return ADC_voltages = (uint32_t)(100 * ADC_voltages);
+ 171              		.loc 1 28 22 view .LVU38
+ 172 0022 F7E7     		b	.L16
+ 173              	.L18:
+ 174              		.align	2
+ 175              	.L17:
+ 176 0024 FFC71900 		.word	1689599
+ 177              		.cfi_endproc
+ 178              	.LFE143:
+ 180              		.global	__aeabi_uldivmod
+ 181              		.section	.text.mean_current,"ax",%progbits
+ 182              		.align	1
+ 183              		.global	mean_current
+ 184              		.syntax unified
+ 185              		.thumb
+ 186              		.thumb_func
+ 187              		.fpu fpv5-d16
+ 189              	mean_current:
+ 190              	.LFB144:
+  31:Src/current_sensor.c **** 
+  32:Src/current_sensor.c **** void mean_current()
+  33:Src/current_sensor.c **** {
+ 191              		.loc 1 33 1 is_stmt 1 view -0
+ARM GAS  /tmp/cchzyTou.s 			page 5
+
+
+ 192              		.cfi_startproc
+ 193              		@ args = 0, pretend = 0, frame = 0
+ 194              		@ frame_needed = 0, uses_anonymous_args = 0
+ 195 0000 08B5     		push	{r3, lr}
+ 196              	.LCFI2:
+ 197              		.cfi_def_cfa_offset 8
+ 198              		.cfi_offset 3, -8
+ 199              		.cfi_offset 14, -4
+  34:Src/current_sensor.c ****     uint64_t val = 0;
+ 200              		.loc 1 34 5 view .LVU40
+ 201              	.LVL12:
+  35:Src/current_sensor.c ****     for (int i = 0; i < LEN_ARRAY; i++)
+ 202              		.loc 1 35 5 view .LVU41
+ 203              	.LBB4:
+ 204              		.loc 1 35 10 view .LVU42
+ 205              		.loc 1 35 14 is_stmt 0 view .LVU43
+ 206 0002 0023     		movs	r3, #0
+ 207              	.LBE4:
+  34:Src/current_sensor.c ****     uint64_t val = 0;
+ 208              		.loc 1 34 14 view .LVU44
+ 209 0004 0020     		movs	r0, #0
+ 210 0006 0021     		movs	r1, #0
+ 211              	.LVL13:
+ 212              	.L20:
+ 213              	.LBB5:
+ 214              		.loc 1 35 21 is_stmt 1 discriminator 1 view .LVU45
+ 215              		.loc 1 35 5 is_stmt 0 discriminator 1 view .LVU46
+ 216 0008 632B     		cmp	r3, #99
+ 217 000a 07DC     		bgt	.L23
+  36:Src/current_sensor.c ****     {
+  37:Src/current_sensor.c ****         val += array_val[i];
+ 218              		.loc 1 37 9 is_stmt 1 discriminator 3 view .LVU47
+ 219              		.loc 1 37 25 is_stmt 0 discriminator 3 view .LVU48
+ 220 000c 074A     		ldr	r2, .L24
+ 221 000e 52F82320 		ldr	r2, [r2, r3, lsl #2]
+ 222              		.loc 1 37 13 discriminator 3 view .LVU49
+ 223 0012 8018     		adds	r0, r0, r2
+ 224              	.LVL14:
+ 225              		.loc 1 37 13 discriminator 3 view .LVU50
+ 226 0014 41F10001 		adc	r1, r1, #0
+ 227              	.LVL15:
+  35:Src/current_sensor.c ****     for (int i = 0; i < LEN_ARRAY; i++)
+ 228              		.loc 1 35 36 is_stmt 1 discriminator 3 view .LVU51
+  35:Src/current_sensor.c ****     for (int i = 0; i < LEN_ARRAY; i++)
+ 229              		.loc 1 35 37 is_stmt 0 discriminator 3 view .LVU52
+ 230 0018 0133     		adds	r3, r3, #1
+ 231              	.LVL16:
+  35:Src/current_sensor.c ****     for (int i = 0; i < LEN_ARRAY; i++)
+ 232              		.loc 1 35 37 discriminator 3 view .LVU53
+ 233 001a F5E7     		b	.L20
+ 234              	.L23:
+  35:Src/current_sensor.c ****     for (int i = 0; i < LEN_ARRAY; i++)
+ 235              		.loc 1 35 37 discriminator 3 view .LVU54
+ 236              	.LBE5:
+  38:Src/current_sensor.c ****     }
+  39:Src/current_sensor.c ****     current_val = val / LEN_ARRAY;
+ 237              		.loc 1 39 5 is_stmt 1 view .LVU55
+ARM GAS  /tmp/cchzyTou.s 			page 6
+
+
+ 238              		.loc 1 39 23 is_stmt 0 view .LVU56
+ 239 001c 6422     		movs	r2, #100
+ 240 001e 0023     		movs	r3, #0
+ 241              	.LVL17:
+ 242              		.loc 1 39 23 view .LVU57
+ 243 0020 FFF7FEFF 		bl	__aeabi_uldivmod
+ 244              	.LVL18:
+ 245              		.loc 1 39 17 view .LVU58
+ 246 0024 024B     		ldr	r3, .L24+4
+ 247 0026 1860     		str	r0, [r3]
+  40:Src/current_sensor.c **** }...
+ 248              		.loc 1 40 1 view .LVU59
+ 249 0028 08BD     		pop	{r3, pc}
+ 250              	.L25:
+ 251 002a 00BF     		.align	2
+ 252              	.L24:
+ 253 002c 00000000 		.word	array_val
+ 254 0030 00000000 		.word	.LANCHOR0
+ 255              		.cfi_endproc
+ 256              	.LFE144:
+ 258              		.global	current_val
+ 259              		.comm	array_val,400,4
+ 260              		.section	.bss.current_val,"aw",%nobits
+ 261              		.align	2
+ 262              		.set	.LANCHOR0,. + 0
+ 265              	current_val:
+ 266 0000 00000000 		.space	4
+ 267              		.text
+ 268              	.Letext0:
+ 269              		.file 2 "/home/alex/Mass Storage/ARM-GCC/arm-none-eabi/include/machine/_default_types.h"
+ 270              		.file 3 "/home/alex/Mass Storage/ARM-GCC/arm-none-eabi/include/sys/_stdint.h"
+ 271              		.file 4 "Drivers/CMSIS/Include/core_cm7.h"
+ 272              		.file 5 "Drivers/CMSIS/Device/ST/STM32F7xx/Include/system_stm32f7xx.h"
+ 273              		.file 6 "Drivers/STM32F7xx_HAL_Driver/Inc/stm32f7xx_hal.h"
+ARM GAS  /tmp/cchzyTou.s 			page 7
+
+
+DEFINED SYMBOLS
+                            *ABS*:0000000000000000 current_sensor.c
+     /tmp/cchzyTou.s:17     .text.get_current:0000000000000000 $t
+     /tmp/cchzyTou.s:25     .text.get_current:0000000000000000 get_current
+     /tmp/cchzyTou.s:41     .text.get_current:0000000000000008 $d
+     /tmp/cchzyTou.s:46     .text.push_into_array:0000000000000000 $t
+     /tmp/cchzyTou.s:53     .text.push_into_array:0000000000000000 push_into_array
+     /tmp/cchzyTou.s:118    .text.push_into_array:000000000000002c $d
+                            *COM*:0000000000000190 array_val
+     /tmp/cchzyTou.s:123    .text.calc_current:0000000000000000 $t
+     /tmp/cchzyTou.s:130    .text.calc_current:0000000000000000 calc_current
+     /tmp/cchzyTou.s:176    .text.calc_current:0000000000000024 $d
+     /tmp/cchzyTou.s:182    .text.mean_current:0000000000000000 $t
+     /tmp/cchzyTou.s:189    .text.mean_current:0000000000000000 mean_current
+     /tmp/cchzyTou.s:253    .text.mean_current:000000000000002c $d
+     /tmp/cchzyTou.s:265    .bss.current_val:0000000000000000 current_val
+     /tmp/cchzyTou.s:261    .bss.current_val:0000000000000000 $d
+
+UNDEFINED SYMBOLS
+__aeabi_uldivmod
