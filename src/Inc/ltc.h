@@ -3,8 +3,9 @@
 #define LTC_H_
 
 #include "inttypes.h"
-#include <stdbool.h>
-#include <stm32f7xx_hal.h>
+#include "stdbool.h"
+#include "stm32f7xx_hal.h"
+#include "fenice-config.h"
 
 #define WRCFG 0b00000000001   // Write Configuration Register Group
 #define RDCFG 0b00000000010   // Read Configuration Register Group
@@ -48,6 +49,8 @@ typedef struct ltc_struct
 	uint16_t STATUS_VA;
 	uint16_t STATUS_VD;
 } ltc_struct;
+
+extern ltc_struct ltc;
 
 void LTC_init(ltc_struct *, SPI_HandleTypeDef *hspi, uint8_t _address, GPIO_TypeDef *pinx, uint8_t pinn);
 bool read_voltages(ltc_struct *);
