@@ -1,0 +1,4 @@
+[submodule "src/lib/can-cicd"]
+	path = src/lib/can-cicd
+	url = git@github.com:eagletrt/can-cicd.git
+	branch = build
