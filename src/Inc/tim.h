@@ -49,6 +49,14 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 /* USER CODE BEGIN Prototypes */
 
+/**
+ * @brief     Get the Internal Clock frequency for a timer
+ * @note      This frequency is usefull only if the timer clock is the internal one
+ * 
+ * @param     htim Tim Handle
+ * @return    Internal clock frequency fed to the timer 
+ */
+uint32_t TIM_GetInternalClkFreq(TIM_HandleTypeDef *htim);
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
