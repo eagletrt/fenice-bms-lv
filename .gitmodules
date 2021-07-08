@@ -1,0 +1,7 @@
+[submodule "Core/Lib/micro-libs"]
+	path = Core/Lib/micro-libs
+	url = git@github.com:eagletrt/micro-libs.git
+[submodule "Core/Lib/can-cicd"]
+	path = Core/Lib/can-cicd
+	url = git@github.com:eagletrt/can-cicd.git
+	branch = build
