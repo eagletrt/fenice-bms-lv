@@ -24,110 +24,175 @@
 #define __MAIN_H
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f7xx_hal.h"
 
-    /* Private includes
-     * ----------------------------------------------------------*/
-    /* USER CODE BEGIN Includes */
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
 
 #include "stdbool.h"
 
-    /* USER CODE END Includes */
+/* USER CODE END Includes */
 
-    /* Exported types
-     * ------------------------------------------------------------*/
-    /* USER CODE BEGIN ET */
+/* Exported types ------------------------------------------------------------*/
+/* USER CODE BEGIN ET */
 
-    typedef struct temperatures_struct
-    {
-        uint32_t value;
+typedef struct temperatures_struct {
+    uint32_t value;
 
-        uint32_t prev_value;
-        uint32_t desired;
-        uint32_t max_temp;
-    } temperatures_struct;
+    uint32_t prev_value;
+    uint32_t desired;
+    uint32_t max_temp;
+} temperatures_struct;
 
-    typedef enum
-    {
-        ON,
-        OFF,
-        BLINK_error,
-        BLINK_underV,
-        BLINK_overT,
-        BLINK_both
-    } LED_STATE;
-    /* USER CODE END ET */
+typedef enum { ON, OFF, BLINK_error, BLINK_underV, BLINK_overT, BLINK_both } LED_STATE;
+/* USER CODE END ET */
 
-    /* Exported constants
-     * --------------------------------------------------------*/
-    /* USER CODE BEGIN EC */
+/* Exported constants --------------------------------------------------------*/
+/* USER CODE BEGIN EC */
 
-    /* USER CODE END EC */
+/* USER CODE END EC */
 
-    /* Exported macro
-     * ------------------------------------------------------------*/
-    /* USER CODE BEGIN EM */
+/* Exported macro ------------------------------------------------------------*/
+/* USER CODE BEGIN EM */
 
-    /* USER CODE END EM */
+/* USER CODE END EM */
 
-    /* Exported functions prototypes
-     * ---------------------------------------------*/
-    void Error_Handler(void);
+/* Exported functions prototypes ---------------------------------------------*/
+void Error_Handler(void);
 
-    /* USER CODE BEGIN EFP */
-    void set_sensor_update_time();
+/* USER CODE BEGIN EFP */
+void set_sensor_update_time();
 
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define FAN1_HV_Pin              GPIO_PIN_1
-#define FAN1_HV_GPIO_Port        GPIOA
-#define CURRENT_SENSOR_Pin       GPIO_PIN_2
-#define CURRENT_SENSOR_GPIO_Port GPIOA
-#define T_BATT1_Pin              GPIO_PIN_3
-#define T_BATT1_GPIO_Port        GPIOA
-#define FAN2_HV_Pin              GPIO_PIN_5
-#define FAN2_HV_GPIO_Port        GPIOA
-#define FAN3_HV_Pin              GPIO_PIN_6
-#define FAN3_HV_GPIO_Port        GPIOA
-#define T_BATT2_Pin              GPIO_PIN_7
-#define T_BATT2_GPIO_Port        GPIOA
-#define RELAY_Pin                GPIO_PIN_5
-#define RELAY_GPIO_Port          GPIOC
-#define T_DCDC12_Pin             GPIO_PIN_0
-#define T_DCDC12_GPIO_Port       GPIOB
-#define T_DCDC24_Pin             GPIO_PIN_1
-#define T_DCDC24_GPIO_Port       GPIOB
-#define FAN6_LV_Pin              GPIO_PIN_10
-#define FAN6_LV_GPIO_Port        GPIOB
-#define FAN5_LV_Pin              GPIO_PIN_11
-#define FAN5_LV_GPIO_Port        GPIOB
-#define PUMP_2_Pin               GPIO_PIN_12
-#define PUMP_2_GPIO_Port         GPIOD
-#define PUMP_1_Pin               GPIO_PIN_13
-#define PUMP_1_GPIO_Port         GPIOD
-#define BUZZER_Pin               GPIO_PIN_6
-#define BUZZER_GPIO_Port         GPIOC
-#define LED_ERR_Pin              GPIO_PIN_7
-#define LED_ERR_GPIO_Port        GPIOC
-#define SDMMC2_CS_Pin            GPIO_PIN_2
-#define SDMMC2_CS_GPIO_Port      GPIOD
-#define SPI2_CS_Pin              GPIO_PIN_4
-#define SPI2_CS_GPIO_Port        GPIOD
-#define SD_DETECT_Pin            GPIO_PIN_5
-#define SD_DETECT_GPIO_Port      GPIOD
-#define RADIATOR_1_Pin           GPIO_PIN_8
-#define RADIATOR_1_GPIO_Port     GPIOB
-#define RADIATOR_2_Pin           GPIO_PIN_9
-#define RADIATOR_2_GPIO_Port     GPIOB
-    /* USER CODE BEGIN Private defines */
+#define FDBK_DCDC_12V_Pin         GPIO_PIN_0
+#define FDBK_DCDC_12V_GPIO_Port   GPIOA
+#define FAN1_HV_Pin               GPIO_PIN_1
+#define FAN1_HV_GPIO_Port         GPIOA
+#define CURRENT_SENSOR_Pin        GPIO_PIN_2
+#define CURRENT_SENSOR_GPIO_Port  GPIOA
+#define T_BATT1_Pin               GPIO_PIN_3
+#define T_BATT1_GPIO_Port         GPIOA
+#define FAN2_HV_Pin               GPIO_PIN_5
+#define FAN2_HV_GPIO_Port         GPIOA
+#define FAN3_HV_Pin               GPIO_PIN_6
+#define FAN3_HV_GPIO_Port         GPIOA
+#define T_BATT2_Pin               GPIO_PIN_7
+#define T_BATT2_GPIO_Port         GPIOA
+#define LV_MASTER_RELAY_Pin       GPIO_PIN_4
+#define LV_MASTER_RELAY_GPIO_Port GPIOC
+#define T_DCDC12_Pin              GPIO_PIN_0
+#define T_DCDC12_GPIO_Port        GPIOB
+#define T_DCDC24_Pin              GPIO_PIN_1
+#define T_DCDC24_GPIO_Port        GPIOB
+#define LED_1_Pin                 GPIO_PIN_11
+#define LED_1_GPIO_Port           GPIOE
+#define LED_2_Pin                 GPIO_PIN_12
+#define LED_2_GPIO_Port           GPIOE
+#define LED_3_Pin                 GPIO_PIN_13
+#define LED_3_GPIO_Port           GPIOE
+#define LED_4_Pin                 GPIO_PIN_14
+#define LED_4_GPIO_Port           GPIOE
+#define LED_5_Pin                 GPIO_PIN_15
+#define LED_5_GPIO_Port           GPIOE
+#define FAN6_LV_Pin               GPIO_PIN_10
+#define FAN6_LV_GPIO_Port         GPIOB
+#define FAN5_LV_Pin               GPIO_PIN_11
+#define FAN5_LV_GPIO_Port         GPIOB
+#define PUMP_2_Pin                GPIO_PIN_12
+#define PUMP_2_GPIO_Port          GPIOD
+#define PUMP_1_Pin                GPIO_PIN_13
+#define PUMP_1_GPIO_Port          GPIOD
+#define BZZR_PWM_Pin              GPIO_PIN_6
+#define BZZR_PWM_GPIO_Port        GPIOC
+#define LED_ERR_Pin               GPIO_PIN_7
+#define LED_ERR_GPIO_Port         GPIOC
+#define SDMMC2_CS_Pin             GPIO_PIN_2
+#define SDMMC2_CS_GPIO_Port       GPIOD
+#define SPI2_CS_Pin               GPIO_PIN_4
+#define SPI2_CS_GPIO_Port         GPIOD
+#define SD_DETECT_Pin             GPIO_PIN_5
+#define SD_DETECT_GPIO_Port       GPIOD
+#define RADIATOR_1_Pin            GPIO_PIN_8
+#define RADIATOR_1_GPIO_Port      GPIOB
+#define RADIATOR_2_Pin            GPIO_PIN_9
+#define RADIATOR_2_GPIO_Port      GPIOB
+/* USER CODE BEGIN Private defines */
 
-    /* USER CODE END Private defines */
+/**
+ * @brief     Get the currente state of the low voltage master relay
+ * 
+ * @return GPIO_PIN_RESET: if LVMR is open
+ * @return GPIO_PIN_SET: if LVMR is closed
+ */
+inline GPIO_PinState LV_MASTER_RELAY_get_state() {
+    return (GPIO_PinState)(LV_MASTER_RELAY_GPIO_Port->ODR & LV_MASTER_RELAY_Pin);
+}
+
+/**
+ * @brief  Set the low voltage master relay to either on of off.
+ *         Switching LVMR takes a little bit of time 50ms  
+ * 
+ * @param  state gpio pin state
+ *         @arg GPIO_PIN_RESET: to open LVMR
+  *        @arg GPIO_PIN_SET: to close LVMR
+ */
+static inline void LV_MASTER_RELAY_set_state(GPIO_PinState state) {
+    HAL_GPIO_WritePin(LV_MASTER_RELAY_GPIO_Port, LV_MASTER_RELAY_Pin, state);
+    HAL_Delay(50);  // Let the relay close
+}
+
+/**
+ * @brief     Get the feedback from the 12V DCDC output.
+ *            Used to know if the bms lv is powering the machine.
+ *            NOTE: if LV_MASTER_REALY is on (closed) but this feedback is off,
+ *            either the LVMS is opened or a fuse is blown.
+ * 
+ * @return    true The 12V DCDC is powering the machine
+ * @return    false The 12V DCDC is off or something else in the main line is opened
+ */
+inline bool FDBK_DCDC_12V_get_state() {
+    return HAL_GPIO_ReadPin(FDBK_DCDC_12V_GPIO_Port, FDBK_DCDC_12V_Pin) == GPIO_PIN_SET;
+}
+
+#define LOG_HUART huart4
+/* Radiator1 -> TIM4 CH3 */
+/* Radiator2 -> TIM4 CH4 */
+
+/* FAN1      -> TIM2 CH2 */
+#define FAN1_HTIM         htim2
+#define FAN1_PWM_TIM_CHNL TIM_CHANNEL_2
+/* FAN2      -> TIM2 CH1 */
+#define FAN2_HTIM         htim2
+#define FAN2_PWM_TIM_CHNL TIM_CHANNEL_1
+/* FAN3      -> TIM3 CH1 */
+#define FAN3_HTIM         htim3
+#define FAN3_PWM_TIM_CHNL TIM_CHANNEL_1
+/* FAN5      -> TIM2 CH4 */
+#define FAN5_HTIM         htim2
+#define FAN5_PWM_TIM_CHNL TIM_CHANNEL_4
+/* FAN6      -> TIM2 CH3 */
+#define FAN6_HTIM         htim2
+#define FAN6_PWM_TIM_CHNL TIM_CHANNEL_3
+
+/* PUMP1     -> TIM4 CH2 */
+#define PMP1_HTIM         htim4
+#define PMP1_PWM_TIM_CHNL TIM_CHANNEL_2
+/* PUMP2     -> TIM4 CH1 */
+#define PMP2_HTIM         htim4
+#define PMP2_PWM_TIM_CHNL TIM_CHANNEL_1
+/* BUZZER    -> TIM8 CH1 */
+#define BZZR_HTIM         htim8
+#define BZZR_PWM_TIM_CHNL TIM_CHANNEL_1
+
+// Commented: enable debugging, Uncommented: disable debugging
+//#define NDEBUG
+/* USER CODE END Private defines */
 
 #ifdef __cplusplus
 }

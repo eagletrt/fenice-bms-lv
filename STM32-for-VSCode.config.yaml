@@ -56,12 +56,12 @@ libraryDirectories: []
 # Do mind that double stars are reserved in yaml
 # these should be escaped with a: \ or the name should be in double quotes e.g. "**.test.**"
 excludes: 
-  - "**/Examples/**"
-  - "**/examples/**"
-  - "**/Example/**"
-  - "**/example/**"
+  - "**/[Ee]xamples/**"
+  - "**/[Ee]xample/**"
+  - "**/*[Tt]est*/**"
+  - "**/*[Tt]est*"
   - "**_template.*"
-
+  - "**/micro-libs/**"
 
 # Include directories (directories containing .h or .hpp files)
 # If a CubeMX makefile is present it will automatically include the include directories from that makefile.
@@ -69,6 +69,7 @@ includeDirectories:
   - Inc/**
   - Core/Inc/**
   - Core/Lib/**
+  - Core/Lib/micro-libs/priority-queue/**
 
 
 # Files that should be included in the compilation.

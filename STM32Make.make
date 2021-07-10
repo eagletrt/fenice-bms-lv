@@ -36,6 +36,34 @@ BUILD_DIR = build
 ######################################
 # C sources
 C_SOURCES =  \
+Core/Lib/can-cicd/external/flatcc/runtime/builder.c \
+Core/Lib/can-cicd/external/flatcc/runtime/emitter.c \
+Core/Lib/can-cicd/external/flatcc/runtime/json_parser.c \
+Core/Lib/can-cicd/external/flatcc/runtime/json_printer.c \
+Core/Lib/can-cicd/external/flatcc/runtime/refmap.c \
+Core/Lib/can-cicd/external/flatcc/runtime/verifier.c \
+Core/Lib/can-cicd/naked_generator/BMSinternal/c/BMSinternal.c \
+Core/Lib/can-cicd/naked_generator/Primary/c/Primary.c \
+Core/Lib/can-cicd/naked_generator/Secondary/c/Secondary.c \
+Core/Src/adc.c \
+Core/Src/can.c \
+Core/Src/common.c \
+Core/Src/current_sensor.c \
+Core/Src/dma.c \
+Core/Src/gpio.c \
+Core/Src/ltc.c \
+Core/Src/main.c \
+Core/Src/peripherals/buzzer.c \
+Core/Src/peripherals/fan.c \
+Core/Src/pwm.c \
+Core/Src/sdmmc.c \
+Core/Src/spi.c \
+Core/Src/stm32f7xx_hal_msp.c \
+Core/Src/stm32f7xx_it.c \
+Core/Src/system_stm32f7xx.c \
+Core/Src/template.c \
+Core/Src/tim.c \
+Core/Src/usart.c \
 Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal.c \
 Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_adc.c \
 Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_adc_ex.c \
@@ -61,31 +89,14 @@ Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_tim_ex.c \
 Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_uart.c \
 Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_uart_ex.c \
 Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_sdmmc.c \
+FATFS/App/fatfs.c \
+FATFS/Target/bsp_driver_sd.c \
+FATFS/Target/fatfs_platform.c \
+FATFS/Target/sd_diskio.c \
 Middlewares/Third_Party/FatFs/src/diskio.c \
 Middlewares/Third_Party/FatFs/src/ff.c \
 Middlewares/Third_Party/FatFs/src/ff_gen_drv.c \
-Middlewares/Third_Party/FatFs/src/option/syscall.c \
-Src/adc.c \
-Src/bsp_driver_sd.c \
-Src/can.c \
-Src/common.c \
-Src/current_sensor.c \
-Src/dma.c \
-Src/fatfs.c \
-Src/fatfs_platform.c \
-Src/gpio.c \
-Src/ltc.c \
-Src/main.c \
-Src/pid_controller.c \
-Src/pwm.c \
-Src/sd_diskio.c \
-Src/sdmmc.c \
-Src/spi.c \
-Src/stm32f7xx_hal_msp.c \
-Src/stm32f7xx_it.c \
-Src/system_stm32f7xx.c \
-Src/tim.c \
-Src/usart.c
+Middlewares/Third_Party/FatFs/src/option/syscall.c
 
 
 CPP_SOURCES = \
@@ -101,15 +112,16 @@ startup_stm32f765xx.s
 # binaries
 #######################################
 PREFIX = arm-none-eabi-
+POSTFIX = "
 # The gcc compiler bin path can be either defined in make command via GCC_PATH variable (> make GCC_PATH=xxx)
 # either it can be added to the PATH environment variable.
-
+GCC_PATH="/usr/bin
 ifdef GCC_PATH
-CXX = $(GCC_PATH)/$(PREFIX)g++
-CC = $(GCC_PATH)/$(PREFIX)gcc
-AS = $(GCC_PATH)/$(PREFIX)gcc -x assembler-with-cpp
-CP = $(GCC_PATH)/$(PREFIX)objcopy
-SZ = $(GCC_PATH)/$(PREFIX)size
+CXX = $(GCC_PATH)/$(PREFIX)g++$(POSTFIX)
+CC = $(GCC_PATH)/$(PREFIX)gcc$(POSTFIX)
+AS = $(GCC_PATH)/$(PREFIX)gcc$(POSTFIX) -x assembler-with-cpp
+CP = $(GCC_PATH)/$(PREFIX)objcopy$(POSTFIX)
+SZ = $(GCC_PATH)/$(PREFIX)size$(POSTFIX)
 else
 CXX = $(PREFIX)g++
 CC = $(PREFIX)gcc
@@ -150,11 +162,24 @@ AS_INCLUDES = \
 
 # C includes
 C_INCLUDES =  \
+-ICore/Inc \
+-ICore/Inc/peripherals \
+-ICore/Lib/can-cicd/external/flatcc \
+-ICore/Lib/can-cicd/external/flatcc/portable \
+-ICore/Lib/can-cicd/external/flatcc/reflection \
+-ICore/Lib/can-cicd/external/flatcc/support \
+-ICore/Lib/can-cicd/includes_generator/BMSinternal \
+-ICore/Lib/can-cicd/includes_generator/Primary \
+-ICore/Lib/can-cicd/includes_generator/Secondary \
+-ICore/Lib/can-cicd/naked_generator/BMSinternal/c \
+-ICore/Lib/can-cicd/naked_generator/Primary/c \
+-ICore/Lib/can-cicd/naked_generator/Secondary/c \
 -IDrivers/CMSIS/Device/ST/STM32F7xx/Include \
 -IDrivers/CMSIS/Include \
 -IDrivers/STM32F7xx_HAL_Driver/Inc \
 -IDrivers/STM32F7xx_HAL_Driver/Inc/Legacy \
--IInc \
+-IFATFS/App \
+-IFATFS/Target \
 -IMiddlewares/Third_Party/FatFs/src
 
 
@@ -168,12 +193,14 @@ ifeq ($(DEBUG), 1)
 CFLAGS += -g -gdwarf-2
 endif
 
+# Add additional flags
+CFLAGS += 
+ASFLAGS += -specs=nosys.specs 
+CXXFLAGS = 
+CXXFLAGS += -feliminate-unused-debug-types
 
 # Generate dependency information
 CFLAGS += -MMD -MP -MF"$(@:%.o=%.d)"
-
-CXXFLAGS?=
-CXXFLAGS += -feliminate-unused-debug-types
 
 #######################################
 # LDFLAGS
@@ -186,7 +213,10 @@ LIBS = -lc -lm -lnosys
 LIBDIR = \
 
 
-LDFLAGS = $(MCU) -specs=nosys.specs -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections
+# Additional LD Flags from config file
+ADDITIONALLDFLAGS = -specs=nosys.specs 
+
+LDFLAGS = $(MCU) $(ADDITIONALLDFLAGS) -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$(BUILD_DIR)/$(TARGET).map,--cref -Wl,--gc-sections
 
 # default action: build all
 all: $(BUILD_DIR)/$(TARGET).elf $(BUILD_DIR)/$(TARGET).hex $(BUILD_DIR)/$(TARGET).bin
@@ -205,16 +235,16 @@ vpath %.c $(sort $(dir $(C_SOURCES)))
 OBJECTS += $(addprefix $(BUILD_DIR)/,$(notdir $(ASM_SOURCES:.s=.o)))
 vpath %.s $(sort $(dir $(ASM_SOURCES)))
 
-$(BUILD_DIR)/%.o: %.cpp Makefile | $(BUILD_DIR) 
+$(BUILD_DIR)/%.o: %.cpp STM32Make.make | $(BUILD_DIR) 
 	$(CXX) -c $(CXXFLAGS) $(CFLAGS) -Wa,-a,-ad,-alms=$(BUILD_DIR)/$(notdir $(<:.cpp=.lst)) $< -o $@
 
-$(BUILD_DIR)/%.o: %.c Makefile | $(BUILD_DIR) 
+$(BUILD_DIR)/%.o: %.c STM32Make.make | $(BUILD_DIR) 
 	$(CC) -c $(CFLAGS) -Wa,-a,-ad,-alms=$(BUILD_DIR)/$(notdir $(<:.c=.lst)) $< -o $@
 
-$(BUILD_DIR)/%.o: %.s Makefile | $(BUILD_DIR)
+$(BUILD_DIR)/%.o: %.s STM32Make.make | $(BUILD_DIR)
 	$(AS) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/$(TARGET).elf: $(OBJECTS) Makefile
+$(BUILD_DIR)/$(TARGET).elf: $(OBJECTS) STM32Make.make
 	$(CC) $(OBJECTS) $(LDFLAGS) -o $@
 	$(SZ) $@
 
@@ -231,13 +261,13 @@ $(BUILD_DIR):
 # flash
 #######################################
 flash: $(BUILD_DIR)/$(TARGET).elf
-	openocd -f interface/stlink-dap.cfg  -f target/stm32f7x.cfg -c "program $(BUILD_DIR)/$(TARGET).elf verify reset exit"
+	"openocd" -f ./openocd.cfg -c "program $(BUILD_DIR)/$(TARGET).elf verify reset exit"
 
 #######################################
 # erase
 #######################################
 erase: $(BUILD_DIR)/$(TARGET).elf
-	openocd -f interface/stlink-dap.cfg -f target/stm32f7x.cfg -c "init; reset halt; stm32f7x mass_erase 0; exit"
+	"openocd" -f ./openocd.cfg -c "init; reset halt; stm32f7x mass_erase 0; exit"
 
 #######################################
 # clean up

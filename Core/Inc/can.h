@@ -21,93 +21,134 @@
 #define __CAN_H__
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-    /* USER CODE BEGIN Includes */
+/* USER CODE BEGIN Includes */
 
+#include "common.h"
 #include "stdbool.h"
-    /* USER CODE END Includes */
 
-    extern CAN_HandleTypeDef hcan1;
-    extern CAN_HandleTypeDef hcan3;
+/* USER CODE END Includes */
 
-    /* USER CODE BEGIN Private defines */
+extern CAN_HandleTypeDef hcan1;
+extern CAN_HandleTypeDef hcan3;
 
-#define fifoLength 100
-    typedef struct fifoDataType
-    {
-        uint32_t id;
-        uint32_t size;
-        uint8_t  data[8];
-    } fifoDataType;
+/* USER CODE BEGIN Private defines */
 
-    typedef struct fifoCanDataType
-    {
-        uint8_t rxHead;
-        uint8_t rxTail;
+/* This constants define which CAN peripherals are uesed for which network */
+/* The below mappings must be precise if changed */
 
-        uint8_t txHead;
-        uint8_t txTail;
+/* hcan1 -> primary network */
+#define hcanP            hcan1            /* Primary can handle */
+#define CANP             CAN1             /* Primary can instance (== hcan->Instance) */
+#define CANP_FILTER_FIFO CAN_FILTER_FIFO0 /* Primary can hardware fifo filter */
+#define CANP_IT_NOTI_SET                                                                                  \
+    CAN_IT_RX_FIFO0_MSG_PENDING | CAN_IT_RX_FIFO0_OVERRUN | CAN_IT_ERROR_WARNING | CAN_IT_ERROR_PASSIVE | \
+        CAN_IT_BUSOFF | CAN_IT_LAST_ERROR_CODE | CAN_IT_ERROR
 
-        fifoDataType rx[fifoLength];
-        fifoDataType tx[fifoLength];
+/* hcan2 -> secondary network */
+#define hcanS            hcan3             // Secondary can handle
+#define CANS             CAN3              // Secondary can instance
+#define CANS_FILTER_FIFO CAN_FILTER_FIFO1  // Secondary can hardware fifo filter
+#define CANS_IT_NOTI_SET                                                                                  \
+    CAN_IT_RX_FIFO1_MSG_PENDING | CAN_IT_RX_FIFO1_OVERRUN | CAN_IT_ERROR_WARNING | CAN_IT_ERROR_PASSIVE | \
+        CAN_IT_BUSOFF | CAN_IT_LAST_ERROR_CODE | CAN_IT_ERROR
 
-    } fifoCanDataType;
+typedef enum { CAN_NET_PRIM = 0U, CAN_NET_SEC, CAN_NO_NET, NUM_CAN_NET } CAN_NetTypeDef;
 
-    typedef struct
-    {
+#define fifoLength       100
+#define C_CANRXFIFO_SIZE 20
 
-        int tx_size; // size of data
-        int rx_size;
-        int rx_size_int;
+typedef struct fifoDataType {
+    uint32_t id;
+    uint32_t size;
+    uint8_t data[8];
+} fifoDataType;
 
-        uint8_t dataTx[8];
-        uint8_t dataRx[8];
-        uint8_t dataRX_int[8];
-        uint8_t dataTxBck[8];
+typedef struct fifoCanDataType {
+    uint8_t rxHead;
+    uint8_t rxTail;
 
-        uint32_t tx_id;
-        uint32_t rx_id;
-        uint32_t rx_id_int;
-        uint32_t idBck;
-        uint32_t sizeBck;
+    uint8_t txHead;
+    uint8_t txTail;
 
-        CAN_HandleTypeDef *hcan;
-        CAN_FilterTypeDef  canFilter;
+    fifoDataType rx[fifoLength];
+    fifoDataType tx[fifoLength];
 
-        HAL_StatusTypeDef configFilter_status;
-        HAL_StatusTypeDef activateNotif_status;
-        HAL_StatusTypeDef canStart_status;
+} fifoCanDataType;
 
-        fifoCanDataType fifo;
+typedef struct {
+    int tx_size;  // size of data
+    int rx_size;
+    int rx_size_int;
 
-        IRQn_Type rx0_interrupt;
-        IRQn_Type tx_interrupt;
+    uint8_t dataTx[8];
+    uint8_t dataRx[8];
+    uint8_t dataRX_int[8];
+    uint8_t dataTxBck[8];
 
-    } canStruct;
-    /* USER CODE END Private defines */
+    uint32_t tx_id;
+    uint32_t rx_id;
+    uint32_t rx_id_int;
+    uint32_t idBck;
+    uint32_t sizeBck;
 
-    void MX_CAN1_Init(void);
-    void MX_CAN3_Init(void);
+    CAN_HandleTypeDef *hcan;
+    CAN_FilterTypeDef canFilter;
 
-    /* USER CODE BEGIN Prototypes */
+    HAL_StatusTypeDef configFilter_status;
+    HAL_StatusTypeDef activateNotif_status;
+    HAL_StatusTypeDef canStart_status;
 
-    bool    can_init();
-    bool    CAN_initialization(canStruct *can);
-    uint8_t CAN_Send(canStruct *);
-    uint8_t CAN_Send_IT(canStruct *can);
-    uint8_t fifoRxDataCAN_pop(canStruct *);
-    uint8_t fifoRxDataCAN_push(canStruct *);
-    uint8_t fifoTxDataCAN_pop(canStruct *);
-    uint8_t fifoTxDataCAN_push(canStruct *);
-    bool    CAN_Read_Message();
-    bool    CAN_send_data();
-    /* USER CODE END Prototypes */
+    fifoCanDataType fifo;
+
+    IRQn_Type rx0_interrupt;
+    IRQn_Type tx_interrupt;
+
+} canStruct;
+
+typedef uint16_t CAN_MsgNameTypeDef;
+/* USER CODE END Private defines */
+
+void MX_CAN1_Init(void);
+void MX_CAN3_Init(void);
+
+/* USER CODE BEGIN Prototypes */
+
+/**
+ * @brief  This function starts and initializes PRIMARY and SECONDARY can
+ *         peripherals for the BMS_LV.
+ *         After this function bms_lv is able to receive and send on canBUS 
+ *         to other nodes.
+ * @return True if all can pripherals started normally otherwise false
+ */
+bool CAN_start_all();
+
+/**
+     * @brief     Send a particular message on primary Canbus
+     *
+     * @param     can_msg_name  The name of the message to send //TODO add group
+     *            of this type
+     * @return    COMM_StatusTypeDef COMM_OK if message sent COMM_ERROR if
+     *            message was not sent
+     */
+COMM_StatusTypeDef CAN_Send(CAN_MsgNameTypeDef can_msg_name);
+
+uint8_t fifoRxDataCAN_pop(canStruct *);
+uint8_t fifoRxDataCAN_push(canStruct *);
+uint8_t fifoTxDataCAN_pop(canStruct *);
+uint8_t fifoTxDataCAN_push(canStruct *);
+bool CAN_Read_Message();
+
+uint8_t old_CAN_Send(canStruct *);
+uint8_t old_CAN_Send_IT(canStruct *can);
+bool old_CAN_Send_data();
+void CAN_id_tostring(CAN_NetTypeDef net, uint32_t msg_id, char buf[static 50]);
+/* USER CODE END Prototypes */
 
 #ifdef __cplusplus
 }

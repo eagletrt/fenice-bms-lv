@@ -1,0 +1,52 @@
+# Peripherals
+
+- LTC6810-2:
+    - What: Voltage Sensor
+    - How Many: 1
+    - where: pcb
+    - datasheet:
+        - ../doc/
+        - [LTC6810](https://www.analog.com/media/en/technical-documentation/data-sheets/LTC6810-1-6810-2.pdf)
+    - Configurations, operational details:
+        - 7KHz mode
+        - 16 bit (in this mode 14 bit are with no noise)
+        - -0.3, 5V input voltage (0 to 4.5V with no noise)
+- TI LM35DT:
+    - What:Temperature sensors
+    - How Many: 4
+    - where:
+        - 2 x Battery Pack Temperature
+        - 2 x DCDC 
+    - datasheet:
+        - ../doc/
+        - [lm35](https://www.ti.com/lit/ds/symlink/lm35.pdf?ts=1617000971707&ref_url=https%253A%252F%252Fwww.ti.com%252Fproduct%252FLM35%253Futm_source%253Dgoogle%2526utm_medium%253Dcpc%2526utm_campaign%253Dasc-null-null-GPN_EN-cpc-pf-google-wwe%2526utm_content%253DLM35%2526ds_k%253DLM35%2526DCM%253Dyes%2526gclid%253DEAIaIQobChMI1Z2H_PXU7wIV6BJ7Ch1dXgV5EAAYASAAEgKnA_D_BwE%2526gclsrc%253Daw.ds)
+    - Configurations, operational details:
+        - 10mV/C
+        - linear error (m =0.5/100) temperatures in range 25 to 100 degree could be considered linear
+        - used in conjunction with adc (range 0V to)
+- TA-25C-22000-4S1P:
+    - Part Number: 	TA0826
+    - What: battery pack 
+    - Where: Porchetto case
+    - Brand: 	Tattu
+    - Configurations, operational details:
+        - Capacity(mAh): 	22000
+        - Configuration: 	4S1P
+        - Discharge Rate (C): 	25
+        - Max Burst discharge Rate (C): 	50
+        - Over 300wh: 	Yes
+        - Capacity Range(mAh): 	10000-49999
+
+- LEM HO SP33-1106 50-s:
+    - What: current sensor
+    - Where: Porchetto case
+    - How Many: 1
+    - datasheet:
+        - ../doc/
+        - [HO SP33](https://www.lem.com/sites/default/files/products_datasheets/ho-s_sp33-1106_series.pdf)
+    - Configurations, operational details:
+        - vref: 3.3V
+        - Vout: 
+            -
+            - more then 1.65 V positive current 
+            - less then 1.65 V positive current 

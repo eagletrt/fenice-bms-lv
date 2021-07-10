@@ -19,27 +19,28 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+
 #include "adc.h"
 #include "can.h"
 #include "dma.h"
 #include "fatfs.h"
+#include "gpio.h"
 #include "sdmmc.h"
 #include "spi.h"
 #include "tim.h"
 #include "usart.h"
-#include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "pid_controller.h"
+#include "../Lib/micro-libs/pid/pid.h"
+#include "buzzer.h"
+#include "common.h"
+#include "current_sensor.h"
+#include "fenice-config.h"
 #include "ltc.h"
+#include "pwm.h"
 #include "stdio.h"
 #include "string.h"
-#include "can.h"
-#include "current_sensor.h"
-#include "pwm.h"
-#include "fenice-config.h"
-#include "common.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -74,12 +75,6 @@ int OVER_TEMPERATURE = 0;
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-#define M_LOG_FIXED_STRING(uart_handle, fixed_string)                      \
-    do                                                                     \
-    {                                                                      \
-        HAL_UART_Transmit(&uart_handle, (uint8_t *)fixed_string,           \
-                          M_STATIC_FIXED_STRING_STRLEN(fixed_string), 10); \
-    } while (0)
 
 /* USER CODE END PM */
 
@@ -101,9 +96,9 @@ pwm_struct hv_pwm;
 pwm_struct pump_pwm;
 
 // PID
-PIDControl lv_pid;
-PIDControl hv_pid;
-PIDControl pump_pid;
+//PID_HandleTypeDef lv_pid;
+//PID_HandleTypeDef hv_pid;
+//PID_HandleTypeDef pump_pid;
 
 // Temperatures
 temperatures_struct lv_temp;
@@ -121,38 +116,38 @@ uint32_t over_temp_start_msec, under_volt_start_msec;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
-void               SystemClock_Config(void);
-static void        write_error_led();
+void SystemClock_Config(void);
+/* USER CODE BEGIN PFP */
+static void _signal_mx_init_succes();
+static void _test_buzzer();
+static void write_error_led();
 static inline void check_over_temperature();
 static inline void check_under_voltage();
 static inline bool bms_on_off();
-/* USER CODE BEGIN PFP */
-
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 static bool is_sensors_update_time = 0;
-int         debug_flag             = 0;
-int         m_sec_timer            = 0;
+int debug_flag                     = 0;
+int m_sec_timer                    = 0;
+
+uint32_t led_last_tick;
 
 /* USER CODE END 0 */
 
 /**
- * @brief  The application entry point.
- * @retval int
- */
-int main(void)
-{
+  * @brief  The application entry point.
+  * @retval int
+  */
+int main(void) {
     /* USER CODE BEGIN 1 */
 
     /* USER CODE END 1 */
 
-    /* MCU
-     * Configuration--------------------------------------------------------*/
+    /* MCU Configuration--------------------------------------------------------*/
 
-    /* Reset of all peripherals, Initializes the Flash interface and the
-     * Systick. */
+    /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
     HAL_Init();
 
     /* USER CODE BEGIN Init */
@@ -178,55 +173,26 @@ int main(void)
     MX_TIM3_Init();
     MX_TIM4_Init();
     MX_TIM8_Init();
-    MX_UART4_Init();
     MX_FATFS_Init();
+    MX_UART4_Init();
     /* USER CODE BEGIN 2 */
 
-    M_LOG_FIXED_STRING(
-        huart4, "\r\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+    // Blink to signal correct MX_XXX_init processes (usuefull for CAN transciever)
+    _signal_mx_init_succes();
 
-    // ERROR_LED
-    for (int i = 0; i < 9; i++)
-    {
-        HAL_GPIO_TogglePin(LED_ERR_GPIO_Port, LED_ERR_Pin);
-        HAL_Delay(100);
-    }
+    BZZR_play_pulses(300, 4);
+    LV_MASTER_RELAY_set_state(GPIO_PIN_SET);
+    BZZR_play_pulses(300, 4);
 
-    M_LOG_FIXED_STRING(huart4, "Testing Buzzer\r\n");
+    CAN_start_all();  //TODO manage false can start
+#if 0
+    LTC_init(&ltc, &hspi2, 0, GPIOD, GPIO_PIN_4);  // init function of LTC_6810
 
-    // BUZZER
-    HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_SET);
-    HAL_Delay(100);
-    HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_RESET);
-
-    M_LOG_FIXED_STRING(huart4, "DONE\r\n");
-
-    can1.rx0_interrupt = CAN1_RX0_IRQn;
-    can1.tx_interrupt  = CAN1_TX_IRQn;
-    can1.hcan          = &hcan1;
-
-    M_LOG_FIXED_STRING(huart4, "CAN initialization...\r\n");
-
-    if (can_init())
-    {
-        M_LOG_FIXED_STRING(huart4, "DONE\r\n");
-    }
-    else
-    {
-        M_LOG_FIXED_STRING(huart4, "FAILED\r\n");
-    }
-
-    M_LOG_FIXED_STRING(huart4, "Initializing LTC\r\n");
-
-    LTC_init(&ltc, &hspi2, 0, GPIOD, GPIO_PIN_4); // init function of LTC_6810
-
-    M_LOG_FIXED_STRING(huart4, "DONE\r\n");
 
     UserAdcConfig.Channel      = ADC_CHANNEL_2;
     UserAdcConfig.Rank         = ADC_REGULAR_RANK_1;
     UserAdcConfig.SamplingTime = ADC_SAMPLETIME_480CYCLES;
-    if (HAL_ADC_ConfigChannel(&hadc1, &UserAdcConfig) != HAL_OK)
-    {
+    if (HAL_ADC_ConfigChannel(&hadc1, &UserAdcConfig) != HAL_OK) {
         Error_Handler();
     }
     HAL_ADC_Start_IT(&hadc1);
@@ -250,10 +216,9 @@ int main(void)
 
     // Initializing PID
     double sample_time = (htim8.Init.Prescaler * htim8.Init.Period) / 108000000;
-    PIDInit(&lv_pid, 10, 0.01, 0.01, (float)sample_time, 100, 1000, AUTOMATIC,
-            REVERSE);
-    PIDInit(&hv_pid, 10, 0.01, 0.01, 0.5, 100, 1000, AUTOMATIC, REVERSE);
-    PIDInit(&pump_pid, 10, 0.01, 0.01, 0.5, 100, 1000, AUTOMATIC, REVERSE);
+    PID_Init(&lv_pid, 10, 0.01, 0.01, (float)sample_time, 100, 1000, PID_MODE_AUTOMATIC, PID_CONTROL_ACTION_REVERSE);
+    PID_Init(&hv_pid, 10, 0.01, 0.01, 0.5, 100, 1000, PID_MODE_AUTOMATIC, PID_CONTROL_ACTION_REVERSE);
+    PID_Init(&pump_pid, 10, 0.01, 0.01, 0.5, 100, 1000, PID_MODE_AUTOMATIC, PID_CONTROL_ACTION_REVERSE);
 
     lv_pid.setpoint   = lv_temp.desired;
     hv_pid.setpoint   = hv_temp.desired;
@@ -263,19 +228,18 @@ int main(void)
     hv_temp.value   = 50;
     pump_temp.value = 50;
 
-    /* USER CODE END 2 */
+  /* USER CODE END 2 */
 
-    /* Infinite loop */
-    /* USER CODE BEGIN WHILE */
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
     m_sec_timer         = HAL_GetTick();
     int currentTick     = m_sec_timer;
     int previous_millis = HAL_GetTick();
-    while (1)
-    {
+    led_last_tick       = HAL_GetTick();
+    while (1) {
         currentTick = HAL_GetTick();
 
-        if (is_sensors_update_time)
-        {
+        if (is_sensors_update_time) {
             is_sensors_update_time = false;
 
             // LTC
@@ -302,44 +266,47 @@ int main(void)
             check_under_voltage();
         }
 
-        if (currentTick % 200 == 0)
-        {
+        if (currentTick % 200 == 0) {
             write_pwm_value(&lv_pwm);
             write_pwm_value(&hv_pwm);
             write_pwm_value(&pump_pwm);
         }
 
 #ifndef NDEBUG_VALUES
-        M_LOG_FIXED_STRING(
-            huart4,
-            "\r\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+        M_LOG_STRING("\r\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
 
-        { // this graphs are used to keep buf[] on the stack and in this
-          // local scope
+        {  // this graphs are used to keep buf[] on the stack and in this
+            // local scope
             char buf[100];
-            sprintf(buf, "is_bms_on: %d, overT: %d, underV: %d\r\n", is_bms_on,
-                    OVER_TEMPERATURE, UNDER_VOLTAGE);
+            sprintf(buf, "is_bms_on: %d, overT: %d, underV: %d\r\n", is_bms_on, OVER_TEMPERATURE, UNDER_VOLTAGE);
             HAL_UART_Transmit(&huart4, (uint8_t *)buf, strlen(buf), 10);
-            sprintf(buf, "PID outputs lv: %d hv: %d pump: %d\r\n",
-                    (int)PIDOutputGet(&lv_pid), (int)PIDOutputGet(&hv_pid),
-                    (int)PIDOutputGet(&pump_pid));
+            sprintf(
+                buf,
+                "PID outputs lv: %d hv: %d pump: %d\r\n",
+                (int)PIDOutputGet(&lv_pid),
+                (int)PIDOutputGet(&hv_pid),
+                (int)PIDOutputGet(&pump_pid));
             HAL_UART_Transmit(&huart4, (uint8_t *)buf, strlen(buf), 10);
-            sprintf(buf, "Voltages %d %d %d %d %d %d\r\n", ltc.voltage[0],
-                    ltc.voltage[1], ltc.voltage[2], ltc.voltage[3],
-                    ltc.voltage[4], ltc.voltage[5]);
+            sprintf(
+                buf,
+                "Voltages %d %d %d %d %d %d\r\n",
+                ltc.voltage[0],
+                ltc.voltage[1],
+                ltc.voltage[2],
+                ltc.voltage[3],
+                ltc.voltage[4],
+                ltc.voltage[5]);
             HAL_UART_Transmit(&huart4, (uint8_t *)buf, strlen(buf), 10);
             sprintf(buf, "Current from sensor: %lu\r\n", get_current());
             HAL_UART_Transmit(&huart4, (uint8_t *)buf, strlen(buf), 10);
         }
 #endif
 
-        if (previous_millis != currentTick)
-        {
-            bool ret        = CAN_send_data(currentTick);
+        if (previous_millis != currentTick) {
+            bool ret        = old_CAN_Send_data(currentTick);
             previous_millis = currentTick;
 #ifndef NDEBUG_CAN_SEND
-            if (ret != 0)
-            {
+            if (ret != 0) {
                 char buf[50];
                 sprintf(buf, "Sent message: %d\r\n", sent);
                 HAL_UART_Transmit(&huart4, (uint8_t *)buf, strlen(buf), 10);
@@ -347,22 +314,16 @@ int main(void)
 #endif
         }
 
-        if (is_bms_on)
-        {
+        if (is_bms_on) {
             HAL_GPIO_WritePin(RELAY_GPIO_Port, RELAY_Pin, GPIO_PIN_SET);
             led_state = ON;
-        }
-        else
-        {
+        } else {
             HAL_GPIO_WritePin(RELAY_GPIO_Port, RELAY_Pin, GPIO_PIN_RESET);
-            if (UNDER_VOLTAGE)
-            {
+            if (UNDER_VOLTAGE) {
                 led_state = BLINK_underV;
                 if (OVER_TEMPERATURE)
                     led_state = BLINK_error;
-            }
-            else
-            {
+            } else {
                 if (OVER_TEMPERATURE)
                     led_state = BLINK_overT;
                 else
@@ -373,194 +334,220 @@ int main(void)
 
         bms_on_off();
 
-        /* USER CODE END WHILE */
+        if (HAL_GetTick() - led_last_tick > 1000) {
+            led_last_tick = HAL_GetTick();
+            HAL_GPIO_TogglePin(LED_1_GPIO_Port, LED_1_Pin);
+        }
+    /* USER CODE END WHILE */
 
-        /* USER CODE BEGIN 3 */
+    /* USER CODE BEGIN 3 */
     }
+#endif
     /* USER CODE END 3 */
 }
 
 /**
- * @brief System Clock Configuration
- * @retval None
- */
-void SystemClock_Config(void)
-{
-    RCC_OscInitTypeDef       RCC_OscInitStruct   = { 0 };
-    RCC_ClkInitTypeDef       RCC_ClkInitStruct   = { 0 };
-    RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = { 0 };
+  * @brief System Clock Configuration
+  * @retval None
+  */
+void SystemClock_Config(void) {
+    RCC_OscInitTypeDef RCC_OscInitStruct         = {0};
+    RCC_ClkInitTypeDef RCC_ClkInitStruct         = {0};
+    RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
 
     /** Configure the main internal regulator output voltage
-     */
+  */
     __HAL_RCC_PWR_CLK_ENABLE();
     __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
     /** Initializes the RCC Oscillators according to the specified parameters
-     * in the RCC_OscInitTypeDef structure.
-     */
-    RCC_OscInitStruct.OscillatorType      = RCC_OSCILLATORTYPE_HSI;
-    RCC_OscInitStruct.HSIState            = RCC_HSI_ON;
-    RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-    RCC_OscInitStruct.PLL.PLLState        = RCC_PLL_ON;
-    RCC_OscInitStruct.PLL.PLLSource       = RCC_PLLSOURCE_HSI;
-    RCC_OscInitStruct.PLL.PLLM            = 8;
-    RCC_OscInitStruct.PLL.PLLN            = 216;
-    RCC_OscInitStruct.PLL.PLLP            = RCC_PLLP_DIV2;
-    RCC_OscInitStruct.PLL.PLLQ            = 9;
-    if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-    {
+  * in the RCC_OscInitTypeDef structure.
+  */
+    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+    RCC_OscInitStruct.HSEState       = RCC_HSE_ON;
+    RCC_OscInitStruct.PLL.PLLState   = RCC_PLL_ON;
+    RCC_OscInitStruct.PLL.PLLSource  = RCC_PLLSOURCE_HSE;
+    RCC_OscInitStruct.PLL.PLLM       = 8;
+    RCC_OscInitStruct.PLL.PLLN       = 216;
+    RCC_OscInitStruct.PLL.PLLP       = RCC_PLLP_DIV2;
+    RCC_OscInitStruct.PLL.PLLQ       = 9;
+    if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
         Error_Handler();
     }
     /** Activate the Over-Drive mode
-     */
-    if (HAL_PWREx_EnableOverDrive() != HAL_OK)
-    {
+  */
+    if (HAL_PWREx_EnableOverDrive() != HAL_OK) {
         Error_Handler();
     }
     /** Initializes the CPU, AHB and APB buses clocks
-     */
-    RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK
-                                  | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+  */
+    RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
     RCC_ClkInitStruct.SYSCLKSource   = RCC_SYSCLKSOURCE_PLLCLK;
     RCC_ClkInitStruct.AHBCLKDivider  = RCC_SYSCLK_DIV1;
     RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
     RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
 
-    if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_7) != HAL_OK)
-    {
+    if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_7) != HAL_OK) {
         Error_Handler();
     }
-    PeriphClkInitStruct.PeriphClockSelection
-        = RCC_PERIPHCLK_UART4 | RCC_PERIPHCLK_SDMMC2 | RCC_PERIPHCLK_CLK48;
+    PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_UART4 | RCC_PERIPHCLK_SDMMC2 | RCC_PERIPHCLK_CLK48;
     PeriphClkInitStruct.Uart4ClockSelection  = RCC_UART4CLKSOURCE_PCLK1;
     PeriphClkInitStruct.Clk48ClockSelection  = RCC_CLK48SOURCE_PLL;
     PeriphClkInitStruct.Sdmmc2ClockSelection = RCC_SDMMC2CLKSOURCE_CLK48;
-    if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
-    {
+    if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK) {
         Error_Handler();
     }
+    HAL_RCC_MCOConfig(RCC_MCO2, RCC_MCO2SOURCE_HSE, RCC_MCODIV_1);
 }
 
 /* USER CODE BEGIN 4 */
 
-static void write_error_led()
-{
-    if (led_state == ON)
-    {
-        HAL_GPIO_WritePin(LED_ERR_GPIO_Port, LED_ERR_Pin, GPIO_PIN_SET);
+/* Exported functions --------------------------------------------------------*/
+
+/**
+  * @brief  RCC Clock Security System interrupt callback
+  * @retval None
+  */
+void HAL_RCC_CSSCallback(void) {
+    //TODO change into something meaningfull
+    for (int i = 0; i < 3; i++) {
+        HAL_GPIO_TogglePin(LED_ERR_GPIO_Port, LED_ERR_Pin);
+        HAL_Delay(100);
     }
-    else if (led_state == BLINK_error)
-    {
-        if (HAL_GetTick() - prev_toggle_msec > ERR_LED_BLINK_error_MSEC)
-        {
+}
+
+/* Private functions =--------------------------------------------------------*/
+static void write_error_led() {
+    if (led_state == ON) {
+        HAL_GPIO_WritePin(LED_ERR_GPIO_Port, LED_ERR_Pin, GPIO_PIN_SET);
+    } else if (led_state == BLINK_error) {
+        if (HAL_GetTick() - prev_toggle_msec > ERR_LED_BLINK_error_MSEC) {
             HAL_GPIO_TogglePin(LED_ERR_GPIO_Port, LED_ERR_Pin);
             prev_toggle_msec = HAL_GetTick();
         }
-    }
-    else if (led_state == BLINK_overT)
-    {
-        if (HAL_GPIO_ReadPin(LED_ERR_GPIO_Port, LED_ERR_Pin))
-        {
-            if (HAL_GetTick() - prev_toggle_msec > ERR_LED_BLINK_overT_ON_MSEC)
-            {
+    } else if (led_state == BLINK_overT) {
+        if (HAL_GPIO_ReadPin(LED_ERR_GPIO_Port, LED_ERR_Pin)) {
+            if (HAL_GetTick() - prev_toggle_msec > ERR_LED_BLINK_overT_ON_MSEC) {
+                HAL_GPIO_TogglePin(LED_ERR_GPIO_Port, LED_ERR_Pin);
+                prev_toggle_msec = HAL_GetTick();
+            }
+        } else {
+            if (HAL_GetTick() - prev_toggle_msec > ERR_LED_BLINK_overT_OFF_MSEC) {
                 HAL_GPIO_TogglePin(LED_ERR_GPIO_Port, LED_ERR_Pin);
                 prev_toggle_msec = HAL_GetTick();
             }
         }
-        else
-        {
-            if (HAL_GetTick() - prev_toggle_msec > ERR_LED_BLINK_overT_OFF_MSEC)
-            {
+    } else if (led_state == BLINK_underV) {
+        if (HAL_GPIO_ReadPin(LED_ERR_GPIO_Port, LED_ERR_Pin)) {
+            if (HAL_GetTick() - prev_toggle_msec > ERR_LED_BLINK_underV_ON_MSEC) {
+                HAL_GPIO_TogglePin(LED_ERR_GPIO_Port, LED_ERR_Pin);
+                prev_toggle_msec = HAL_GetTick();
+            }
+        } else {
+            if (HAL_GetTick() - prev_toggle_msec > ERR_LED_BLINK_underV_OFF_MSEC) {
                 HAL_GPIO_TogglePin(LED_ERR_GPIO_Port, LED_ERR_Pin);
                 prev_toggle_msec = HAL_GetTick();
             }
         }
-    }
-    else if (led_state == BLINK_underV)
-    {
-        if (HAL_GPIO_ReadPin(LED_ERR_GPIO_Port, LED_ERR_Pin))
-        {
-            if (HAL_GetTick() - prev_toggle_msec > ERR_LED_BLINK_underV_ON_MSEC)
-            {
-                HAL_GPIO_TogglePin(LED_ERR_GPIO_Port, LED_ERR_Pin);
-                prev_toggle_msec = HAL_GetTick();
-            }
-        }
-        else
-        {
-            if (HAL_GetTick() - prev_toggle_msec
-                > ERR_LED_BLINK_underV_OFF_MSEC)
-            {
-                HAL_GPIO_TogglePin(LED_ERR_GPIO_Port, LED_ERR_Pin);
-                prev_toggle_msec = HAL_GetTick();
-            }
-        }
-    }
-    else if (led_state == OFF)
-    {
+    } else if (led_state == OFF) {
         HAL_GPIO_WritePin(LED_ERR_GPIO_Port, LED_ERR_Pin, GPIO_PIN_RESET);
-    }
-    else
-    {
+    } else {
         HAL_GPIO_WritePin(LED_ERR_GPIO_Port, LED_ERR_Pin, GPIO_PIN_RESET);
     }
 }
 
-static inline void check_under_voltage()
-{
-    if (get_min_voltage(&ltc) < 10)
-    {
+static inline void check_under_voltage() {
+    if (get_min_voltage(&ltc) < 10) {
         UNDER_VOLTAGE = 1;
-    }
-    else
-    {
+    } else {
         UNDER_VOLTAGE = 0;
     }
 }
 
-static inline void check_over_temperature()
-{
-    if (lv_temp.value > lv_temp.max_temp)
-    {
+static inline void check_over_temperature() {
+    if (lv_temp.value > lv_temp.max_temp) {
         OVER_TEMPERATURE = 1;
-    }
-    else
-    {
+    } else {
         OVER_TEMPERATURE = 0;
     }
 }
 
-static inline bool bms_on_off()
-{
-    if (is_bms_on_requested)
-    {
-        if (!OVER_TEMPERATURE && !UNDER_VOLTAGE)
-        {
+static inline bool bms_on_off() {
+    if (is_bms_on_requested) {
+        if (!OVER_TEMPERATURE && !UNDER_VOLTAGE) {
             is_bms_on = true;
-        }
-        else
-        {
+        } else {
             is_bms_on = false;
         }
-    }
-    else
-    {
+    } else {
         is_bms_on = false;
     }
     return is_bms_on;
 }
-
-void is_sensor_update_time()
-{
+void is_sensor_update_time() {
     is_sensors_update_time = true;
 }
+static void _signal_mx_init_succes() {
+    printl("MX_INIT Success!", NORM_HEADER);
+
+    HAL_GPIO_WritePin(LED_1_GPIO_Port, LED_1_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(LED_2_GPIO_Port, LED_2_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(LED_3_GPIO_Port, LED_3_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(LED_4_GPIO_Port, LED_4_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(LED_5_GPIO_Port, LED_5_Pin, GPIO_PIN_RESET);
+    for (int i = 0; i < 2; i++) {
+        HAL_GPIO_WritePin(LED_5_GPIO_Port, LED_5_Pin, GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(LED_1_GPIO_Port, LED_1_Pin, GPIO_PIN_SET);
+        HAL_Delay(50);
+        HAL_GPIO_WritePin(LED_1_GPIO_Port, LED_1_Pin, GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(LED_2_GPIO_Port, LED_2_Pin, GPIO_PIN_SET);
+        HAL_Delay(50);
+        HAL_GPIO_WritePin(LED_2_GPIO_Port, LED_2_Pin, GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(LED_3_GPIO_Port, LED_3_Pin, GPIO_PIN_SET);
+        HAL_Delay(50);
+        HAL_GPIO_WritePin(LED_3_GPIO_Port, LED_3_Pin, GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(LED_4_GPIO_Port, LED_4_Pin, GPIO_PIN_SET);
+        HAL_Delay(50);
+        HAL_GPIO_WritePin(LED_4_GPIO_Port, LED_4_Pin, GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(LED_5_GPIO_Port, LED_5_Pin, GPIO_PIN_SET);
+        HAL_Delay(100);
+        HAL_GPIO_WritePin(LED_5_GPIO_Port, LED_5_Pin, GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(LED_4_GPIO_Port, LED_4_Pin, GPIO_PIN_SET);
+        HAL_Delay(50);
+        HAL_GPIO_WritePin(LED_4_GPIO_Port, LED_4_Pin, GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(LED_3_GPIO_Port, LED_3_Pin, GPIO_PIN_SET);
+        HAL_Delay(50);
+        HAL_GPIO_WritePin(LED_3_GPIO_Port, LED_3_Pin, GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(LED_2_GPIO_Port, LED_2_Pin, GPIO_PIN_SET);
+        HAL_Delay(50);
+        HAL_GPIO_WritePin(LED_2_GPIO_Port, LED_2_Pin, GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(LED_1_GPIO_Port, LED_1_Pin, GPIO_PIN_SET);
+        HAL_Delay(50);
+    }
+    HAL_GPIO_WritePin(LED_1_GPIO_Port, LED_1_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(LED_2_GPIO_Port, LED_2_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(LED_3_GPIO_Port, LED_3_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(LED_4_GPIO_Port, LED_4_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(LED_5_GPIO_Port, LED_5_Pin, GPIO_PIN_RESET);
+}
+#if 0
+static void _test_buzzer() {
+#ifndef NDEBUG
+    M_LOG_STRING("+[BMS-LV BUZZER]\r\n +-> Start test sonata\r\n");
+#endif
+    buzzer_sonata(500, 2);
+#ifndef NDEBUG
+    M_LOG_STRING("+[BMS-LV BUZZER]\r\n +-> End test sonata\r\n");
+#endif
+};
+#endif
+
 /* USER CODE END 4 */
 
 /**
- * @brief  This function is executed in case of error occurrence.
- * @retval None
- */
-void Error_Handler(void)
-{
+  * @brief  This function is executed in case of error occurrence.
+  * @retval None
+  */
+void Error_Handler(void) {
     /* USER CODE BEGIN Error_Handler_Debug */
     /* User can add his own implementation to report the HAL error return state
      */
@@ -570,14 +557,13 @@ void Error_Handler(void)
 
 #ifdef USE_FULL_ASSERT
 /**
- * @brief  Reports the name of the source file and the source line number
- *         where the assert_param error has occurred.
- * @param  file: pointer to the source file name
- * @param  line: assert_param error line source number
- * @retval None
- */
-void assert_failed(uint8_t *file, uint32_t line)
-{
+  * @brief  Reports the name of the source file and the source line number
+  *         where the assert_param error has occurred.
+  * @param  file: pointer to the source file name
+  * @param  line: assert_param error line source number
+  * @retval None
+  */
+void assert_failed(uint8_t *file, uint32_t line) {
     /* USER CODE BEGIN 6 */
     /* User can add his own implementation to report the file name and line
        number, tex: printf("Wrong parameters value: file %s on line %d\r\n",
