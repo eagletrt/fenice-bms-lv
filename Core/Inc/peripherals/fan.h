@@ -14,7 +14,7 @@
 #define _TEMPLATE_H_
 
 /* Includes ------------------------------------------------------------------*/
-#include "../Lib/micro-libs/pid/pid.h"
+//#include "../Lib/micro-libs/pid/pid.h"
 #include "common.h"
 #include "tim.h"
 /* Exported defines ----------------------------------------------------------*/

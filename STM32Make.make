@@ -45,6 +45,8 @@ Core/Lib/can-cicd/external/flatcc/runtime/verifier.c \
 Core/Lib/can-cicd/naked_generator/BMSinternal/c/BMSinternal.c \
 Core/Lib/can-cicd/naked_generator/Primary/c/Primary.c \
 Core/Lib/can-cicd/naked_generator/Secondary/c/Secondary.c \
+Core/Lib/micro-libs/priority-queue/priority_queue.c \
+Core/Lib/micro-libs/priority-queue/priority_queue_fast_insert.c \
 Core/Src/adc.c \
 Core/Src/can.c \
 Core/Src/common.c \
@@ -174,6 +176,7 @@ C_INCLUDES =  \
 -ICore/Lib/can-cicd/naked_generator/BMSinternal/c \
 -ICore/Lib/can-cicd/naked_generator/Primary/c \
 -ICore/Lib/can-cicd/naked_generator/Secondary/c \
+-ICore/Lib/micro-libs/priority-queue \
 -IDrivers/CMSIS/Device/ST/STM32F7xx/Include \
 -IDrivers/CMSIS/Include \
 -IDrivers/STM32F7xx_HAL_Driver/Inc \

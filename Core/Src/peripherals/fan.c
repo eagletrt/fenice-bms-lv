@@ -12,7 +12,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "peripherals/fan.h"
 
-#include "../Lib/micro-libs/pid/pid.h"
+//#include "../Lib/micro-libs/pid/pid.h"
 #include "common.h"
 #include "tim.h"
 

@@ -61,7 +61,12 @@ excludes:
   - "**/*[Tt]est*/**"
   - "**/*[Tt]est*"
   - "**_template.*"
-  - "**/micro-libs/**"
+  - "**/micro-libs/can-fifo-queue/**"
+  - "**/micro-libs/cli/**"
+  - "**/micro-libs/fsm/**"
+  - "**/micro-libs/fsm/**"
+  - "**/micro-libs/llist/**"
+  - "**/micro-libs/munit/**"
 
 # Include directories (directories containing .h or .hpp files)
 # If a CubeMX makefile is present it will automatically include the include directories from that makefile.
@@ -69,7 +74,6 @@ includeDirectories:
   - Inc/**
   - Core/Inc/**
   - Core/Lib/**
-  - Core/Lib/micro-libs/priority-queue/**
 
 
 # Files that should be included in the compilation.

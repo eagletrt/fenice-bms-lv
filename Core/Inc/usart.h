@@ -1,21 +1,21 @@
 /**
- ******************************************************************************
- * @file    usart.h
- * @brief   This file contains all the function prototypes for
- *          the usart.c file
- ******************************************************************************
- * @attention
- *
- * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
- * All rights reserved.</center></h2>
- *
- * This software component is licensed by ST under Ultimate Liberty license
- * SLA0044, the "License"; You may not use this file except in compliance with
- * the License. You may obtain a copy of the License at:
- *                             www.st.com/SLA0044
- *
- ******************************************************************************
- */
+  ******************************************************************************
+  * @file    usart.h
+  * @brief   This file contains all the function prototypes for
+  *          the usart.c file
+  ******************************************************************************
+  * @attention
+  *
+  * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
+  * All rights reserved.</center></h2>
+  *
+  * This software component is licensed by ST under Ultimate Liberty license
+  * SLA0044, the "License"; You may not use this file except in compliance with
+  * the License. You may obtain a copy of the License at:
+  *                             www.st.com/SLA0044
+  *
+  ******************************************************************************
+  */
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __USART_H__
 #define __USART_H__
@@ -74,7 +74,15 @@ extern UART_HandleTypeDef huart4;
 void MX_UART4_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-typedef enum { NORM_HEADER = 0U, NO_HEADER, ERR_HEADER, CAN_HEADER, UART_HEADER, CAN_ERR_HEADER } UART_HeaderTypeDef;
+typedef enum {
+    NORM_HEADER = 0U,
+    NO_HEADER,
+    NOTHING,
+    ERR_HEADER,
+    CAN_HEADER,
+    UART_HEADER,
+    CAN_ERR_HEADER
+} UART_HeaderTypeDef;
 
 /**
  * @brief Print log messages over the serial UART, prefixed with header

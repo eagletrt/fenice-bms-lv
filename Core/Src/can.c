@@ -1,21 +1,21 @@
 /**
- ******************************************************************************
- * @file    can.c
- * @brief   This file provides code for the configuration
- *          of the CAN instances.
- ******************************************************************************
- * @attention
- *
- * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
- * All rights reserved.</center></h2>
- *
- * This software component is licensed by ST under Ultimate Liberty license
- * SLA0044, the "License"; You may not use this file except in compliance with
- * the License. You may obtain a copy of the License at:
- *                             www.st.com/SLA0044
- *
- ******************************************************************************
- */
+  ******************************************************************************
+  * @file    can.c
+  * @brief   This file provides code for the configuration
+  *          of the CAN instances.
+  ******************************************************************************
+  * @attention
+  *
+  * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
+  * All rights reserved.</center></h2>
+  *
+  * This software component is licensed by ST under Ultimate Liberty license
+  * SLA0044, the "License"; You may not use this file except in compliance with
+  * the License. You may obtain a copy of the License at:
+  *                             www.st.com/SLA0044
+  *
+  ******************************************************************************
+  */
 
 /* Includes ------------------------------------------------------------------*/
 #include "can.h"
@@ -27,6 +27,8 @@
 #include "../Lib/can-cicd/includes_generator/Secondary/utils.h"
 #include "../Lib/can-cicd/naked_generator/Primary/c/Primary.h"
 #include "../Lib/can-cicd/naked_generator/Secondary/c/Secondary.h"
+#include "../Lib/micro-libs/priority-queue/priority_queue_fast_insert.h"
+#include "assert.h"
 #include "common.h"
 #include "fenice-config.h"
 #include "ltc.h"
@@ -35,9 +37,17 @@
 /* Private defines -----------------------------------------------------------*/
 canStruct can1, can3;
 
+/* Private variables ---------------------------------------------------------*/
+PQFI_HandleTypeDef hpqfi_rx_pcan = NULL; /* PQFI handle for primary CAN in RX (receive messages) */
+#ifndef NO_SECONDARY_CAN
+PQFI_HandleTypeDef hpqfi_rx_scan = NULL; /* PQFI handle for secondary CAN in RX (receive messages) */
+#endif
+
 /* Private functions prototypes ----------------------------------------------*/
 static void _can_apply_filter(CAN_HandleTypeDef *hcan);
-static void _can_error_handler(CAN_HandleTypeDef *hcan, char *msg);
+static void _can_error_handler(CAN_HandleTypeDef *hcan);
+static bool _pqfi_rx_pcan_pri_cmpr_function(PQFI_PriorityTypeDef a, PQFI_PriorityTypeDef b);
+
 void _compose_can_message(CAN_MsgNameTypeDef can_msg_name, uint8_t msg_buff[8], uint8_t *buff_fin_size);
 
 /* USER CODE END 0 */
@@ -57,9 +67,9 @@ void MX_CAN1_Init(void) {
     hcan1.Instance                  = CAN1;
     hcan1.Init.Prescaler            = 3;
     hcan1.Init.Mode                 = CAN_MODE_NORMAL;
-    hcan1.Init.SyncJumpWidth        = CAN_SJW_1TQ;
-    hcan1.Init.TimeSeg1             = CAN_BS1_16TQ;
-    hcan1.Init.TimeSeg2             = CAN_BS2_2TQ;
+    hcan1.Init.SyncJumpWidth        = CAN_SJW_2TQ;
+    hcan1.Init.TimeSeg1             = CAN_BS1_12TQ;
+    hcan1.Init.TimeSeg2             = CAN_BS2_5TQ;
     hcan1.Init.TimeTriggeredMode    = DISABLE;
     hcan1.Init.AutoBusOff           = DISABLE;
     hcan1.Init.AutoWakeUp           = DISABLE;
@@ -130,6 +140,15 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef *canHandle) {
         GPIO_InitStruct.Alternate = GPIO_AF9_CAN1;
         HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
+        /* CAN1 interrupt Init */
+        HAL_NVIC_SetPriority(CAN1_TX_IRQn, 0, 0);
+        HAL_NVIC_EnableIRQ(CAN1_TX_IRQn);
+        HAL_NVIC_SetPriority(CAN1_RX0_IRQn, 0, 0);
+        HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
+        HAL_NVIC_SetPriority(CAN1_RX1_IRQn, 0, 0);
+        HAL_NVIC_EnableIRQ(CAN1_RX1_IRQn);
+        HAL_NVIC_SetPriority(CAN1_SCE_IRQn, 0, 0);
+        HAL_NVIC_EnableIRQ(CAN1_SCE_IRQn);
         /* USER CODE BEGIN CAN1_MspInit 1 */
 
         /* USER CODE END CAN1_MspInit 1 */
@@ -185,6 +204,11 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef *canHandle) {
         */
         HAL_GPIO_DeInit(GPIOD, GPIO_PIN_0 | GPIO_PIN_1);
 
+        /* CAN1 interrupt Deinit */
+        HAL_NVIC_DisableIRQ(CAN1_TX_IRQn);
+        HAL_NVIC_DisableIRQ(CAN1_RX0_IRQn);
+        HAL_NVIC_DisableIRQ(CAN1_RX1_IRQn);
+        HAL_NVIC_DisableIRQ(CAN1_SCE_IRQn);
         /* USER CODE BEGIN CAN1_MspDeInit 1 */
 
         /* USER CODE END CAN1_MspDeInit 1 */
@@ -201,9 +225,9 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef *canHandle) {
         }
 
         /**CAN3 GPIO Configuration
-        PA8     ------> CAN3_RX
-        PB4     ------> CAN3_TX
-        */
+    PA8     ------> CAN3_RX
+    PB4     ------> CAN3_TX
+    */
         HAL_GPIO_DeInit(GPIOA, GPIO_PIN_8);
 
         HAL_GPIO_DeInit(GPIOB, GPIO_PIN_4);
@@ -218,46 +242,59 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef *canHandle) {
 
 /* Exported functions --------------------------------------------------------*/
 
-bool CAN_start_all() {
-    bool ret = true;
+COMM_StatusTypeDef CAN_start_all() {
+    COMM_StatusTypeDef ret = COMM_OK;
     /* Start primary Can*/
 
     if (HAL_CAN_ActivateNotification(&hcanP, CANP_IT_NOTI_SET) != HAL_OK) {
         printl("Failed to activate PRIMARY can interrupts", CAN_ERR_HEADER);
-        ret = false;
+        ret = COMM_ERROR;
     }
-    if (HAL_CAN_Start(&hcanS) != HAL_OK) {
-        printl("Unable to start primary CAN", CAN_ERR_HEADER);
+    hpqfi_rx_pcan =
+        PQFI_init(C_RX_FIFO_LENGTH, sizeof(CAN_RxPQFI_Data_TypeDef), &_pqfi_rx_pcan_pri_cmpr_function, NULL);
+    if (hpqfi_rx_pcan == NULL) {
+        printl("Priority queue RX in PRIMARY can not initialized, probably malloc errors", CAN_ERR_HEADER);
+        ret = COMM_ERROR;
+    }
+    if (HAL_CAN_Start(&hcanP) != HAL_OK) {
+        printl("Unable to start PRIMARY CAN", CAN_ERR_HEADER);
 
         /* Primary can error sequence*/
         BZZR_play_pulses(200, 2);
         HAL_Delay(500);
         BZZR_play_pulses(200, 1);
-        ret = false;
+        ret = COMM_ERROR;
     }
     printl("Primary CAN ready", CAN_HEADER);
 
+#ifndef NO_SECONDARY_CAN
     /* Start secondary Can*/
     if (HAL_CAN_ActivateNotification(&hcanS, CANS_IT_NOTI_SET) == HAL_ERROR) {
         printl("Failed to activate SECONDARY can interrupts", CAN_ERR_HEADER);
-        ret = false;
+        ret = COMM_ERROR;
+    }
+    if (hpqfi_rx_pcan == NULL) {
+        printl("Priority queue RX in SECONDARY can not initialized, probably malloc errors", CAN_ERR_HEADER);
+        ret = COMM_ERROR;
     }
     if (HAL_CAN_Start(&hcanS) != HAL_OK) {
-        printl("Unable to start secondary CAN", CAN_ERR_HEADER);
+        printl("Unable to start SECONDARY CAN", CAN_ERR_HEADER);
 
         /* Secondary can error sequence*/
         BZZR_play_pulses(200, 2);
         HAL_Delay(500);
         BZZR_play_pulses(200, 2);
-        ret = false;
+        ret = COMM_ERROR;
     }
     printl("Secondary CAN ready", CAN_HEADER);
+#endif
     return ret;
 }
 
 HAL_StatusTypeDef CAN_send(CAN_HandleTypeDef *hcan, uint16_t msg_name) {
     if (HAL_CAN_GetTxMailboxesFreeLevel(hcan) == 0) {
-        _can_error_handler(hcan, "No free mailboxes available\r\n");
+        printl("No free mailboxes available", CAN_ERR_HEADER);
+        _can_error_handler(hcan);
         return HAL_ERROR;
     }
 
@@ -275,40 +312,66 @@ HAL_StatusTypeDef CAN_send(CAN_HandleTypeDef *hcan, uint16_t msg_name) {
 
     /* Send the message */
     status = HAL_CAN_AddTxMessage(hcan, &header, data, &free_mailbox);
-    if (status != HAL_OK)
-        _can_error_handler(hcan, "AddTxMessage failed");
+    if (status != HAL_OK) {
+        printl("AddTxMessage failed", CAN_ERR_HEADER);
+        _can_error_handler(hcan);
+    }
 
     printl("CAN_send", CAN_HEADER);
     return status;
 }
 
-void CAN_get(CAN_HandleTypeDef *hcan, CAN_RxHeaderTypeDef *rxheader, uint8_t data[static 8]) {
+COMM_StatusTypeDef CAN_get(CAN_HandleTypeDef *hcan, CAN_RxPQFI_Data_TypeDef *rx_data) {
+    assert(hcan != NULL);
+    assert(rx_data != NULL);
+    PQFI_HandleTypeDef hpqfi_tmp;
+    if (hcan == &hcanP) {
+        hpqfi_tmp = hpqfi_rx_pcan;
+    }
+#ifndef NO_SECONDARY_CAN
+    else if (hcan == hcanS) {
+        hpqfi_tmp = hpqfi_rx_scan;
+    }
+#endif
+    else {
+        printl("Wrong can instance", CAN_HEADER);
+        return COMM_ERROR;
+    }
+
+    return PQFI_pop(hpqfi_tmp, rx_data) ? COMM_OK : COMM_ERROR;
+}
+void CAN_print_rxdata(CAN_RxPQFI_Data_TypeDef *rx_data) {
     char buf[100]    = {};
     char id_name[50] = {};
+#ifndef NO_SECONDARY_CAN
     hcan->Instance == CANP ? CAN_id_tostring(CAN_NET_PRIM, rxheader->StdId, id_name)
                            : CAN_id_tostring(CAN_NET_SEC, rxheader->StdId, id_name);
-    sprintf(buf, "ID: %lu, MSG_NAME: %s", rxheader->StdId, id_name);
+#else
+    CAN_id_tostring(CAN_NET_PRIM, rx_data->rxheader.StdId, id_name);
+#endif
+    sprintf(buf, "ID: %lu (%s) [", rx_data->rxheader.StdId, id_name);
     printl(buf, CAN_HEADER);
     sprintf(
         buf,
-        "data: %X %X %X %X, DLC: %lu, RTR: %lu",
-        data[0] << 8 | data[1],
-        data[2] << 8 | data[3],
-        data[4] << 8 | data[5],
-        data[6] << 8 | data[7],
-        rxheader->DLC,
-        rxheader->RTR);
-    printl(buf, NO_HEADER);
+        "x%02X x%02X x%02X x%02X], DLC: %lu, RTR: %lu",
+        rx_data->payload[0] << 8 | rx_data->payload[1],
+        rx_data->payload[2] << 8 | rx_data->payload[3],
+        rx_data->payload[4] << 8 | rx_data->payload[5],
+        rx_data->payload[6] << 8 | rx_data->payload[7],
+        rx_data->rxheader.DLC,
+        rx_data->rxheader.RTR);
+    printl(buf, NOTHING);
 }
-
 void CAN_id_tostring(CAN_NetTypeDef net, uint32_t msg_id, char buf[static 50]) {
     switch (net) {
         case CAN_NET_PRIM:
             Primary_msgname_from_id(msg_id, buf);
             break;
+#ifndef NO_SECONDARY_CAN
         case CAN_NET_SEC:
             Secondary_msgname_from_id(msg_id, buf);
             break;
+#endif
         default:
             buf[0] = '\0';
             break;
@@ -576,15 +639,18 @@ bool CAN_Read_Message() {
 /* Callbacks -----------------------------------------------------------------*/
 
 void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan) {
-    char buf[50];
-    sprintf(buf, "Code: %lu", (uint32_t)hcan->ErrorCode);
-    _can_error_handler(hcan, buf);
+    _can_error_handler(hcan);
 }
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
-    printl("FUCKING RX1", CAN_HEADER);
-    CAN_RxHeaderTypeDef h;
-    uint8_t data[8];
-    HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &h, data);
+    static CAN_RxPQFI_Data_TypeDef rx_pqfi_data;
+    rx_pqfi_data.net = CAN_NET_PRIM;
+
+    if (PQFI_is_full(hpqfi_rx_pcan) != true) {
+        HAL_CAN_GetRxMessage(hcan, CANP_RX_FIFO, &(rx_pqfi_data.rxheader), rx_pqfi_data.payload);
+        PQFI_insert(hpqfi_rx_pcan, rx_pqfi_data.rxheader.StdId, &rx_pqfi_data);
+    } else {
+        printl("Primary can rx fifo full", CAN_HEADER);
+    }
 }
 void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan) {
     printl("FUCKING RX2", CAN_HEADER);
@@ -593,10 +659,10 @@ void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan) {
     HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO1, &h, data);
 }
 void HAL_CAN_RxFifo0FullCallback(CAN_HandleTypeDef *hcan) {
-    _can_error_handler(hcan, "RX FIFO#0 is full");
+    printl("RX FIFO#0 is full", CAN_HEADER);
 }
 void HAL_CAN_RxFifo1FullCallback(CAN_HandleTypeDef *hcan) {
-    _can_error_handler(hcan, "RX FIFO#1 is full");
+    printl("RX FIFO#1 is full", CAN_HEADER);
 }
 void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *hcan) {
     printl("Mailbox 0 complete", CAN_HEADER);
@@ -633,7 +699,9 @@ static void _can_apply_filter(CAN_HandleTypeDef *hcan) {
         filter.FilterIdHigh     = 0;
         filter.FilterMaskIdHigh = 0;
         filter.FilterMaskIdLow  = 0;
-    } else if (hcan->Instance == CANS) {
+    }
+#ifndef NO_SECONDARY_CAN
+    else if (hcan->Instance == CANS) {
         filter.FilterFIFOAssignment = CANS_FILTER_FIFO;
 
         // Filter for topic TODO: place topic
@@ -641,10 +709,25 @@ static void _can_apply_filter(CAN_HandleTypeDef *hcan) {
         filter.FilterIdHigh     = 0;
         filter.FilterMaskIdHigh = 0;
         filter.FilterMaskIdLow  = 0;
-    } else {
+    }
+#endif
+    else {
+        printl("Wrong can handle while applying filter", CAN_ERR_HEADER);
         return;
     }
     HAL_CAN_ConfigFilter(hcan, &filter);
+}
+
+/**
+ * @brief     Priority compare function for elements inside hpqfi_rx_pcan
+ * 
+ * @param     a Priority item A
+ * @param     b Priority item B
+ * @return    true if A < B
+ * @return    false if A >= B
+ */
+static bool _pqfi_rx_pcan_pri_cmpr_function(PQFI_PriorityTypeDef a, PQFI_PriorityTypeDef b) {
+    return a < b;
 }
 
 /**
@@ -652,10 +735,14 @@ static void _can_apply_filter(CAN_HandleTypeDef *hcan) {
  *        the CAN error LED
  * @param msg The message to send over UART
  * */
-static void _can_error_handler(CAN_HandleTypeDef *hcan, char *msg) {
-    printl(msg, CAN_ERR_HEADER);
-
+static void _can_error_handler(CAN_HandleTypeDef *hcan) {
     uint32_t err_code = HAL_CAN_GetError(hcan);
+    if (err_code == 0)
+        return;
+
+    char buf[50];
+    sprintf(buf, "Code: %08lX", err_code);
+    printl(buf, CAN_ERR_HEADER);
 
     if ((err_code & HAL_CAN_ERROR_EWG) == HAL_CAN_ERROR_EWG)
         printl("Protocol error warning", NO_HEADER);
@@ -704,8 +791,6 @@ static void _can_error_handler(CAN_HandleTypeDef *hcan, char *msg) {
     if ((err_code & HAL_CAN_ERROR_INTERNAL) == HAL_CAN_ERROR_INTERNAL)
         printl("Internal error", NO_HEADER);
 
-    char buf[50];
-
     uint16_t rec_val = (uint16_t)((hcan->Instance->ESR && CAN_ESR_REC_Msk) >> CAN_ESR_REC_Pos);
     if (rec_val > 0) {
         sprintf(buf, "REC (Receive Error Counter) %d", rec_val);
@@ -721,5 +806,4 @@ static void _can_error_handler(CAN_HandleTypeDef *hcan, char *msg) {
 
 /* USER CODE END 1 */
 
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF
- * FILE****/
+/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

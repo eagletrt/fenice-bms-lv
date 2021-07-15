@@ -1,8 +1,12 @@
 {
     "stm32-for-vscode.openocdPath": "openocd",
-    "cortex-debug.openocdPath": "/usr/bin/openocd",
+    "cortex-debug.openocdPath": "openocd",
     "stm32-for-vscode.makePath": "make",
     "stm32-for-vscode.armToolchainPath": "/usr/bin",
     "cortex-debug.armToolchainPath": "/usr/bin",
-    "stm32-for-vscode.openOCDPath": "openocd"
+    "stm32-for-vscode.openOCDPath": "openocd",
+    "files.associations": {
+        "priority_queue_fast_insert.h": "c",
+        "usart.h": "c"
+    }
 }
