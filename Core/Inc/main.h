@@ -28,7 +28,7 @@ extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f7xx_hal.h"
+#include "stm32f4xx_hal.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -70,58 +70,50 @@ void set_sensor_update_time();
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define FDBK_DCDC_12V_Pin GPIO_PIN_0
-#define FDBK_DCDC_12V_GPIO_Port GPIOA
-#define FAN1_HV_Pin GPIO_PIN_1
-#define FAN1_HV_GPIO_Port GPIOA
-#define CURRENT_SENSOR_Pin GPIO_PIN_2
-#define CURRENT_SENSOR_GPIO_Port GPIOA
-#define T_BATT1_Pin GPIO_PIN_3
-#define T_BATT1_GPIO_Port GPIOA
-#define FAN2_HV_Pin GPIO_PIN_5
-#define FAN2_HV_GPIO_Port GPIOA
-#define FAN3_HV_Pin GPIO_PIN_6
-#define FAN3_HV_GPIO_Port GPIOA
-#define T_BATT2_Pin GPIO_PIN_7
-#define T_BATT2_GPIO_Port GPIOA
-#define LV_MASTER_RELAY_Pin GPIO_PIN_4
-#define LV_MASTER_RELAY_GPIO_Port GPIOC
-#define T_DCDC12_Pin GPIO_PIN_0
-#define T_DCDC12_GPIO_Port GPIOB
-#define T_DCDC24_Pin GPIO_PIN_1
-#define T_DCDC24_GPIO_Port GPIOB
-#define LED_1_Pin GPIO_PIN_11
-#define LED_1_GPIO_Port GPIOE
-#define LED_2_Pin GPIO_PIN_12
-#define LED_2_GPIO_Port GPIOE
-#define LED_3_Pin GPIO_PIN_13
-#define LED_3_GPIO_Port GPIOE
-#define LED_4_Pin GPIO_PIN_14
-#define LED_4_GPIO_Port GPIOE
-#define LED_5_Pin GPIO_PIN_15
-#define LED_5_GPIO_Port GPIOE
-#define FAN6_LV_Pin GPIO_PIN_10
-#define FAN6_LV_GPIO_Port GPIOB
-#define FAN5_LV_Pin GPIO_PIN_11
-#define FAN5_LV_GPIO_Port GPIOB
-#define PUMP_2_Pin GPIO_PIN_12
-#define PUMP_2_GPIO_Port GPIOD
-#define PUMP_1_Pin GPIO_PIN_13
-#define PUMP_1_GPIO_Port GPIOD
-#define BZZR_PWM_Pin GPIO_PIN_6
-#define BZZR_PWM_GPIO_Port GPIOC
-#define LED_ERR_Pin GPIO_PIN_7
-#define LED_ERR_GPIO_Port GPIOC
-#define SDMMC2_CS_Pin GPIO_PIN_2
-#define SDMMC2_CS_GPIO_Port GPIOD
-#define SPI2_CS_Pin GPIO_PIN_4
-#define SPI2_CS_GPIO_Port GPIOD
-#define SD_DETECT_Pin GPIO_PIN_5
-#define SD_DETECT_GPIO_Port GPIOD
-#define RADIATOR_1_Pin GPIO_PIN_8
-#define RADIATOR_1_GPIO_Port GPIOB
-#define RADIATOR_2_Pin GPIO_PIN_9
-#define RADIATOR_2_GPIO_Port GPIOB
+#define SD_CS_Pin GPIO_PIN_13
+#define SD_CS_GPIO_Port GPIOC
+#define EEPROM_HOLD_Pin GPIO_PIN_14
+#define EEPROM_HOLD_GPIO_Port GPIOC
+#define SD_DETECT_Pin GPIO_PIN_15
+#define SD_DETECT_GPIO_Port GPIOC
+#define HALL_Pin GPIO_PIN_0
+#define HALL_GPIO_Port GPIOC
+#define HALL_OCD_Pin GPIO_PIN_1
+#define HALL_OCD_GPIO_Port GPIOC
+#define TMP_DCDC12_Pin GPIO_PIN_2
+#define TMP_DCDC12_GPIO_Port GPIOC
+#define TMP_DCDC24_Pin GPIO_PIN_3
+#define TMP_DCDC24_GPIO_Port GPIOC
+#define TMP_BATT1_Pin GPIO_PIN_0
+#define TMP_BATT1_GPIO_Port GPIOA
+#define TMP_BATT2_Pin GPIO_PIN_1
+#define TMP_BATT2_GPIO_Port GPIOA
+#define PUMP_L_Pin GPIO_PIN_4
+#define PUMP_L_GPIO_Port GPIOA
+#define PUMP_R_Pin GPIO_PIN_5
+#define PUMP_R_GPIO_Port GPIOA
+#define RAD_L_Pin GPIO_PIN_6
+#define RAD_L_GPIO_Port GPIOA
+#define RAD_R_Pin GPIO_PIN_7
+#define RAD_R_GPIO_Port GPIOA
+#define INV_FRG_Pin GPIO_PIN_4
+#define INV_FRG_GPIO_Port GPIOC
+#define INV_RFE_Pin GPIO_PIN_5
+#define INV_RFE_GPIO_Port GPIOC
+#define FAN_Pin GPIO_PIN_0
+#define FAN_GPIO_Port GPIOB
+#define RELAY_Pin GPIO_PIN_1
+#define RELAY_GPIO_Port GPIOB
+#define LTC_CS_Pin GPIO_PIN_10
+#define LTC_CS_GPIO_Port GPIOB
+#define BUZZER_Pin GPIO_PIN_6
+#define BUZZER_GPIO_Port GPIOC
+#define L_ERR_Pin GPIO_PIN_7
+#define L_ERR_GPIO_Port GPIOC
+#define EEPROM_WP_Pin GPIO_PIN_15
+#define EEPROM_WP_GPIO_Port GPIOA
+#define EEPROM_CS_Pin GPIO_PIN_4
+#define EEPROM_CS_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
 /**
@@ -131,7 +123,7 @@ void set_sensor_update_time();
  * @return GPIO_PIN_SET: if LVMR is closed
  */
 inline GPIO_PinState LV_MASTER_RELAY_get_state() {
-    return (GPIO_PinState)(LV_MASTER_RELAY_GPIO_Port->ODR & LV_MASTER_RELAY_Pin);
+    return false;  //(GPIO_PinState)(LV_MASTER_RELAY_GPIO_Port->ODR & LV_MASTER_RELAY_Pin);
 }
 
 /**
@@ -143,8 +135,8 @@ inline GPIO_PinState LV_MASTER_RELAY_get_state() {
   *        @arg GPIO_PIN_SET: to close LVMR
  */
 static inline void LV_MASTER_RELAY_set_state(GPIO_PinState state) {
-    HAL_GPIO_WritePin(LV_MASTER_RELAY_GPIO_Port, LV_MASTER_RELAY_Pin, state);
-    HAL_Delay(50);  // Let the relay close
+    //HAL_GPIO_WritePin(LV_MASTER_RELAY_GPIO_Port, LV_MASTER_RELAY_Pin, state);
+    //HAL_Delay(50);  // Let the relay close
 }
 
 /**
@@ -157,10 +149,10 @@ static inline void LV_MASTER_RELAY_set_state(GPIO_PinState state) {
  * @return    false The 12V DCDC is off or something else in the main line is opened
  */
 inline bool FDBK_DCDC_12V_get_state() {
-    return HAL_GPIO_ReadPin(FDBK_DCDC_12V_GPIO_Port, FDBK_DCDC_12V_Pin) == GPIO_PIN_SET;
+    return false;  //HAL_GPIO_ReadPin(FDBK_DCDC_12V_GPIO_Port, FDBK_DCDC_12V_Pin) == GPIO_PIN_SET;
 }
 
-#define LOG_HUART huart4
+#define LOG_HUART huart1
 /* Radiator1 -> TIM4 CH3 */
 /* Radiator2 -> TIM4 CH4 */
 
@@ -199,5 +191,3 @@ inline bool FDBK_DCDC_12V_get_state() {
 #endif
 
 #endif /* __MAIN_H */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

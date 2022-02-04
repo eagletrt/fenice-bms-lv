@@ -45,60 +45,53 @@ Core/Lib/can-cicd/external/flatcc/runtime/verifier.c \
 Core/Lib/can-cicd/naked_generator/BMSinternal/c/BMSinternal.c \
 Core/Lib/can-cicd/naked_generator/Primary/c/Primary.c \
 Core/Lib/can-cicd/naked_generator/Secondary/c/Secondary.c \
-Core/Lib/micro-libs/priority-queue/priority_queue.c \
+Core/Lib/micro-libs/pid/pid.c \
 Core/Lib/micro-libs/priority-queue/priority_queue_fast_insert.c \
 Core/Src/adc.c \
 Core/Src/can.c \
 Core/Src/common.c \
 Core/Src/current_sensor.c \
-Core/Src/dma.c \
+Core/Src/dac.c \
 Core/Src/gpio.c \
+Core/Src/i2c.c \
 Core/Src/ltc.c \
 Core/Src/main.c \
 Core/Src/peripherals/buzzer.c \
 Core/Src/peripherals/fan.c \
+Core/Src/peripherals/status_led.c \
 Core/Src/pwm.c \
-Core/Src/sdmmc.c \
 Core/Src/spi.c \
-Core/Src/stm32f7xx_hal_msp.c \
-Core/Src/stm32f7xx_it.c \
-Core/Src/system_stm32f7xx.c \
+Core/Src/stm32f4xx_hal_msp.c \
+Core/Src/stm32f4xx_it.c \
+Core/Src/system_stm32f4xx.c \
 Core/Src/template.c \
 Core/Src/tim.c \
 Core/Src/usart.c \
-Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal.c \
-Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_adc.c \
-Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_adc_ex.c \
-Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_can.c \
-Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_cortex.c \
-Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dma.c \
-Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_dma_ex.c \
-Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_exti.c \
-Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_flash.c \
-Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_flash_ex.c \
-Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_gpio.c \
-Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_i2c.c \
-Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_i2c_ex.c \
-Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_pwr.c \
-Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_pwr_ex.c \
-Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_rcc.c \
-Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_rcc_ex.c \
-Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_sd.c \
-Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_spi.c \
-Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_spi_ex.c \
-Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_tim.c \
-Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_tim_ex.c \
-Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_uart.c \
-Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_hal_uart_ex.c \
-Drivers/STM32F7xx_HAL_Driver/Src/stm32f7xx_ll_sdmmc.c \
-FATFS/App/fatfs.c \
-FATFS/Target/bsp_driver_sd.c \
-FATFS/Target/fatfs_platform.c \
-FATFS/Target/sd_diskio.c \
-Middlewares/Third_Party/FatFs/src/diskio.c \
-Middlewares/Third_Party/FatFs/src/ff.c \
-Middlewares/Third_Party/FatFs/src/ff_gen_drv.c \
-Middlewares/Third_Party/FatFs/src/option/syscall.c
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_can.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dac.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dac_ex.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma_ex.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ex.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ramfunc.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c_ex.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr_ex.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_spi.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_adc.c
 
 
 CPP_SOURCES = \
@@ -106,7 +99,7 @@ CPP_SOURCES = \
 
 # ASM sources
 ASM_SOURCES =  \
-startup_stm32f765xx.s
+startup_stm32f446xx.s
 
 
 
@@ -138,10 +131,10 @@ BIN = $(CP) -O binary -S
 # CFLAGS
 #######################################
 # cpu
-CPU = -mcpu=cortex-m7
+CPU = -mcpu=cortex-m4
 
 # fpu
-FPU = -mfpu=fpv5-d16
+FPU = -mfpu=fpv4-sp-d16
 
 # float-abi
 FLOAT-ABI = -mfloat-abi=hard
@@ -155,7 +148,7 @@ AS_DEFS =
 
 # C defines
 C_DEFS =  \
--DSTM32F765xx \
+-DSTM32F446xx \
 -DUSE_HAL_DRIVER
 
 
@@ -176,14 +169,12 @@ C_INCLUDES =  \
 -ICore/Lib/can-cicd/naked_generator/BMSinternal/c \
 -ICore/Lib/can-cicd/naked_generator/Primary/c \
 -ICore/Lib/can-cicd/naked_generator/Secondary/c \
+-ICore/Lib/micro-libs/pid \
 -ICore/Lib/micro-libs/priority-queue \
--IDrivers/CMSIS/Device/ST/STM32F7xx/Include \
+-IDrivers/CMSIS/Device/ST/STM32F4xx/Include \
 -IDrivers/CMSIS/Include \
--IDrivers/STM32F7xx_HAL_Driver/Inc \
--IDrivers/STM32F7xx_HAL_Driver/Inc/Legacy \
--IFATFS/App \
--IFATFS/Target \
--IMiddlewares/Third_Party/FatFs/src
+-IDrivers/STM32F4xx_HAL_Driver/Inc \
+-IDrivers/STM32F4xx_HAL_Driver/Inc/Legacy
 
 
 
@@ -209,7 +200,7 @@ CFLAGS += -MMD -MP -MF"$(@:%.o=%.d)"
 # LDFLAGS
 #######################################
 # link script
-LDSCRIPT = STM32F765VGTx_FLASH.ld
+LDSCRIPT = STM32F446RETx_FLASH.ld
 
 # libraries
 LIBS = -lc -lm -lnosys 
@@ -270,7 +261,7 @@ flash: $(BUILD_DIR)/$(TARGET).elf
 # erase
 #######################################
 erase: $(BUILD_DIR)/$(TARGET).elf
-	"openocd" -f ./openocd.cfg -c "init; reset halt; stm32f7x mass_erase 0; exit"
+	"openocd" -f ./openocd.cfg -c "init; reset halt; stm32f4x mass_erase 0; exit"
 
 #######################################
 # clean up

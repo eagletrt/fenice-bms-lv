@@ -1,10 +1,11 @@
 #ifndef _PWM_H_
 #define _PWM_H_
 
-#include "stm32f7xx_hal.h"
+#include "main.h"
 
-typedef struct pwm_struct
-{
+#include <inttypes.h>
+
+typedef struct pwm_struct {
     uint32_t value;
 
     uint32_t prev_value;

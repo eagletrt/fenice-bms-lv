@@ -13,16 +13,16 @@ language: C
 optimization: Og
 
 # MCU settings
-targetMCU: stm32f7x
-cpu: -mcpu=cortex-m7
-fpu: -mfpu=fpv5-d16
+targetMCU: stm32f4x
+cpu: -mcpu=cortex-m4
+fpu: -mfpu=fpv4-sp-d16
 floatAbi: -mfloat-abi=hard
-ldscript: STM32F765VGTx_FLASH.ld # linker script
+ldscript: STM32F446RETx_FLASH.ld # linker script
 
 # Compiler definitions. The -D prefix for the compiler will be automatically added.
 cDefinitions: 
   - USE_HAL_DRIVER
-  - STM32F765xx
+  - STM32F446xx
 
 cxxDefinitions: []
 asDefinitions: []
@@ -56,23 +56,31 @@ libraryDirectories: []
 # Do mind that double stars are reserved in yaml
 # these should be escaped with a: \ or the name should be in double quotes e.g. "**.test.**"
 excludes: 
-  - "**/[Ee]xamples/**"
-  - "**/[Ee]xample/**"
-  - "**/*[Tt]est*/**"
-  - "**/*[Tt]est*"
+  - "**/Examples/**"
+  - "**/examples/**"
+  - "**/Example/**"
+  - "**/example/**"
   - "**_template.*"
   - "**/micro-libs/can-fifo-queue/**"
+  - "**/micro-libs/priority-queue/priority_queue.*"
   - "**/micro-libs/cli/**"
   - "**/micro-libs/fsm/**"
   - "**/micro-libs/fsm/**"
   - "**/micro-libs/llist/**"
   - "**/micro-libs/munit/**"
+  - "**/micro-libs/can-sensor-programmer/**"
+  - "**/micro-libs/m95256/**"
+  - "**/test.c"
+  - "**/test/**"
 
 # Include directories (directories containing .h or .hpp files)
 # If a CubeMX makefile is present it will automatically include the include directories from that makefile.
 includeDirectories: 
   - Inc/**
   - Core/Inc/**
+  - Core/Lib/**
+  - Src/**
+  - Core/Src/**
   - Core/Lib/**
 
 
