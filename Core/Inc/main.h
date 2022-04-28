@@ -135,8 +135,9 @@ inline GPIO_PinState LV_MASTER_RELAY_get_state() {
   *        @arg GPIO_PIN_SET: to close LVMR
  */
 static inline void LV_MASTER_RELAY_set_state(GPIO_PinState state) {
-    //HAL_GPIO_WritePin(LV_MASTER_RELAY_GPIO_Port, LV_MASTER_RELAY_Pin, state);
-    //HAL_Delay(50);  // Let the relay close
+    //HAL_GPIO_WritePin(RELAY_GPIO_Port, RELAY_Pin, state);
+    HAL_GPIO_WritePin(RELAY_GPIO_Port, RELAY_Pin, state);
+    HAL_Delay(50);  // Let the relay close
 }
 
 /**

@@ -152,6 +152,9 @@ void printl(char *txt, UART_HeaderTypeDef header_type) {
             case NO_HEADER:
                 header = "\r\n";
                 break;
+            case VOLT_HEADER:
+                header = "\r\n[" M_NAME_TO_STR(MCU_NAME) "@fenice]~> {VOLT} ";
+                break;     
             case NOTHING:
             default:
                 header = "";

@@ -25,18 +25,18 @@ static inline COMM_StatusTypeDef chck_powered();
 
 /* Exported functions --------------------------------------------------------*/
 COMM_StatusTypeDef BZZR_play_pulses(uint32_t pulse_period, uint8_t numb_of_pulses) {
-    volatile bool val = FDBK_DCDC_12V_get_state();
-    if (chck_powered() != COMM_OK) {
-        printl("Trying to ring an unpowered buzzer", ERR_HEADER);
-        return COMM_ERROR;
-    }
-    if (prepare_peak_db_resp_freq() != COMM_OK) {
-        printl("Something wrong with timer", ERR_HEADER);
-        return COMM_ERROR;
-    }
+    // volatile bool val = FDBK_DCDC_12V_get_state();
+    // if (chck_powered() != COMM_OK) {
+    //     printl("Trying to ring an unpowered buzzer", ERR_HEADER);
+    //     return COMM_ERROR;
+    // }
+    // if (prepare_peak_db_resp_freq() != COMM_OK) {
+    //     printl("Something wrong with timer", ERR_HEADER);
+    //     return COMM_ERROR;
+    // }
 
     printl("Buzzer Start pulses", NORM_HEADER);
-
+    //BZZR_HTIM.Instance->CCR1 = 500; 
     for (int i = 0; i < numb_of_pulses; i++) {
         HAL_TIM_PWM_Start(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
         HAL_Delay(pulse_period);

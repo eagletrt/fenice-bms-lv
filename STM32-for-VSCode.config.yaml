@@ -38,8 +38,9 @@ asDefinitionsFile:
 # Compiler flags
 cFlags: []
 cxxFlags: []
-assemblyFlags: 
-  - -specs=nosys.specs
+linkerFlags: 
+  - -specs=nano.specs
+  - -u_printf_float
 
 
 # libraries to be included. The -l prefix to the library will be automatically added.

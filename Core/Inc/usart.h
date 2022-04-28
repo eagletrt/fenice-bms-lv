@@ -80,7 +80,8 @@ typedef enum {
     ERR_HEADER,
     CAN_HEADER,
     UART_HEADER,
-    CAN_ERR_HEADER
+    CAN_ERR_HEADER,
+    VOLT_HEADER
 } UART_HeaderTypeDef;
 
 /**
@@ -116,3 +117,4 @@ bool UART_is_log_on();
 #endif
 
 #endif /* __USART_H__ */
+

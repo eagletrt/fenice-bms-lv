@@ -31,7 +31,6 @@
 #include "assert.h"
 #include "common.h"
 #include "fenice-config.h"
-#include "ltc.h"
 #include "peripherals/buzzer.h"
 #include "usart.h"
 /* Private defines -----------------------------------------------------------*/
@@ -560,6 +559,7 @@ void HAL_CAN_TxMailbox0CompleteCallback(CAN_HandleTypeDef *hcan) {
 }
 #endif
 
+#ifdef OLD_CAN_SEND_DATA
 bool old_CAN_Send_data(uint32_t tick) {
     bool message_sent = false;
 
@@ -574,6 +574,7 @@ bool old_CAN_Send_data(uint32_t tick) {
 
     return message_sent;
 }
+#endif
 
 bool CAN_Read_Message() {
     if (fifoRxDataCAN_pop(&can1)) {
