@@ -14,6 +14,8 @@
 #include "spi.h"
 
 #define VOLT_MAX_ALLOWED_VOLTAGE 4.2
+#define VOLT_MAX_ATTEMPTS 5
+ 
 
 extern voltage_t voltages[LV_CELLS_COUNT];
 extern bms_balancing_cells cells;

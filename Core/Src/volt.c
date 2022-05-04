@@ -9,7 +9,7 @@
 #include "volt.h"
 #include "main.h"
 #include "usart.h"
- 
+
 voltage_t voltages[LV_CELLS_COUNT] = {0};
 bms_balancing_cells cells = 0b0;
 char buff[500];
@@ -67,16 +67,13 @@ uint8_t volt_get_min() {
  */
 uint8_t volt_read_and_print(){
    uint8_t return_code = 1;
-    printl("LTC TEST", NORM_HEADER);
-        HAL_Delay(1000);
-
         voltage_min_index = -1;
         total_voltage_on_board = 0.0;
         HAL_Delay(200);
         volt_start_basic_measure();
         HAL_Delay(200);
         if(volt_read()==1){
-             printl("LTC ERROR!", VOLT_HEADER);
+             printl("LTC ERROR!", ERR_HEADER);
         }else{
             voltage_min_index = volt_get_min();
         }
@@ -86,7 +83,7 @@ uint8_t volt_read_and_print(){
                 sprintf(buff, "Cell %u: %.3fV M",i, (float)voltages[i]/10000);
             }else{
                 if((float)voltages[i]/10000 >= VOLT_MAX_ALLOWED_VOLTAGE){
-                    sprintf(buff, "Error! Max allowed voltage exceeded");
+                    sprintf(buff, "Error! Max allowed voltage exceeded (Cell %u: %.3fV)",i, (float)voltages[i]/10000);
                     return_code = -1;
                 }else{
                      sprintf(buff, "Cell %u: %.3fV",i, (float)voltages[i]/10000);
@@ -94,10 +91,10 @@ uint8_t volt_read_and_print(){
                 
             }
             total_voltage_on_board+=(float)voltages[i]/10000;
-            printl(buff, VOLT_HEADER);
+            printl(buff, NO_HEADER);
             }
         if(total_voltage_on_board < 10.5){
-            printl("UNDERVOLTAGE", VOLT_HEADER);
+            printl("UNDERVOLTAGE!", ERR_HEADER);
             return_code = 0;
         }
         return return_code;

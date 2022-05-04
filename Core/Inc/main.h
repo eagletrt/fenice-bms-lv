@@ -110,6 +110,8 @@ void set_sensor_update_time();
 #define BUZZER_GPIO_Port GPIOC
 #define L_ERR_Pin GPIO_PIN_7
 #define L_ERR_GPIO_Port GPIOC
+#define L_OTHER_Pin GPIO_PIN_8
+#define L_OTHER_GPIO_Port GPIOC
 #define EEPROM_WP_Pin GPIO_PIN_15
 #define EEPROM_WP_GPIO_Port GPIOA
 #define EEPROM_CS_Pin GPIO_PIN_4

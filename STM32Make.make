@@ -46,6 +46,7 @@ Core/Lib/can-cicd/naked_generator/BMSinternal/c/BMSinternal.c \
 Core/Lib/can-cicd/naked_generator/Primary/c/Primary.c \
 Core/Lib/can-cicd/naked_generator/Secondary/c/Secondary.c \
 Core/Lib/ltc6810/ltc6810-driver.c \
+Core/Lib/mcp23017/mcp23017.c \
 Core/Lib/micro-libs/blink/blink.c \
 Core/Lib/micro-libs/ctrl-nwk-utils/ctrl-nwk-utils.c \
 Core/Lib/micro-libs/logger/logger.c \
@@ -180,6 +181,7 @@ C_INCLUDES =  \
 -ICore/Lib/can-cicd/naked_generator/Primary/c \
 -ICore/Lib/can-cicd/naked_generator/Secondary/c \
 -ICore/Lib/ltc6810 \
+-ICore/Lib/mcp23017 \
 -ICore/Lib/micro-libs/blink \
 -ICore/Lib/micro-libs/ctrl-nwk-utils \
 -ICore/Lib/micro-libs/logger \
