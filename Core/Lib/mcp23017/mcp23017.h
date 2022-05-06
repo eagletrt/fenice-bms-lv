@@ -1,3 +1,13 @@
+/**
+ * @file mcp23017.c
+ * @author Tommaso Canova [tommaso.canova@studenti.unitn.it]
+ * @brief 
+ * @version 0.1
+ * @date 2022-05-04
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
 
 #ifndef MCP23017_H
 #define MCP23017_H
@@ -73,6 +83,8 @@ typedef struct {
 	uint8_t			gpio[2];
 } MCP23017_HandleTypeDef;
 
+extern MCP23017_HandleTypeDef hmcp;
+
 void mcp23017_init(MCP23017_HandleTypeDef *hdev, I2C_HandleTypeDef *hi2c, uint16_t addr);
 HAL_StatusTypeDef mcp23017_read(MCP23017_HandleTypeDef *hdev, uint16_t reg, uint8_t *data);
 HAL_StatusTypeDef mcp23017_write(MCP23017_HandleTypeDef *hdev, uint16_t reg, uint8_t *data);
@@ -84,5 +96,6 @@ HAL_StatusTypeDef mcp23017_write_gpio(MCP23017_HandleTypeDef *hdev, uint8_t port
 void mcp23017_print_gpioA(MCP23017_HandleTypeDef *hdev);
 void mcp23017_print_gpioB(MCP23017_HandleTypeDef *hdev);
 void mcp23017_basic_config_init(MCP23017_HandleTypeDef *hdev, I2C_HandleTypeDef *hi2c);
-void mcp23017_read_both(MCP23017_HandleTypeDef *hdev, I2C_HandleTypeDef *hi2c);
+void mcp23017_read_and_print_both(MCP23017_HandleTypeDef *hdev, I2C_HandleTypeDef *hi2c);
+uint8_t mcp23017_get_state(MCP23017_HandleTypeDef *hdev, uint8_t gpio_port, uint8_t gpio_pin);
 #endif

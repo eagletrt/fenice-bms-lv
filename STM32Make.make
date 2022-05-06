@@ -45,6 +45,7 @@ Core/Lib/can-cicd/external/flatcc/runtime/verifier.c \
 Core/Lib/can-cicd/naked_generator/BMSinternal/c/BMSinternal.c \
 Core/Lib/can-cicd/naked_generator/Primary/c/Primary.c \
 Core/Lib/can-cicd/naked_generator/Secondary/c/Secondary.c \
+Core/Lib/dac_pump/dac_pump.c \
 Core/Lib/ltc6810/ltc6810-driver.c \
 Core/Lib/mcp23017/mcp23017.c \
 Core/Lib/micro-libs/blink/blink.c \
@@ -180,6 +181,7 @@ C_INCLUDES =  \
 -ICore/Lib/can-cicd/naked_generator/BMSinternal/c \
 -ICore/Lib/can-cicd/naked_generator/Primary/c \
 -ICore/Lib/can-cicd/naked_generator/Secondary/c \
+-ICore/Lib/dac_pump \
 -ICore/Lib/ltc6810 \
 -ICore/Lib/mcp23017 \
 -ICore/Lib/micro-libs/blink \
@@ -279,13 +281,13 @@ $(BUILD_DIR):
 # flash
 #######################################
 flash: $(BUILD_DIR)/$(TARGET).elf
-	"openocd" -f ./openocd.cfg -c "program $(BUILD_DIR)/$(TARGET).elf verify reset exit"
+	"/usr/local/bin/openocd" -f ./openocd.cfg -c "program $(BUILD_DIR)/$(TARGET).elf verify reset exit"
 
 #######################################
 # erase
 #######################################
 erase: $(BUILD_DIR)/$(TARGET).elf
-	"openocd" -f ./openocd.cfg -c "init; reset halt; stm32f4x mass_erase 0; exit"
+	"/usr/local/bin/openocd" -f ./openocd.cfg -c "init; reset halt; stm32f4x mass_erase 0; exit"
 
 #######################################
 # clean up

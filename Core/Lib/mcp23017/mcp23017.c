@@ -1,3 +1,14 @@
+/**
+ * @file mcp23017.c
+ * @author Tommaso Canova [tommaso.canova@studenti.unitn.it]
+ * @brief 
+ * @version 0.1
+ * @date 2022-05-04
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
+
 #include "main.h"
 #include "mcp23017.h"
 #include "stdio.h"
@@ -30,6 +41,8 @@
 #define I2C_TIMEOUT 10
 #define GPIOA_TOTAL_FB 8
 #define GPIOB_TOTAL_FB 3
+
+MCP23017_HandleTypeDef hmcp;
 
 void mcp23017_init(MCP23017_HandleTypeDef *hdev, I2C_HandleTypeDef *hi2c, uint16_t addr) {
     hdev->hi2c = hi2c;
@@ -156,20 +169,27 @@ void mcp23017_basic_config_init(MCP23017_HandleTypeDef *hdev, I2C_HandleTypeDef 
         printl("IPOL ERROR GPIOB", ERR_HEADER);
     }
 }
-
-void mcp23017_read_both(MCP23017_HandleTypeDef *hdev, I2C_HandleTypeDef *hi2c) {
+/**
+ * @brief Read and print register GPIOA and GPIOB
+ * 
+ * @param hdev MCP23017_HandleTypeDef handle for the device
+ * @param hi2c I2C Handle
+ */
+void mcp23017_read_and_print_both(MCP23017_HandleTypeDef *hdev, I2C_HandleTypeDef *hi2c) {
     HAL_StatusTypeDef res = HAL_I2C_Mem_Read(hi2c, hdev->addr, REGISTER_GPIOA, 1, hdev->gpio, 1, 100);
     if (res != HAL_OK) {
         printl("GPIOA READ ERROR", ERR_HEADER);
     } else {
-        //hmcp.gpio[0] = ~hmcp.gpio[0];
         mcp23017_print_gpioA(hdev);
     }
     res = HAL_I2C_Mem_Read(hi2c, hdev->addr, REGISTER_GPIOB, 1, hdev->gpio + 1, 1, 100);
     if (res != HAL_OK) {
         printl("GPIOB READ ERROR", ERR_HEADER);
     } else {
-        //hmcp.gpio[1] = ~hmcp.gpio[1];
         mcp23017_print_gpioB(hdev);
     }
+}
+
+uint8_t mcp23017_get_state(MCP23017_HandleTypeDef *hdev, uint8_t gpio_port, uint8_t gpio_pin){
+    return 1;
 }

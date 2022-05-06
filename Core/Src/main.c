@@ -40,6 +40,9 @@
     #include "string.h"
     #include "volt.h"
     #include "mcp23017.h"
+    #include "logger.h"
+    #include "timer_utils.h"
+    #include "dac_pump.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -132,10 +135,11 @@ void SystemClock_Config(void);
     int m_sec_timer                    = 0;
 
     uint32_t led_last_tick;
+    HAL_StatusTypeDef status;
 
-    char main_buff[500];
-    MCP23017_HandleTypeDef hmcp;
-    uint8_t read_gpio[2];
+    bool fb_state;
+
+    char main_buff[500];  
 /* USER CODE END 0 */
 
 /**
@@ -182,8 +186,8 @@ int main(void)
         // Blink to signal correct MX_XXX_init processes (usuefull for CAN transciever)
         _signal_mx_init_succes();
 
-        HAL_GPIO_WritePin(L_ERR_GPIO_Port, L_ERR_Pin, GPIO_PIN_SET);
-        HAL_GPIO_WritePin(L_OTHER_GPIO_Port, L_ERR_Pin, GPIO_PIN_SET);
+        //HAL_GPIO_WritePin(L_ERR_GPIO_Port, L_ERR_Pin, GPIO_PIN_SET);
+        
         ltc6810_disable_cs(&SPI);
 
         sprintf(main_buff, "LTC ID %s",ltc6810_return_serial_id());
@@ -195,24 +199,78 @@ int main(void)
         pwm_set_period(&BZZR_HTIM, 1);
         pwm_set_duty_cicle(&BZZR_HTIM, BZZR_PWM_TIM_CHNL, 0.5);
 
+        //FAN 25KHZ
+        
+        // Fan configuration NOT SEEING ANY PWM
+        pwm_set_period(&FAN6_HTIM, 0.04);
+        pwm_set_duty_cicle(&FAN6_HTIM, FAN6_PWM_TIM_CHNL, 0.70);
+        pwm_start_channel(&FAN6_HTIM, FAN6_PWM_TIM_CHNL);
+
+
+        //TOGGLE FUNZIONA
+        // HAL_GPIO_WritePin(FAN_GPIO_Port, FAN_Pin, GPIO_PIN_SET);
+        // HAL_GPIO_WritePin(FAN_GPIO_Port, FAN_Pin, GPIO_PIN_RESET);
+        // HAL_GPIO_WritePin(FAN_GPIO_Port, FAN_Pin, GPIO_PIN_SET);
+        // HAL_GPIO_WritePin(FAN_GPIO_Port, FAN_Pin, GPIO_PIN_RESET);
+
+        // RAD_L configuration
+        //pwm_set_period(&RAD_L_HTIM, 0.04);
+        pwm_set_duty_cicle(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, 0.70);
+        pwm_start_channel(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL);
+        
+        // RAD_R configuration
+        pwm_set_duty_cicle(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, 0.70);
+        pwm_start_channel(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL);
+
+        dac_pump_sample_test(&hdac_pump);
+
+        // }; // 2.25V
+        // uint32_t var;
+        // float val = 1.2;
+        // HAL_DAC_Start(&PUMP_DAC, DAC_CHANNEL_1);
+        // HAL_DAC_Start(&PUMP_DAC, DAC_CHANNEL_2);
+        // for(uint u = 0; u < 10; u++){
+        //     var = (uint32_t)(val*4096)/3.3;
+        //     HAL_DAC_SetValue(&PUMP_DAC, DAC_CHANNEL_1, DAC_ALIGN_12B_R, var);
+        //     HAL_DAC_SetValue(&PUMP_DAC, DAC_CHANNEL_2, DAC_ALIGN_12B_R, var);
+        //     val += 0.5;
+        //     HAL_Delay(2000);
+        //     if(val > 3) {val = 0.2;}
+        // }
+        //status = HAL_DAC_SetValue(&PUMP_DAC, DAC_CHANNEL_1, DAC_ALIGN_12B_R, (4096*1.5)/3.3);
+        //status = HAL_DAC_SetValue(&PUMP_DAC, DAC_CHANNEL_2, DAC_ALIGN_12B_R, (2048*1.5)/3.3);
+        // if(status != HAL_OK){
+        //     printl("PUMP ERROR", NO_HEADER);
+        // // }
+        // HAL_DAC_Stop(&PUMP_DAC, DAC_CHANNEL_1);
+        // HAL_DAC_Stop(&PUMP_DAC, DAC_CHANNEL_2);
+        
+
         mcp23017_basic_config_init(&hmcp, &hi2c3);
 
         sprintf(main_buff, "Checking if total voltage on board is above 10.5V");
         for(uint8_t i = 0; i < VOLT_MAX_ATTEMPTS; i++){
-            sprintf(main_buff, "Closing relay phase: attempt %d of %d", ++i, VOLT_MAX_ATTEMPTS);
+            sprintf(main_buff, "Closing relay phase: attempt %d of %d", i+1, VOLT_MAX_ATTEMPTS);
             printl(main_buff,NO_HEADER);
             if(volt_read_and_print() == 1){
                 printl("Relay on",NORM_HEADER);
+                HAL_GPIO_WritePin(L_OTHER_GPIO_Port, L_OTHER_Pin, GPIO_PIN_SET);
                 pwm_start_channel(&BZZR_HTIM,BZZR_PWM_TIM_CHNL);
                 //BZZR_play_pulses(300, 4);
                 LV_MASTER_RELAY_set_state(GPIO_PIN_SET);
+                HAL_Delay(BUZZER_ALARM_TIME);
                 pwm_stop_channel(&BZZR_HTIM,BZZR_PWM_TIM_CHNL);
                 i = VOLT_MAX_ATTEMPTS;
                 printl("DONE!\r\n",NORM_HEADER);
             }
             HAL_Delay(200);
         }
-        
+        pwm_start_channel(&FAN6_HTIM,FAN6_PWM_TIM_CHNL);
+
+        pwm_stop_channel(&FAN6_HTIM,FAN6_PWM_TIM_CHNL);
+
+
+
         CAN_start_all();  //TODO manage false can start
     #if 0
         LTC_init(&ltc, &hspi2, 0, GPIOD, GPIO_PIN_4);  // init function of LTC_6810
@@ -276,40 +334,11 @@ int main(void)
                 //LV_MASTER_RELAY_set_state(GPIO_PIN_SET);
                 pwm_stop_channel(&BZZR_HTIM,BZZR_PWM_TIM_CHNL);
             }
-            HAL_Delay(1000);
             printl("\r\nReading Feedbacks",NO_HEADER);
-            mcp23017_read_both(&hmcp, &hi2c3);
-            
-            // if(HAL_I2C_IsDeviceReady(&hi2c3, MCP23017_ADD_20 << 1, 20, 1000) != HAL_OK){
-            //     printl("I2C DEVICE NOT READY", ERR_HEADER);
-            // }
-            // HAL_Delay(1);
-            // sprintf(main_buff, "LTC ID %s",ltc6810_return_serial_id());
-            // printl(main_buff, VOLT_HEADER);
-            
-            #ifdef OLD_V
-            
-            #endif
-            #ifdef new_V
-            if(HAL_I2C_IsDeviceReady(&hi2c3, MCP23017_ADDRESS, 30, 100) != HAL_OK){
-                pritnl("Device not ready", ERR_HEADER);
-            }else{
-                
-            }
-            
+            mcp23017_read_and_print_both(&hmcp, &hi2c3);
 
-            mcp23017_digitalRead(&hmcp, MCP23017_GPB0_Pin, &read_gpio);
-            mcp23017_digitalRead(&hmcp, MCP23017_GPB1_Pin, &read_gpio);
-            mcp23017_digitalRead(&hmcp, MCP23017_GPB2_Pin, &read_gpio);
-            mcp23017_digitalRead(&hmcp, MCP23017_GPA0_Pin, &read_gpio);
-            mcp23017_digitalRead(&hmcp, MCP23017_GPA5_Pin, &read_gpio);
-            #endif
-            // ret = HAL_I2C_Mem_Read(&hi2c3, hmcp.addr, MC)
-            // // ret = HAL_I2C_Mem_Read(hdev->hi2c, hdev->addr, addr, 1, mcp_gpio[0], 1, HAL_MAX_DELAY);
-            // mcp23017_digitalRead(&hmcp, GPIO_PIN_All, mcp_gpio[1]);
             printl("WAIT\r\n", NO_HEADER);
 
-            //volt_read_and_print();
             HAL_Delay(200);
             //if (CAN_get(&hcanP, &rx_data) != COMM_ERROR) {
             //    CAN_print_rxdata(&rx_data);

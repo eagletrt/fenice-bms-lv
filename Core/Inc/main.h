@@ -34,7 +34,7 @@ extern "C" {
 /* USER CODE BEGIN Includes */
 
 #include "stdbool.h"
-
+#include "mcp23017.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -125,7 +125,7 @@ void set_sensor_update_time();
  * @return GPIO_PIN_SET: if LVMR is closed
  */
 inline GPIO_PinState LV_MASTER_RELAY_get_state() {
-    return false;  //(GPIO_PinState)(LV_MASTER_RELAY_GPIO_Port->ODR & LV_MASTER_RELAY_Pin);
+    return true;//mcp23017_get_state(&hmcp, MCP23017_PORTB, FB_MAIN) == 1 ? true : false;
 }
 
 /**
@@ -152,7 +152,26 @@ static inline void LV_MASTER_RELAY_set_state(GPIO_PinState state) {
  * @return    false The 12V DCDC is off or something else in the main line is opened
  */
 inline bool FDBK_DCDC_12V_get_state() {
-    return false;  //HAL_GPIO_ReadPin(FDBK_DCDC_12V_GPIO_Port, FDBK_DCDC_12V_Pin) == GPIO_PIN_SET;
+    return true;//mcp23017_get_state(&hmcp, MCP23017_PORTB, FB_12) == 1 ? true : false;
+}
+/**
+ * @brief Get the feedback from the Relay 
+ * 
+ * @return true  Relay is closed and there are at least 12V on board
+ * @return false Relay is open
+ */
+inline bool FDBK_RELAY_get_state(){
+    return true;//mcp23017_get_state(&hmcp, MCP23017_PORTA, FB_RELAY) == 1 ? true : false;
+}
+
+/**
+ * @brief Get the feedback from the 24V DCDC output
+ * 
+ * @return true  The 24V DCDC it's working properly
+ * @return false The 24V DCDC it's not working properly
+ */
+inline bool FDBK_DCDC_24V_get_state(){
+    return true;//mcp23017_get_state(&hmcp, MCP23017_PORTA, FB_24) == 1 ? true : false;
 }
 
 #define LOG_HUART huart1
@@ -165,14 +184,17 @@ inline bool FDBK_DCDC_12V_get_state() {
 /* FAN2      -> TIM2 CH1 */
 #define FAN2_HTIM         htim2
 #define FAN2_PWM_TIM_CHNL TIM_CHANNEL_1
-/* FAN3      -> TIM3 CH1 */
-#define FAN3_HTIM         htim3
-#define FAN3_PWM_TIM_CHNL TIM_CHANNEL_1
+/* RAD_L      -> TIM3 CH1 */
+#define RAD_L_HTIM         htim3
+#define RAD_L_PWM_TIM_CHNL TIM_CHANNEL_1
+/* RAD_R      -> TIM3 CH2 */
+#define RAD_R_HTIM         htim3
+#define RAD_R_PWM_TIM_CHNL TIM_CHANNEL_2
 /* FAN5      -> TIM2 CH4 */
 #define FAN5_HTIM         htim2
 #define FAN5_PWM_TIM_CHNL TIM_CHANNEL_4
 /* FAN6      -> TIM2 CH3 */
-#define FAN6_HTIM         htim2
+#define FAN6_HTIM         htim3
 #define FAN6_PWM_TIM_CHNL TIM_CHANNEL_3
 
 /* PUMP1     -> TIM4 CH2 */
@@ -184,6 +206,11 @@ inline bool FDBK_DCDC_12V_get_state() {
 /* BUZZER    -> TIM8 CH1 */
 #define BZZR_HTIM         htim8
 #define BZZR_PWM_TIM_CHNL TIM_CHANNEL_1
+#define BUZZER_ALARM_TIME 50
+
+#define PUMP_DAC          hdac
+#define PUMP_L_CHNL       DAC_CHANNEL_1
+#define PUMP_R_CHNL       DAC_CHANNEL_2
 
 // Commented: enable debugging, Uncommented: disable debugging
 //#define NDEBUG
