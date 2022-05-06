@@ -43,6 +43,7 @@
     #include "logger.h"
     #include "timer_utils.h"
     #include "dac_pump.h"
+    #include "radiator.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -137,8 +138,6 @@ void SystemClock_Config(void);
     uint32_t led_last_tick;
     HAL_StatusTypeDef status;
 
-    bool fb_state;
-
     char main_buff[500];  
 /* USER CODE END 0 */
 
@@ -203,7 +202,7 @@ int main(void)
         
         // Fan configuration NOT SEEING ANY PWM
         pwm_set_period(&FAN6_HTIM, 0.04);
-        pwm_set_duty_cicle(&FAN6_HTIM, FAN6_PWM_TIM_CHNL, 0.70);
+        pwm_set_duty_cicle(&FAN6_HTIM, FAN6_PWM_TIM_CHNL, 0.20);
         pwm_start_channel(&FAN6_HTIM, FAN6_PWM_TIM_CHNL);
 
 
@@ -215,13 +214,19 @@ int main(void)
 
         // RAD_L configuration
         //pwm_set_period(&RAD_L_HTIM, 0.04);
-        pwm_set_duty_cicle(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, 0.70);
-        pwm_start_channel(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL);
+        //low on- high on
+        // pwm_set_duty_cicle(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, 0.2);
+        // pwm_start_channel(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL);
         
-        // RAD_R configuration
-        pwm_set_duty_cicle(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, 0.70);
-        pwm_start_channel(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL);
+        // // RAD_R configuration
+        // pwm_set_duty_cicle(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, 0.2);
+        // pwm_start_channel(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL);
 
+        
+        radiator_init();
+        set_radiator_dt(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL,1);
+        set_radiator_dt(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL,1);
+        start_both_radiator(&RAD_R_HTIM, RAD_L_PWM_TIM_CHNL, RAD_R_PWM_TIM_CHNL);
 
         // }; // 2.25V
         // uint32_t var;
