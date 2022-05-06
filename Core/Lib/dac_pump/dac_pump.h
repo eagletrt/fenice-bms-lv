@@ -1,3 +1,14 @@
+/**
+ * @file dac_pump.c
+ * @author Tommaso Canova (tommaso.canova@studenti.unitn.it)
+ * @brief 
+ * @version 0.1
+ * @date 2022-05-06
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
+
 #ifndef __DAC_PUMP_H
 #define __DAC_PUMP_H
 
@@ -9,6 +20,12 @@
 #define MAX_GPIO_OUT 3.3
 #define AMPLIFICATOR_GAIN 1.5
 #define MAX_OPAMP_OUT MAX_GPIO_OUT * AMPLIFICATOR_GAIN
+
+/**
+ * @brief Note that with BMS LV rev 1.1
+ * both pumps are controller by PUMP_L_CHANNEL
+ * 
+ */
 
 /**
  * @brief Pump handle used with DAC pheripheral
