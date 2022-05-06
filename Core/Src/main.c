@@ -222,7 +222,6 @@ int main(void)
         pwm_set_duty_cicle(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, 0.70);
         pwm_start_channel(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL);
 
-        dac_pump_sample_test(&hdac_pump);
 
         // }; // 2.25V
         // uint32_t var;
@@ -265,12 +264,12 @@ int main(void)
             }
             HAL_Delay(200);
         }
-        pwm_start_channel(&FAN6_HTIM,FAN6_PWM_TIM_CHNL);
+        // pwm_start_channel(&FAN6_HTIM,FAN6_PWM_TIM_CHNL);
 
-        pwm_stop_channel(&FAN6_HTIM,FAN6_PWM_TIM_CHNL);
+        // pwm_stop_channel(&FAN6_HTIM,FAN6_PWM_TIM_CHNL);
 
 
-
+        dac_pump_sample_test(&hdac_pump);
         CAN_start_all();  //TODO manage false can start
     #if 0
         LTC_init(&ltc, &hspi2, 0, GPIOD, GPIO_PIN_4);  // init function of LTC_6810
@@ -328,11 +327,7 @@ int main(void)
        
         while (1) {
             if(volt_read_and_print() == 1){
-                //printl("Relay on",NORM_HEADER);
-                pwm_start_channel(&BZZR_HTIM,BZZR_PWM_TIM_CHNL);
-                //BZZR_play_pulses(300, 4);
-                //LV_MASTER_RELAY_set_state(GPIO_PIN_SET);
-                pwm_stop_channel(&BZZR_HTIM,BZZR_PWM_TIM_CHNL);
+                printl("Correct voltage", NO_HEADER);
             }
             printl("\r\nReading Feedbacks",NO_HEADER);
             mcp23017_read_and_print_both(&hmcp, &hi2c3);

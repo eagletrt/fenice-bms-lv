@@ -62,24 +62,27 @@ uint8_t dac_pump_store_and_set_value_on_both_channels(DAC_Pump_Handle *hdp, floa
         error = -1;
     }else{
         hdp->is_L_on = 1;
+        hdp->last_analog_value_L = analog_val_l;
     }
     if(HAL_DAC_SetValue(&PUMP_DAC, PUMP_R_CHNL, DAC_ALIGN_12B_R, analog_val_r) != HAL_OK){
         error = -1;
     }else{
         hdp->is_R_on = 1;
+        hdp->last_analog_value_R = analog_val_r;
+        
     }
     
     return error;
 }
 /**
- * @brief Stores and write with DAC a given voltage value to specific channel
+ * @brief Stores and write a given voltage value to specific channel using DAC
  * 
  * @param hdp DAC_Pump_Handle
  * @param channel DAC Channel such as PUMP_L_CHNL or PUMP_R_CHNL
  * @param digital_value float digital value such as 2.5 V
  * @return uint8_t error: if -1 comething went wrong
  */
-uint8_t dac_pump_set_value_on_single_channel(DAC_Pump_Handle *hdp, uint32_t channel, float digital_value){
+uint8_t dac_pump_store_and_set_value_on_single_channel(DAC_Pump_Handle *hdp, uint32_t channel, float digital_value){
     uint8_t error = 0;
     uint32_t analog_value = dac_pump_digital_volt_to_analog(digital_value);
     HAL_DAC_Start(&PUMP_DAC, channel);
@@ -147,6 +150,58 @@ uint8_t dac_pump_break_both(DAC_Pump_Handle *hdp){
     HAL_DAC_Stop(&PUMP_DAC, PUMP_L_CHNL);
     return error;
 }
+
+/**
+ * @brief Stores and write a given excursion of MAX_OPAMP_OUT value to specific channel
+ * 
+ * @param hdp     DAC_Pump_Handle
+ * @param channel DAC Channel such as PUMP_L_CHNL or PUMP_R_CHNL
+ * @param proportional Percentage of MAX_OPAMP_OUT eg: 0.5 will output 0.5*MAX_OPAMP_OUT
+ * @return uint8_t error: if -1 comething went wrong
+ */
+uint8_t dac_pump_store_and_set_proportional_on_single_channel(DAC_Pump_Handle *hdp, uint32_t channel, float proportional){
+uint8_t error = 0;
+    uint32_t analog_value = dac_pump_proportional_to_analog(proportional);
+    HAL_DAC_Start(&PUMP_DAC, channel);
+    if(HAL_DAC_SetValue(&PUMP_DAC, channel, DAC_ALIGN_12B_R, analog_value) != HAL_OK){
+        error = -1; 
+    }else{
+        if(channel == PUMP_L_CHNL){
+            hdp->last_analog_value_L = analog_value;
+            hdp->is_L_on = 1;
+        }else if(channel == PUMP_R_CHNL){
+            hdp->last_analog_value_R = analog_value;
+            hdp->is_R_on = 1;
+        }
+    }
+    return error;
+}
+
+uint8_t dac_pump_store_and_set_proportional_on_both_channels(DAC_Pump_Handle *hdp, float proportional_l, float proportional_r){
+    uint8_t error = 0;
+    uint32_t analog_val_l, analog_val_r;
+    analog_val_l = dac_pump_proportional_to_analog(proportional_l);
+    analog_val_r = dac_pump_proportional_to_analog(proportional_r);
+
+    HAL_DAC_Start(&PUMP_DAC, PUMP_L_CHNL);
+    HAL_DAC_Start(&PUMP_DAC, PUMP_R_CHNL);
+
+    if(HAL_DAC_SetValue(&PUMP_DAC, PUMP_L_CHNL, DAC_ALIGN_12B_R, analog_val_l) != HAL_OK){
+        error = -1;
+    }else{
+        hdp->is_L_on = 1;
+        hdp->last_analog_value_L = analog_val_l;
+    }
+    if(HAL_DAC_SetValue(&PUMP_DAC, PUMP_R_CHNL, DAC_ALIGN_12B_R, analog_val_r) != HAL_OK){
+        error = -1;
+    }else{
+        hdp->is_R_on = 1;
+        hdp->last_analog_value_R = analog_val_r;
+    }
+    
+    return error;
+}
+
 /**
  * @brief Sample test to check whether the DAC it's working properly
  * 
@@ -154,30 +209,31 @@ uint8_t dac_pump_break_both(DAC_Pump_Handle *hdp){
  */
 void dac_pump_sample_test(DAC_Pump_Handle *hdp){
     dac_pump_handle_init(hdp, 0.0, 0.0);
-
-        if(dac_pump_set_value_on_single_channel(&hdac_pump,PUMP_L_CHNL, 1.5) == -1){
+    
+        if(dac_pump_store_and_set_value_on_single_channel(&hdac_pump,PUMP_L_CHNL, 1.5) == -1){
             printl("PUMP ERROR", NO_HEADER);
         } // 2.25V
-        if(dac_pump_set_value_on_single_channel(&hdac_pump,PUMP_L_CHNL, 2) == -1){
+        if(dac_pump_store_and_set_value_on_single_channel(&hdac_pump,PUMP_L_CHNL, 2) == -1){
             printl("PUMP ERROR", NO_HEADER);
         }// 3
-        if(dac_pump_set_value_on_single_channel(&hdac_pump,PUMP_L_CHNL, 3.3) == -1){
+        if(dac_pump_store_and_set_value_on_single_channel(&hdac_pump,PUMP_L_CHNL, 3.3) == -1){
             printl("PUMP ERROR", NO_HEADER);
         }
 
-        if(dac_pump_set_value_on_single_channel(&hdac_pump,PUMP_R_CHNL, 1.5) == -1){
+        if(dac_pump_store_and_set_value_on_single_channel(&hdac_pump,PUMP_R_CHNL, 1.5) == -1){
             printl("PUMP ERROR", NO_HEADER);
         }; // 2.25V
-        if(dac_pump_set_value_on_single_channel(&hdac_pump,PUMP_R_CHNL, 2) == -1){
+        if(dac_pump_store_and_set_value_on_single_channel(&hdac_pump,PUMP_R_CHNL, 2) == -1){
             printl("PUMP ERROR", NO_HEADER);
         }// 3
-        if(dac_pump_set_value_on_single_channel(&hdac_pump,PUMP_R_CHNL, 3.3) == -1){
+        if(dac_pump_store_and_set_value_on_single_channel(&hdac_pump,PUMP_R_CHNL, 3.3) == -1){
             printl("PUMP ERROR", NO_HEADER);
         }
 
         dac_pump_break_single(&hdac_pump, PUMP_L_CHNL);
         dac_pump_break_single(&hdac_pump, PUMP_R_CHNL);
-        dac_pump_store_and_set_value_on_both_channels(&hdac_pump, 2.5, 2.5);
+        dac_pump_store_and_set_value_on_both_channels(&hdac_pump, 1, 1);
+        dac_pump_store_and_set_proportional_on_both_channels(&hdac_pump, 0.5, 0.5);
         dac_pump_break_both(&hdac_pump);
 
 }

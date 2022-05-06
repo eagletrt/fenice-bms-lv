@@ -29,23 +29,23 @@ extern DAC_Pump_Handle hdac_pump;
  * is considered
  * 
  * 
- * @param val Desired digital value
+ * @param val Desired digital value, not above MAX_OPAMP_OUT
  * @return uint32_t analog value
  */
 inline uint32_t dac_pump_digital_volt_to_analog (float val){
-    return (uint32_t)((val * MAX_DAC_OUT) / (MAX_OPAMP_OUT));
+    return (val <= MAX_OPAMP_OUT) ? (uint32_t)((val * MAX_DAC_OUT) / (MAX_OPAMP_OUT)) : (uint32_t)((MAX_DAC_OUT));
 }
 
 /**
- * @brief Convert digital to analog value based on a given duty cyle
+ * @brief Convert digital to analog value based on a given proportional parameter
  * 
- * @param dt Escursion percentage of MAX_OPAMP_OUT
+ * @param percentage Escursion percentage of MAX_OPAMP_OUT [min: 0.0, max: 1.0]
  * @return uint32_t Analog value needed to DAC Handle
  * @example dac_pump_dt_to_analog(0.5) -> 0.5 * MAX_OPAMP_OUT
  */
-inline uint32_t dac_pump_dt_to_analog(float dt){
-    if( dt <= 1){
-        return dac_pump_digital_volt_to_analog(dt * MAX_OPAMP_OUT);
+inline uint32_t dac_pump_proportional_to_analog(float percentage){
+    if( percentage <= 1){
+        return dac_pump_digital_volt_to_analog(percentage * MAX_OPAMP_OUT);
     }else{
         return dac_pump_digital_volt_to_analog(MAX_OPAMP_OUT); // if duty cycle it's not
     }
@@ -55,7 +55,9 @@ inline uint32_t dac_pump_dt_to_analog(float dt){
 void dac_pump_handle_init(DAC_Pump_Handle *hdp, float pump_l_volt, float pump_r_volt);
 uint8_t dac_pump_set_value_on_both_channels(DAC_Pump_Handle *hdp);
 uint8_t dac_pump_store_and_set_value_on_both_channels(DAC_Pump_Handle *hdp, float pump_l_volt, float pump_r_volt);
-uint8_t dac_pump_set_value_on_single_channel(DAC_Pump_Handle *hdp, uint32_t channel, float digital_value);
+uint8_t dac_pump_store_and_set_value_on_single_channel(DAC_Pump_Handle *hdp, uint32_t channel, float digital_value);
+uint8_t dac_pump_store_and_set_proportional_on_single_channel(DAC_Pump_Handle *hdp, uint32_t channel, float proportional);
+uint8_t dac_pump_store_and_set_proportional_on_both_channels(DAC_Pump_Handle *hdp, float proportional_l, float proportional_r);
 uint8_t dac_pump_break_single(DAC_Pump_Handle *hdp, uint32_t channel);
 uint8_t dac_pump_break_both(DAC_Pump_Handle *hdp);
 void dac_pump_sample_test(DAC_Pump_Handle *hdp);

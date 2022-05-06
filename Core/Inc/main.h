@@ -209,8 +209,8 @@ inline bool FDBK_DCDC_24V_get_state(){
 #define BUZZER_ALARM_TIME 50
 
 #define PUMP_DAC          hdac
-#define PUMP_L_CHNL       DAC_CHANNEL_1
-#define PUMP_R_CHNL       DAC_CHANNEL_2
+#define PUMP_L_CHNL       DAC_CHANNEL_2
+#define PUMP_R_CHNL       DAC_CHANNEL_1
 
 // Commented: enable debugging, Uncommented: disable debugging
 //#define NDEBUG
