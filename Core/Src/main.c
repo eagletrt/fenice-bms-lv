@@ -22,6 +22,7 @@
 #include "adc.h"
 #include "can.h"
 #include "dac.h"
+#include "dma.h"
 #include "i2c.h"
 #include "spi.h"
 #include "tim.h"
@@ -163,6 +164,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_ADC1_Init();
   MX_CAN1_Init();
   MX_CAN2_Init();
@@ -172,9 +174,16 @@ int main(void)
   MX_TIM2_Init();
   MX_TIM3_Init();
   MX_USART1_UART_Init();
-  MX_SPI3_Init();
+  //MX_DMA_Init();
   MX_TIM8_Init();
+  MX_SPI3_Init();
   /* USER CODE BEGIN 2 */
+    // MX_DMA_Init() must be before MX_ADC_Init() but __CUBEMIX e' stronzo__ and doesn't do that 
+    // so manual intervention is necessary
+    // https://community.st.com/s/question/0D50X0000ALudz8SQB/how-to-enable-adc-continuous-mode-with-dma
+
+    // Start DMA handled readings for the current sensor, battery and DCDC(12/24v) temperature sensors
+    ADC_start_dma_readings();
 
     // Blink to signal correct MX_XXX_init processes (usuefull for CAN transciever)
     _signal_mx_init_succes();
@@ -246,17 +255,51 @@ int main(void)
     led_last_tick       = HAL_GetTick();
 #endif
     //CAN_RxPQFI_Data_TypeDef rx_data = {};
+    uint32_t tim_1s_next = HAL_GetTick();
+    uint32_t tim_10ms_next = HAL_GetTick();
+    uint32_t tim_100ms_next = HAL_GetTick();
+
     while (1) {
-        sprintf(main_buff, "Checking if total voltage on board is above 10.5V");
-        printl(main_buff,NORM_HEADER);
-        if(volt_read_and_print() == 1){
-            printl("Relay on",NORM_HEADER);
-            pwm_start_channel(&BZZR_HTIM,BZZR_PWM_TIM_CHNL);
-            //BZZR_play_pulses(300, 4);
-            LV_MASTER_RELAY_set_state(GPIO_PIN_SET);
-            pwm_stop_channel(&BZZR_HTIM,BZZR_PWM_TIM_CHNL);
+        if (HAL_GetTick() >= tim_1s_next){
+            
+            sprintf(main_buff, "Checking if total voltage on board is above 10.5V");
+            printl(main_buff,NORM_HEADER);
+            if(volt_read_and_print() == 1){
+                printl("Relay on",NORM_HEADER);
+                pwm_start_channel(&BZZR_HTIM,BZZR_PWM_TIM_CHNL);
+                //BZZR_play_pulses(300, 4);
+                LV_MASTER_RELAY_set_state(GPIO_PIN_SET);
+                pwm_stop_channel(&BZZR_HTIM,BZZR_PWM_TIM_CHNL);
+            }
+
+
+
+            // Update Timer
+            tim_1s_next = HAL_GetTick() + 1000;
         }
-        HAL_Delay(1000);
+
+        if(HAL_GetTick() > tim_10ms_next){
+
+            sprintf(main_buff, "main ADC: %lu %i %i %i %i %i",
+                                HAL_GetTick(),
+                                ADC_get_i_sensor_val(),
+                                ADC_get_t_batt1_val(),
+                                ADC_get_t_batt2_val(),
+                                ADC_get_t_dcdc12_val(),
+                                ADC_get_t_dcdc24_val());
+            printl(main_buff,NORM_HEADER);
+            ADC_start_dma_readings();
+
+            // Update Timer
+            tim_10ms_next = HAL_GetTick() + 10;
+        }
+
+        if(HAL_GetTick() > tim_100ms_next){
+
+            // Update Timer
+            tim_100ms_next = HAL_GetTick() + 100;
+        }
+
         //if (CAN_get(&hcanP, &rx_data) != COMM_ERROR) {
         //    CAN_print_rxdata(&rx_data);
         //}

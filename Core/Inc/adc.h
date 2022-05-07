@@ -42,7 +42,44 @@ void MX_ADC1_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 
+/**
+ * @brief This functions is a wrapper HAL_ADC_Start_DMA(...)it, starts ADC in DMA mode 
+ * @note  The necessity of this function was due to confine the array of ADC values into the ADC module.
+ *        Proper getters will be used to acces the values retirived from the adc
+ * @return see @ref HAL_ADC_Start_DMA
+ */
+HAL_StatusTypeDef ADC_start_dma_readings();
 /* USER CODE END Prototypes */
+
+/**
+ * @brief Current sensor value getter
+ * @return current sensor value
+ */
+uint16_t ADC_get_i_sensor_val();
+
+/**
+ * @brief Battery Temperature sensor #1 value getter
+ * @return Battery Temperature sensor #1 value
+ */
+uint16_t ADC_get_t_batt1_val();
+
+/**
+ * @brief Battery Temperature sensor #2 value getter
+ * @return Battery Temperature sensor #2 value
+ */
+uint16_t ADC_get_t_batt2_val();
+
+/**
+ * @brief DCDC 12v Temperature sensor value getter
+ * @return DCDC 12v Temperature sensor value
+ */
+uint16_t ADC_get_t_dcdc12_val();
+
+/**
+ * @brief DCDC 24v Temperature sensor value getter
+ * @return DCDC 24v Temperature sensor value
+ */
+uint16_t ADC_get_t_dcdc24_val();
 
 #ifdef __cplusplus
 }
