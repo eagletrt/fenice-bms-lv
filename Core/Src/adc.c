@@ -21,129 +21,209 @@
 #include "adc.h"
 
 /* USER CODE BEGIN 0 */
-#include "current_sensor.h"
 
-ADC_ChannelConfTypeDef UserAdcConfig = { 0 };
+#define N_ADC_CONVERSIONS 5
+
+ADC_ChannelConfTypeDef UserAdcConfig = {0};
+
+/* This array will hold ADC values retrived via DMA */
+uint16_t adc_values[N_ADC_CONVERSIONS] = {};
+
 /* USER CODE END 0 */
 
 ADC_HandleTypeDef hadc1;
+DMA_HandleTypeDef hdma_adc1;
 
 /* ADC1 init function */
-void MX_ADC1_Init(void)
-{
+void MX_ADC1_Init(void) {
+    /* USER CODE BEGIN ADC1_Init 0 */
 
-  /* USER CODE BEGIN ADC1_Init 0 */
+    /* USER CODE END ADC1_Init 0 */
 
-  /* USER CODE END ADC1_Init 0 */
+    ADC_ChannelConfTypeDef sConfig = {0};
 
-  ADC_ChannelConfTypeDef sConfig = {0};
+    /* USER CODE BEGIN ADC1_Init 1 */
 
-  /* USER CODE BEGIN ADC1_Init 1 */
-
-  /* USER CODE END ADC1_Init 1 */
-  /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
+    /* USER CODE END ADC1_Init 1 */
+    /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
   */
-  hadc1.Instance = ADC1;
-  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
-  hadc1.Init.Resolution = ADC_RESOLUTION_12B;
-  hadc1.Init.ScanConvMode = DISABLE;
-  hadc1.Init.ContinuousConvMode = DISABLE;
-  hadc1.Init.DiscontinuousConvMode = DISABLE;
-  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
-  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
-  hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.NbrOfConversion = 1;
-  hadc1.Init.DMAContinuousRequests = DISABLE;
-  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
-  if (HAL_ADC_Init(&hadc1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+    hadc1.Instance                   = ADC1;
+    hadc1.Init.ClockPrescaler        = ADC_CLOCK_SYNC_PCLK_DIV4;
+    hadc1.Init.Resolution            = ADC_RESOLUTION_12B;
+    hadc1.Init.ScanConvMode          = ENABLE;
+    hadc1.Init.ContinuousConvMode    = DISABLE;
+    hadc1.Init.DiscontinuousConvMode = DISABLE;
+    hadc1.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_NONE;
+    hadc1.Init.ExternalTrigConv      = ADC_SOFTWARE_START;
+    hadc1.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
+    hadc1.Init.NbrOfConversion       = 5;
+    hadc1.Init.DMAContinuousRequests = ENABLE;
+    hadc1.Init.EOCSelection          = ADC_EOC_SEQ_CONV;
+    if (HAL_ADC_Init(&hadc1) != HAL_OK) {
+        Error_Handler();
+    }
+    /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
   */
-  sConfig.Channel = ADC_CHANNEL_13;
-  sConfig.Rank = 1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
-  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN ADC1_Init 2 */
+    sConfig.Channel      = ADC_CHANNEL_0;
+    sConfig.Rank         = 1;
+    sConfig.SamplingTime = ADC_SAMPLETIME_84CYCLES;
+    if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) {
+        Error_Handler();
+    }
+    /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+  */
+    sConfig.Channel      = ADC_CHANNEL_1;
+    sConfig.Rank         = 2;
+    sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+    if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) {
+        Error_Handler();
+    }
+    /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+  */
+    sConfig.Channel      = ADC_CHANNEL_10;
+    sConfig.Rank         = 3;
+    sConfig.SamplingTime = ADC_SAMPLETIME_84CYCLES;
+    if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) {
+        Error_Handler();
+    }
+    /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+  */
+    sConfig.Channel = ADC_CHANNEL_12;
+    sConfig.Rank    = 4;
+    if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) {
+        Error_Handler();
+    }
+    /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+  */
+    sConfig.Channel = ADC_CHANNEL_13;
+    sConfig.Rank    = 5;
+    if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) {
+        Error_Handler();
+    }
+    /* USER CODE BEGIN ADC1_Init 2 */
 
-  /* USER CODE END ADC1_Init 2 */
-
+    /* USER CODE END ADC1_Init 2 */
 }
 
-void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
-{
+void HAL_ADC_MspInit(ADC_HandleTypeDef *adcHandle) {
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+    if (adcHandle->Instance == ADC1) {
+        /* USER CODE BEGIN ADC1_MspInit 0 */
 
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
-  if(adcHandle->Instance==ADC1)
-  {
-  /* USER CODE BEGIN ADC1_MspInit 0 */
+        /* USER CODE END ADC1_MspInit 0 */
+        /* ADC1 clock enable */
+        __HAL_RCC_ADC1_CLK_ENABLE();
 
-  /* USER CODE END ADC1_MspInit 0 */
-    /* ADC1 clock enable */
-    __HAL_RCC_ADC1_CLK_ENABLE();
-
-    __HAL_RCC_GPIOC_CLK_ENABLE();
-    __HAL_RCC_GPIOA_CLK_ENABLE();
-    /**ADC1 GPIO Configuration
+        __HAL_RCC_GPIOC_CLK_ENABLE();
+        __HAL_RCC_GPIOA_CLK_ENABLE();
+        /**ADC1 GPIO Configuration
     PC0     ------> ADC1_IN10
     PC2     ------> ADC1_IN12
     PC3     ------> ADC1_IN13
     PA0-WKUP     ------> ADC1_IN0
     PA1     ------> ADC1_IN1
     */
-    GPIO_InitStruct.Pin = HALL_Pin|TMP_DCDC12_Pin|TMP_DCDC24_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+        GPIO_InitStruct.Pin  = HALL_Pin | TMP_DCDC12_Pin | TMP_DCDC24_Pin;
+        GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+        GPIO_InitStruct.Pull = GPIO_NOPULL;
+        HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-    GPIO_InitStruct.Pin = TMP_BATT1_Pin|TMP_BATT2_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+        GPIO_InitStruct.Pin  = TMP_BATT1_Pin | TMP_BATT2_Pin;
+        GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+        GPIO_InitStruct.Pull = GPIO_NOPULL;
+        HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /* USER CODE BEGIN ADC1_MspInit 1 */
+        /* ADC1 DMA Init */
+        /* ADC1 Init */
+        hdma_adc1.Instance                 = DMA2_Stream0;
+        hdma_adc1.Init.Channel             = DMA_CHANNEL_0;
+        hdma_adc1.Init.Direction           = DMA_PERIPH_TO_MEMORY;
+        hdma_adc1.Init.PeriphInc           = DMA_PINC_DISABLE;
+        hdma_adc1.Init.MemInc              = DMA_MINC_ENABLE;
+        hdma_adc1.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
+        hdma_adc1.Init.MemDataAlignment    = DMA_MDATAALIGN_HALFWORD;
+        hdma_adc1.Init.Mode                = DMA_CIRCULAR;
+        hdma_adc1.Init.Priority            = DMA_PRIORITY_MEDIUM;
+        hdma_adc1.Init.FIFOMode            = DMA_FIFOMODE_DISABLE;
+        if (HAL_DMA_Init(&hdma_adc1) != HAL_OK) {
+            Error_Handler();
+        }
 
-  /* USER CODE END ADC1_MspInit 1 */
-  }
+        __HAL_LINKDMA(adcHandle, DMA_Handle, hdma_adc1);
+
+        /* ADC1 interrupt Init */
+        HAL_NVIC_SetPriority(ADC_IRQn, 0, 0);
+        HAL_NVIC_EnableIRQ(ADC_IRQn);
+        /* USER CODE BEGIN ADC1_MspInit 1 */
+
+        /* USER CODE END ADC1_MspInit 1 */
+    }
 }
 
-void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
-{
+void HAL_ADC_MspDeInit(ADC_HandleTypeDef *adcHandle) {
+    if (adcHandle->Instance == ADC1) {
+        /* USER CODE BEGIN ADC1_MspDeInit 0 */
 
-  if(adcHandle->Instance==ADC1)
-  {
-  /* USER CODE BEGIN ADC1_MspDeInit 0 */
+        /* USER CODE END ADC1_MspDeInit 0 */
+        /* Peripheral clock disable */
+        __HAL_RCC_ADC1_CLK_DISABLE();
 
-  /* USER CODE END ADC1_MspDeInit 0 */
-    /* Peripheral clock disable */
-    __HAL_RCC_ADC1_CLK_DISABLE();
-
-    /**ADC1 GPIO Configuration
+        /**ADC1 GPIO Configuration
     PC0     ------> ADC1_IN10
     PC2     ------> ADC1_IN12
     PC3     ------> ADC1_IN13
     PA0-WKUP     ------> ADC1_IN0
     PA1     ------> ADC1_IN1
     */
-    HAL_GPIO_DeInit(GPIOC, HALL_Pin|TMP_DCDC12_Pin|TMP_DCDC24_Pin);
+        HAL_GPIO_DeInit(GPIOC, HALL_Pin | TMP_DCDC12_Pin | TMP_DCDC24_Pin);
 
-    HAL_GPIO_DeInit(GPIOA, TMP_BATT1_Pin|TMP_BATT2_Pin);
+        HAL_GPIO_DeInit(GPIOA, TMP_BATT1_Pin | TMP_BATT2_Pin);
 
-  /* USER CODE BEGIN ADC1_MspDeInit 1 */
+        /* ADC1 DMA DeInit */
+        HAL_DMA_DeInit(adcHandle->DMA_Handle);
 
-  /* USER CODE END ADC1_MspDeInit 1 */
-  }
+        /* ADC1 interrupt Deinit */
+        HAL_NVIC_DisableIRQ(ADC_IRQn);
+        /* USER CODE BEGIN ADC1_MspDeInit 1 */
+
+        /* USER CODE END ADC1_MspDeInit 1 */
+    }
 }
 
 /* USER CODE BEGIN 1 */
 
-void
-HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
-{
+HAL_StatusTypeDef ADC_start_dma_readings() {
+    return HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc_values, N_ADC_CONVERSIONS);
+};
+
+/** 
+ * NOTE: prepare to read shitty getters
+ * Since __CUBEMIX e' stronzo (cit.)__ we can't map in an automaitc way adc ranks to a constant in the code 
+ * (we would need to manually write the MX_ADC_Init ourselves loosing CUBE MX functionality :( )
+ * Therefore if ADC ranks change this values need to change accorgingly to their position and meaning
+ **/
+uint16_t ADC_get_i_sensor_val() {
+    return adc_values[0];
+};
+
+uint16_t ADC_get_t_batt1_val() {
+    return adc_values[1];
+};
+
+uint16_t ADC_get_t_batt2_val() {
+    return adc_values[2];
+};
+
+uint16_t ADC_get_t_dcdc12_val() {
+    return adc_values[3];
+};
+
+uint16_t ADC_get_t_dcdc24_val() {
+    return adc_values[4];
+};
+
+#if 0
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
     if (hadc == &hadc1)
     {
         if (UserAdcConfig.Channel == ADC_CHANNEL_2)
@@ -158,5 +238,6 @@ HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
         HAL_ADC_Start_IT(&hadc1);
     }
 }
+#endif
 
 /* USER CODE END 1 */
