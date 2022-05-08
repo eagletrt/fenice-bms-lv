@@ -20,10 +20,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-#include "adc.h"
 #include "can.h"
 #include "dac.h"
-#include "dma.h"
 #include "gpio.h"
 #include "i2c.h"
 #include "spi.h"
@@ -170,8 +168,6 @@ int main(void) {
 
     /* Initialize all configured peripherals */
     MX_GPIO_Init();
-    MX_DMA_Init();
-    MX_ADC1_Init();
     MX_CAN1_Init();
     MX_CAN2_Init();
     MX_DAC_Init();
@@ -180,13 +176,18 @@ int main(void) {
     MX_TIM2_Init();
     MX_TIM3_Init();
     MX_USART1_UART_Init();
-    //MX_DMA_Init();
     MX_TIM8_Init();
     MX_SPI3_Init();
     /* USER CODE BEGIN 2 */
-    // MX_DMA_Init() must be before MX_ADC_Init() but __CUBEMIX e' stronzo__ and doesn't do that
-    // so manual intervention is necessary
-    // https://community.st.com/s/question/0D50X0000ALudz8SQB/how-to-enable-adc-continuous-mode-with-dma
+
+    //  MX_DMA_Init() must be executed before MX_ADC_Init() otherwise the ADC doesnt' work in DMA mode correctly
+    //  but since __CUBEMIX e' stronzo__(cit.), this isn't enforced by the code generator
+    //  threfore manual intervention is necessary
+    //  https://community.st.com/s/question/0D50X0000ALudz8SQB/how-to-enable-adc-continuous-mode-with-dma
+
+    MX_DMA_Init();
+    MX_ADC1_Init();
+
 
     // Start DMA handled readings for the current sensor, battery and DCDC(12/24v) temperature sensors
     ADC_start_dma_readings();
