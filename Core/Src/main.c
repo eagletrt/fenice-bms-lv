@@ -139,6 +139,7 @@ int m_sec_timer                    = 0;
 
 uint32_t led_last_tick;
 HAL_StatusTypeDef status;
+bool flag;
 
 char main_buff[500];
 /* USER CODE END 0 */
@@ -199,22 +200,25 @@ int main(void) {
     //HAL_GPIO_WritePin(L_ERR_GPIO_Port, L_ERR_Pin, GPIO_PIN_SET);
 
     ltc6810_disable_cs(&SPI);
-
+    HAL_GPIO_WritePin(L_ERR_GPIO_Port, L_ERR_Pin, GPIO_PIN_SET);
     sprintf(main_buff, "LTC ID %s", ltc6810_return_serial_id());
     printl(main_buff, NO_HEADER);
     printl("Relay out disabled, waiting 5 seconds before reading voltages\r\n", NO_HEADER);
     HAL_Delay(5000);
+
+    mcp23017_basic_config_init(&hmcp, &hi2c3);
 
     // Buzzer congiguration
     pwm_set_period(&BZZR_HTIM, 1);
     pwm_set_duty_cicle(&BZZR_HTIM, BZZR_PWM_TIM_CHNL, 0.5);
 
     //FAN 25KHZ
-
-    // Fan configuration NOT SEEING ANY PWM
     pwm_set_period(&FAN6_HTIM, 0.04);
     pwm_set_duty_cicle(&FAN6_HTIM, FAN6_PWM_TIM_CHNL, 0.20);
-    pwm_start_channel(&FAN6_HTIM, FAN6_PWM_TIM_CHNL);
+
+    radiator_init();
+    set_radiator_dt(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, 1);
+    set_radiator_dt(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, 1);
 
     // RAD_L configuration
     //pwm_set_period(&RAD_L_HTIM, 0.04);
@@ -225,11 +229,6 @@ int main(void) {
     // // RAD_R configuration
     // pwm_set_duty_cicle(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, 0.2);
     // pwm_start_channel(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL);
-
-    radiator_init();
-    set_radiator_dt(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, 1);
-    set_radiator_dt(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, 1);
-    start_both_radiator(&RAD_R_HTIM, RAD_L_PWM_TIM_CHNL, RAD_R_PWM_TIM_CHNL);
 
     // }; // 2.25V
     // uint32_t var;
@@ -252,13 +251,12 @@ int main(void) {
     // HAL_DAC_Stop(&PUMP_DAC, DAC_CHANNEL_1);
     // HAL_DAC_Stop(&PUMP_DAC, DAC_CHANNEL_2);
 
-    mcp23017_basic_config_init(&hmcp, &hi2c3);
-
     sprintf(main_buff, "Checking if total voltage on board is above 10.5V");
     for (uint8_t i = 0; i < VOLT_MAX_ATTEMPTS; i++) {
         sprintf(main_buff, "Closing relay phase: attempt %d of %d", i + 1, VOLT_MAX_ATTEMPTS);
         printl(main_buff, NO_HEADER);
         if (volt_read_and_print() == 1) {
+            HAL_GPIO_WritePin(L_ERR_GPIO_Port, L_ERR_Pin, GPIO_PIN_RESET);
             printl("Relay on", NORM_HEADER);
             HAL_GPIO_WritePin(L_OTHER_GPIO_Port, L_OTHER_Pin, GPIO_PIN_SET);
             pwm_start_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
@@ -271,11 +269,20 @@ int main(void) {
         }
         HAL_Delay(200);
     }
-    // pwm_start_channel(&FAN6_HTIM,FAN6_PWM_TIM_CHNL);
 
-    // pwm_stop_channel(&FAN6_HTIM,FAN6_PWM_TIM_CHNL);
+    mcp23017_read_and_print_both(&hmcp, &hi2c3);
 
-    dac_pump_sample_test(&hdac_pump);
+    if (FDBK_12V_FANS_get_state()) {
+        pwm_start_channel(&FAN6_HTIM, FAN6_PWM_TIM_CHNL);
+    }
+
+    if (FDBK_12V_RADIATORS_get_state()) {
+        start_both_radiator(&RAD_R_HTIM, RAD_L_PWM_TIM_CHNL, RAD_R_PWM_TIM_CHNL);
+    }
+
+    if (FDBK_24V_PUMPS_get_state()) {
+        dac_pump_sample_test(&hdac_pump);
+    }
     CAN_start_all();  //TODO manage false can start
 #if 0
   LTC_init(&ltc, &hspi2, 0, GPIOD, GPIO_PIN_4);  // init function of LTC_6810
@@ -340,7 +347,17 @@ int main(void) {
                 printl("Correct voltage", NO_HEADER);
             }
             printl("\r\nReading Feedbacks", NO_HEADER);
-            mcp23017_read_and_print_both(&hmcp, &hi2c3);
+            mcp23017_read_both(&hmcp, &hi2c3);
+
+            flag = LV_MASTER_RELAY_get_state();
+            sprintf(main_buff, "MASTER RELAY: %d\r\n", flag);
+            printl(main_buff, NO_HEADER);
+            flag = FDBK_DCDC_12V_get_state();
+            sprintf(main_buff, "DCDC 12V: %d\r\n", flag);
+            printl(main_buff, NO_HEADER);
+            flag = FDBK_DCDC_24V_get_state();
+            sprintf(main_buff, "DCDC 24V: %d\r\n", flag);
+            printl(main_buff, NO_HEADER);
 
             printl("WAIT\r\n", NO_HEADER);
             // Update Timer

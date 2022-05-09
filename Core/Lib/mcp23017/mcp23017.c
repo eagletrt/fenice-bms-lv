@@ -171,7 +171,7 @@ void mcp23017_basic_config_init(MCP23017_HandleTypeDef *hdev, I2C_HandleTypeDef 
     }
 }
 /**
- * @brief Read and print register GPIOA and GPIOB
+ * @brief Read and print registers GPIOA and GPIOB
  * 
  * @param hdev MCP23017_HandleTypeDef handle for the device
  * @param hi2c I2C Handle
@@ -191,6 +191,23 @@ void mcp23017_read_and_print_both(MCP23017_HandleTypeDef *hdev, I2C_HandleTypeDe
     }
 }
 
+/**
+ * @brief      Read registers GPIOA and GPIOB
+ * 
+ * @param hdev MCP23017_HandleTypeDef handle for the device
+ * @param hi2c I2C Handle
+ */
+void mcp23017_read_both(MCP23017_HandleTypeDef *hdev, I2C_HandleTypeDef *hi2c) {
+    HAL_StatusTypeDef res = HAL_I2C_Mem_Read(hi2c, hdev->addr, REGISTER_GPIOA, 1, hdev->gpio, 1, 100);
+    if (res != HAL_OK) {
+        printl("GPIOA READ ERROR", ERR_HEADER);
+    }
+    res = HAL_I2C_Mem_Read(hi2c, hdev->addr, REGISTER_GPIOB, 1, hdev->gpio + 1, 1, 100);
+    if (res != HAL_OK) {
+        printl("GPIOB READ ERROR", ERR_HEADER);
+    }
+}
+
 uint8_t mcp23017_get_state(MCP23017_HandleTypeDef *hdev, uint8_t gpio_port, uint8_t gpio_pin) {
-    return 1;
+    return (hdev->gpio[gpio_port] & (1 << gpio_pin)) >> gpio_pin;
 }

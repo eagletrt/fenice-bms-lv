@@ -124,8 +124,9 @@ void set_sensor_update_time();
  * @return GPIO_PIN_RESET: if LVMR is open
  * @return GPIO_PIN_SET: if LVMR is closed
  */
-inline GPIO_PinState LV_MASTER_RELAY_get_state() {
-    return true;  //mcp23017_get_state(&hmcp, MCP23017_PORTB, FB_MAIN) == 1 ? true : false;
+static inline GPIO_PinState LV_MASTER_RELAY_get_state() {
+    //return true;
+    return mcp23017_get_state(&hmcp, MCP23017_PORTB, FB_RELAY) == 0x1 ? true : false;
 }
 
 /**
@@ -151,8 +152,9 @@ static inline void LV_MASTER_RELAY_set_state(GPIO_PinState state) {
  * @return    true The 12V DCDC is powering the machine
  * @return    false The 12V DCDC is off or something else in the main line is opened
  */
-inline bool FDBK_DCDC_12V_get_state() {
-    return true;  //mcp23017_get_state(&hmcp, MCP23017_PORTB, FB_12) == 1 ? true : false;
+static inline bool FDBK_DCDC_12V_get_state() {
+    //return true;  //
+    return mcp23017_get_state(&hmcp, MCP23017_PORTB, FB_12) == 0x1 ? true : false;
 }
 /**
  * @brief Get the feedback from the Relay 
@@ -160,8 +162,9 @@ inline bool FDBK_DCDC_12V_get_state() {
  * @return true  Relay is closed and there are at least 12V on board
  * @return false Relay is open
  */
-inline bool FDBK_RELAY_get_state() {
-    return true;  //mcp23017_get_state(&hmcp, MCP23017_PORTA, FB_RELAY) == 1 ? true : false;
+static inline bool FDBK_RELAY_get_state() {
+    //return true;  //
+    return mcp23017_get_state(&hmcp, MCP23017_PORTA, FB_RELAY) == 0x1 ? true : false;
 }
 
 /**
@@ -170,8 +173,79 @@ inline bool FDBK_RELAY_get_state() {
  * @return true  The 24V DCDC it's working properly
  * @return false The 24V DCDC it's not working properly
  */
-inline bool FDBK_DCDC_24V_get_state() {
-    return true;  //mcp23017_get_state(&hmcp, MCP23017_PORTA, FB_24) == 1 ? true : false;
+static inline bool FDBK_DCDC_24V_get_state() {
+    //return true;  //
+    return mcp23017_get_state(&hmcp, MCP23017_PORTA, FB_24) == 0x1 ? true : false;
+}
+
+/**
+ * @brief Get the feedback from Pumps voltage supply
+ * 
+ * @return true Pumps can work because of the presence of 24V
+ * @return false Pumps can't work
+ */
+static inline bool FDBK_24V_PUMPS_get_state() {
+    return mcp23017_get_state(&hmcp, MCP23017_PORTA, FB_PUMPS) == 0x1 ? true : false;
+}
+
+/**
+ * @brief Get the feedback from Radiators voltage supply
+ * 
+ * @return true Radiators can work because of the presence of 12V
+ * @return false Radiators can't work
+ */
+static inline bool FDBK_12V_RADIATORS_get_state() {
+    return mcp23017_get_state(&hmcp, MCP23017_PORTA, FB_RADIATORS) == 0x1 ? true : false;
+}
+
+/**
+ * @brief Get the feedback from Shutdown fuse
+ * 
+ * @return true Fuse it's working properly and there are 12V over it
+ * @return false Fuse it's not working properly, it could be open
+ */
+static inline bool FDBK_12V_SHUTDOWN_get_state() {
+    return mcp23017_get_state(&hmcp, MCP23017_PORTA, FB_SHUTDOWN) == 0x1 ? true : false;
+}
+
+/**
+ * @brief Get the feedback from the FANS voltage supply
+ * 
+ * @return true Fans can work because of the presence of 12V
+ * @return false Fans can't work because of the presence of 12V
+ */
+static inline bool FDBK_12V_FANS_get_state() {
+    return mcp23017_get_state(&hmcp, MCP23017_PORTA, FB_FAN) == 0x1 ? true : false;
+}
+
+/**
+ * @brief Check if there are 12V on board, needed to supply other boards
+ * 
+ * @return true There are 12V on board
+ * @return false There aren't 12V on board
+ */
+static inline bool FDBK_12V_PCBS_get_state() {
+    return mcp23017_get_state(&hmcp, MCP23017_PORTB, FB_FAN) == 0x1 ? true : false;
+}
+
+/**
+ * @brief Check if LVMS it's closed
+ * 
+ * @return true LVMS closed
+ * @return false LVMS open
+ */
+static inline bool FDBK_LVMS_get_state() {
+    return mcp23017_get_state(&hmcp, MCP23017_PORTB, FB_MAIN) == 0x1 ? true : false;
+}
+
+/**
+ * @brief Check if Inverters are powered with 24V
+ * 
+ * @return true The inverter is powered with 24V
+ * @return false The inverter is not powered with 24V
+ */
+static inline bool FDBK_24V_INVERTERS_get_state() {
+    return mcp23017_get_state(&hmcp, MCP23017_PORTA, FB_INVERTERS) == 0x1 ? true : false;
 }
 
 #define LOG_HUART huart1
@@ -236,10 +310,10 @@ inline bool FDBK_DCDC_24V_get_state() {
 //#define NDEBUG
 /* USER CODE END Private defines */
 
-#define MAX_DUTY_CYCLE 1.0
-#define MIN_DUTY_CYCLE 0.0
-#define MIN_MOTOR_TEMP 20.0
-#define MAX_MOTOR_TEMP 60.0
+#define MAX_FAN_DUTY_CYCLE 1.0
+#define MIN_FAN_DUTY_CYCLE 0.8
+#define MIN_MOTOR_TEMP     20.0
+#define MAX_MOTOR_TEMP     60.0
 
 #ifdef __cplusplus
 }

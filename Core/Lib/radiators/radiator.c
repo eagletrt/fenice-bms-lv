@@ -73,5 +73,5 @@ void set_radiator_dt(TIM_HandleTypeDef *rad_tim, uint8_t channel, float duty_cyc
  * @return float Optimal PWM Duty Cycle 
  */
 float get_radiator_dt(float temp) {
-    return (MAX_DUTY_CYCLE - MIN_DUTY_CYCLE) / (MAX_MOTOR_TEMP - MIN_MOTOR_TEMP) * (temp - MIN_MOTOR_TEMP);
+    return (MAX_FAN_DUTY_CYCLE - MIN_FAN_DUTY_CYCLE) / (MAX_MOTOR_TEMP - MIN_MOTOR_TEMP) * (temp - MIN_MOTOR_TEMP);
 }
