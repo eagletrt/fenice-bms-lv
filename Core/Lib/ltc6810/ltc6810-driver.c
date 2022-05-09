@@ -10,7 +10,7 @@
 #include "ltc6810-driver.h"
 
 uint8_t dummy_data[6] = {0};
-uint8_t serial_id[6] = {0};
+uint8_t serial_id[6]  = {0};
 char buf[128];
 
 /**
@@ -45,14 +45,14 @@ const uint16_t crcTable[256] = {
  * @param len 
  * @return uint16_t 
  */
-uint16_t ltc6810_pec15 (uint8_t data[], uint8_t len){
-    uint16_t remainder,address;
-    remainder = 16;//PEC seed
-    for (int i = 0; i < len; i++){
-        address = ((remainder >> 7) ^ data[i]) & 0xff;//calculate PEC table address
-        remainder = (remainder << 8 ) ^ crcTable[address]; //pectable before
+uint16_t ltc6810_pec15(uint8_t data[], uint8_t len) {
+    uint16_t remainder, address;
+    remainder = 16;  //PEC seed
+    for (int i = 0; i < len; i++) {
+        address   = ((remainder >> 7) ^ data[i]) & 0xff;   //calculate PEC table address
+        remainder = (remainder << 8) ^ crcTable[address];  //pectable before
     }
-    return (remainder*2); //The CRC15 has a 0 in the LSB so the final value must be multiplied by 2
+    return (remainder * 2);  //The CRC15 has a 0 in the LSB so the final value must be multiplied by 2
 }
 
 /**
@@ -60,18 +60,20 @@ uint16_t ltc6810_pec15 (uint8_t data[], uint8_t len){
  * 
  * @param spi 
  */
-void ltc6810_enable_cs(SPI_HandleTypeDef* spi){
+void ltc6810_enable_cs(SPI_HandleTypeDef *spi) {
     HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_RESET);
-    while(spi->State != HAL_SPI_STATE_READY);
+    while (spi->State != HAL_SPI_STATE_READY)
+        ;
 }
 /**
  * @brief Set CS high to end the communication
  * 
  * @param spi 
  */
-void ltc6810_disable_cs(SPI_HandleTypeDef* spi){
+void ltc6810_disable_cs(SPI_HandleTypeDef *spi) {
     HAL_GPIO_WritePin(SPI_CS_GPIO_Port, SPI_CS_Pin, GPIO_PIN_SET);
-    while(spi->State != HAL_SPI_STATE_READY);
+    while (spi->State != HAL_SPI_STATE_READY)
+        ;
 }
 
 /**
@@ -79,7 +81,7 @@ void ltc6810_disable_cs(SPI_HandleTypeDef* spi){
  * 
  * @param spi 
  */
-void ltc6810_wakeup_idle(SPI_HandleTypeDef* spi){
+void ltc6810_wakeup_idle(SPI_HandleTypeDef *spi) {
     uint8_t data = 0xFF;
     ltc6810_enable_cs(spi);
     HAL_SPI_Transmit(spi, &data, 1, 1);
@@ -91,7 +93,7 @@ void ltc6810_wakeup_idle(SPI_HandleTypeDef* spi){
  *        with 7khz sampling mode, DCP disable and all cells selected 
  * @param spi 
  */
-void ltc6810_basic_adcv(SPI_HandleTypeDef* spi){
+void ltc6810_basic_adcv(SPI_HandleTypeDef *spi) {
     uint8_t cmd[4];
     uint16_t cmd_pec;
     // ADCV message: 0 1 MD[1] MD[0] 1 1 DCP 0 CH[2] CH[1] CH[0]
@@ -99,17 +101,16 @@ void ltc6810_basic_adcv(SPI_HandleTypeDef* spi){
     // CMD0 = 0 0 0 0 0 0 1 MD[1]
     // CMD1 = MD[2] 1 1 DCP 0 CH[2] CH[1] CH[0]
     //cmd[0] = (uint8_t) 0b00000011; //0b;//(uint8_t)0b00000010 | (MD >> 1);
-    cmd[0] = (uint8_t) 0b00000011;
-    cmd[1] = (uint8_t) 0b01100000;
-    cmd_pec = ltc6810_pec15(cmd, 2);  // returns 16bit pec code
-    cmd[2] = (uint8_t)(cmd_pec >> 8); // extracts first pec code
-    cmd[3] = (uint8_t)(cmd_pec);      // extracts second pec code
+    cmd[0]  = (uint8_t)0b00000011;
+    cmd[1]  = (uint8_t)0b01100000;
+    cmd_pec = ltc6810_pec15(cmd, 2);    // returns 16bit pec code
+    cmd[2]  = (uint8_t)(cmd_pec >> 8);  // extracts first pec code
+    cmd[3]  = (uint8_t)(cmd_pec);       // extracts second pec code
 
     ltc6810_wakeup_idle(spi);
     ltc6810_enable_cs(spi);
-    HAL_SPI_Transmit(spi, cmd, 4, 100); // sends 32bits cmd
+    HAL_SPI_Transmit(spi, cmd, 4, 100);  // sends 32bits cmd
     ltc6810_disable_cs(spi);
-
 }
 
 /**
@@ -121,7 +122,7 @@ void ltc6810_basic_adcv(SPI_HandleTypeDef* spi){
  * @param DCP Discharge permitted  [1 bit] 
  * @param CH  Cell selection       [3 bit]
  */
-void ltc6810_adcv(SPI_HandleTypeDef* spi, uint8_t MD, uint8_t DCP, uint8_t CH){
+void ltc6810_adcv(SPI_HandleTypeDef *spi, uint8_t MD, uint8_t DCP, uint8_t CH) {
     //TODO: not tested yet
     uint8_t cmd[4];
     uint16_t cmd_pec;
@@ -129,17 +130,17 @@ void ltc6810_adcv(SPI_HandleTypeDef* spi, uint8_t MD, uint8_t DCP, uint8_t CH){
     // example of broadcast message:
     // CMD0 = 0 0 0 0 0 0 1 MD[1]
     // CMD1 = MD[2] 1 1 DCP 0 CH[2] CH[1] CH[0]
-    cmd[0] = (uint8_t)0b00000010 | (MD >> 1);;
-    cmd[1] = (uint8_t) (uint8_t)0b01100000 | (MD << 7) | (DCP << 3) | CH ;
-    cmd_pec = ltc6810_pec15(cmd, 2);  // returns 16bit pec code
-    cmd[2] = (uint8_t)(cmd_pec >> 8); // extracts first pec code
-    cmd[3] = (uint8_t)(cmd_pec);      // extracts second pec code
+    cmd[0] = (uint8_t)0b00000010 | (MD >> 1);
+    ;
+    cmd[1]  = (uint8_t)(uint8_t)0b01100000 | (MD << 7) | (DCP << 3) | CH;
+    cmd_pec = ltc6810_pec15(cmd, 2);    // returns 16bit pec code
+    cmd[2]  = (uint8_t)(cmd_pec >> 8);  // extracts first pec code
+    cmd[3]  = (uint8_t)(cmd_pec);       // extracts second pec code
 
     ltc6810_wakeup_idle(spi);
     ltc6810_enable_cs(spi);
-    HAL_SPI_Transmit(spi, cmd, 4, 100); // sends 32bits cmd
+    HAL_SPI_Transmit(spi, cmd, 4, 100);  // sends 32bits cmd
     ltc6810_disable_cs(spi);
-
 }
 
 /**
@@ -148,14 +149,14 @@ void ltc6810_adcv(SPI_HandleTypeDef* spi, uint8_t MD, uint8_t DCP, uint8_t CH){
  * @param spi 
  * @param cfgr Register
  */
-void ltc6810_wrcfg(SPI_HandleTypeDef* spi, uint8_t cfgr[8]){
+void ltc6810_wrcfg(SPI_HandleTypeDef *spi, uint8_t cfgr[8]) {
     // Wrfg message: 0000000001
     uint8_t cmd[4];
-    cmd[0] = 0;
-    cmd[1]=  1;
-    uint16_t cmd_pec = ltc6810_pec15(cmd, 2);  // returns 16bit pec code
-    cmd[2] = (uint8_t)(cmd_pec >> 8); // extracts first pec code
-    cmd[3] = (uint8_t)(cmd_pec);      // extracts second pec code
+    cmd[0]           = 0;
+    cmd[1]           = 1;
+    uint16_t cmd_pec = ltc6810_pec15(cmd, 2);    // returns 16bit pec code
+    cmd[2]           = (uint8_t)(cmd_pec >> 8);  // extracts first pec code
+    cmd[3]           = (uint8_t)(cmd_pec);       // extracts second pec code
 
     ltc6810_wakeup_idle(spi);
     ltc6810_enable_cs(spi);
@@ -169,23 +170,21 @@ void ltc6810_wrcfg(SPI_HandleTypeDef* spi, uint8_t cfgr[8]){
  * 
  * @param spi 
  */
-void ltc6810_read_serial_id(SPI_HandleTypeDef *spi){
-    
+void ltc6810_read_serial_id(SPI_HandleTypeDef *spi) {
     uint8_t cmd[4];
-    cmd[0] = 0b10000000;
-    cmd[1] = 0b00101100;
+    cmd[0]           = 0b10000000;
+    cmd[1]           = 0b00101100;
     uint16_t cmd_pec = ltc6810_pec15(cmd, 2);
-    cmd[2] = (uint8_t)(cmd_pec >> 8); // extracts first pec code
-    cmd[3] = (uint8_t)(cmd_pec);      // extracts second pec code
-    
+    cmd[2]           = (uint8_t)(cmd_pec >> 8);  // extracts first pec code
+    cmd[3]           = (uint8_t)(cmd_pec);       // extracts second pec code
+
     ltc6810_wakeup_idle(spi);
-    
+
     ltc6810_enable_cs(spi);
     HAL_SPI_Transmit(spi, cmd, 4, 100);
     //HAL_SPI_Receive(spi, rx_buff, 6, 100);
     HAL_SPI_TransmitReceive(spi, dummy_data, serial_id, 6, 100);
     ltc6810_disable_cs(spi);
-    
 }
 
 /**
@@ -196,8 +195,7 @@ void ltc6810_read_serial_id(SPI_HandleTypeDef *spi){
  * @param volts voltages struct
  * @return uint8_t 
  */
-uint8_t ltc6810_read_voltages(SPI_HandleTypeDef *spi, voltage_t *volts){
-
+uint8_t ltc6810_read_voltages(SPI_HandleTypeDef *spi, voltage_t *volts) {
     uint8_t ltc_error = 0;
     uint8_t cmd[4];
     uint16_t cmd_pec;
@@ -205,14 +203,13 @@ uint8_t ltc6810_read_voltages(SPI_HandleTypeDef *spi, voltage_t *volts){
 
     cmd[0] = 0;
 
-    if(ltc6810_pladc(spi, 10)==HAL_TIMEOUT){
+    if (ltc6810_pladc(spi, 10) == HAL_TIMEOUT) {
         ltc_error = 1;
     }
 
-    for(uint8_t reg = 0; reg < LTC6810_REG_COUNT; reg++){
-
+    for (uint8_t reg = 0; reg < LTC6810_REG_COUNT; reg++) {
         // Create rdcv message for each register
-        cmd[1] = (uint8_t)rdcv_cmds[reg];
+        cmd[1]  = (uint8_t)rdcv_cmds[reg];
         cmd_pec = ltc6810_pec15(cmd, 2);
         cmd[2]  = (uint8_t)(cmd_pec >> 8);
         cmd[3]  = (uint8_t)(cmd_pec);
@@ -221,14 +218,15 @@ uint8_t ltc6810_read_voltages(SPI_HandleTypeDef *spi, voltage_t *volts){
         ltc6810_enable_cs(spi);
 
         //Forces SPI Transmit
-        do {} while(HAL_SPI_Transmit(spi, cmd, 4, 100) != HAL_OK);
+        do {
+        } while (HAL_SPI_Transmit(spi, cmd, 4, 100) != HAL_OK);
 
         /* Each register can hold LTC6810_REG_CELL_COUNT, every value it's 2 byte long.
            2 more bytes are added to attach pec to the rx_data */
-        HAL_SPI_TransmitReceive(spi, dummy_data, rx_data, LTC6810_REG_CELL_COUNT * 2 + 2,100);
+        HAL_SPI_TransmitReceive(spi, dummy_data, rx_data, LTC6810_REG_CELL_COUNT * 2 + 2, 100);
         ltc6810_disable_cs(spi);
 
-        #if LTC6810_EMU == 1
+#if LTC6810_EMU == 1
         // Writes 3.6v to each cell
         uint8_t emu_i;
         for (emu_i = 0; emu_i < LTC6810_REG_CELL_COUNT * 2; emu_i++) {
@@ -237,24 +235,22 @@ uint8_t ltc6810_read_voltages(SPI_HandleTypeDef *spi, voltage_t *volts){
             rx_data[++emu_i] = 0b10001100;
         }
         uint16_t emu_pec = ltc6810_pec15(rx_data, 6);
-        rx_data[6]          = (uint8_t)(emu_pec >> 8);
-        rx_data[7]          = (uint8_t)emu_pec;
-        #endif
+        rx_data[6]       = (uint8_t)(emu_pec >> 8);
+        rx_data[7]       = (uint8_t)emu_pec;
+#endif
 
-        #ifdef VOLTAGE_CONVERSION
-        uint16_t rx_pec = (((uint16_t) rx_data[6] ) << 8 ) | ((uint8_t) rx_data[7]);
+#ifdef VOLTAGE_CONVERSION
+        uint16_t rx_pec = (((uint16_t)rx_data[6]) << 8) | ((uint8_t)rx_data[7]);
         //if(ltc6810_pec15(rx_data,6) == (uint16_t)(rx_data[6] * 256 + rx_data[7])){
-        if(ltc6810_pec15(rx_data, 6) == rx_pec){
+        if (ltc6810_pec15(rx_data, 6) == rx_pec) {
             ltc_error = 0;
             // For every cell in the register
-            for(uint8_t cell = 0; cell < LTC6810_REG_CELL_COUNT; cell++){
+            for (uint8_t cell = 0; cell < LTC6810_REG_CELL_COUNT; cell++) {
                 uint16_t index = (reg * LTC6810_REG_CELL_COUNT) + cell;
-                volts[index] = ltc6810_convert_voltages(&rx_data[sizeof(voltage_t)*cell]); 
+                volts[index]   = ltc6810_convert_voltages(&rx_data[sizeof(voltage_t) * cell]);
             }
         }
-        #endif
-
-        
+#endif
     }
     return ltc_error;
 }
@@ -265,8 +261,8 @@ uint8_t ltc6810_read_voltages(SPI_HandleTypeDef *spi, voltage_t *volts){
  * @param v_data 
  * @return uint16_t 
  */
-uint16_t ltc6810_convert_voltages(uint8_t v_data[]){
-    return *((uint16_t*)v_data);
+uint16_t ltc6810_convert_voltages(uint8_t v_data[]) {
+    return *((uint16_t *)v_data);
 }
 
 /**
@@ -274,27 +270,29 @@ uint16_t ltc6810_convert_voltages(uint8_t v_data[]){
  * 
  * @param spi 
  */
-void ltc6810_read_both_status_register(SPI_HandleTypeDef* spi){
+void ltc6810_read_both_status_register(SPI_HandleTypeDef *spi) {
     uint8_t cmd[4];
     uint16_t cmd_pec;
     uint8_t rx_data[8];
 
     cmd[0] = 0;
 
-    for(uint8_t reg = 0; reg < LTC6810_REG_COUNT; reg++){
-        cmd[1] = (uint8_t)rdstat_cmds[reg];
+    for (uint8_t reg = 0; reg < LTC6810_REG_COUNT; reg++) {
+        cmd[1]  = (uint8_t)rdstat_cmds[reg];
         cmd_pec = ltc6810_pec15(cmd, 2);
         cmd[2]  = (uint8_t)(cmd_pec >> 8);
         cmd[3]  = (uint8_t)(cmd_pec);
 
         ltc6810_wakeup_idle(spi);
         ltc6810_enable_cs(spi);
-        if(HAL_SPI_Transmit(spi, cmd, 4, 10) != HAL_OK){}
-        while(spi->State != HAL_SPI_STATE_READY);
+        if (HAL_SPI_Transmit(spi, cmd, 4, 10) != HAL_OK) {
+        }
+        while (spi->State != HAL_SPI_STATE_READY)
+            ;
         ltc6810_disable_cs(spi);
         /* Each register can hold LTC6810_REG_CELL_COUNT, every value it's 2 byte long.
         2 more bytes are added to attach pec to the rx_data */
-        HAL_SPI_TransmitReceive(spi, dummy_data, rx_data, LTC6810_REG_CELL_COUNT * 2 + 2,100);
+        HAL_SPI_TransmitReceive(spi, dummy_data, rx_data, LTC6810_REG_CELL_COUNT * 2 + 2, 100);
         ltc6810_disable_cs(spi);
     }
 }
@@ -304,14 +302,14 @@ void ltc6810_read_both_status_register(SPI_HandleTypeDef* spi){
  * 
  * @return char* 
  */
-char* ltc6810_return_serial_id(){
+char *ltc6810_return_serial_id() {
     ltc6810_read_serial_id(&SPI);
-    memset(buf,0,sizeof(buf));
-    for (uint8_t i = 0; i < 6; i++){
-       sprintf(buf+strlen(buf), "%x" ,serial_id[i]);
+    memset(buf, 0, sizeof(buf));
+    for (uint8_t i = 0; i < 6; i++) {
+        sprintf(buf + strlen(buf), "%x", serial_id[i]);
     }
     //sprintf(buf+strlen(buf), "\r\n");
-    return buf;  
+    return buf;
 }
 
 /**
@@ -321,16 +319,16 @@ char* ltc6810_return_serial_id(){
  * @param timeout 
  * @return HAL_StatusTypeDef 
  */
-HAL_StatusTypeDef ltc6810_pladc(SPI_HandleTypeDef *spi, uint32_t timeout){
+HAL_StatusTypeDef ltc6810_pladc(SPI_HandleTypeDef *spi, uint32_t timeout) {
     // PLADC COMMAND 11100010100
     uint8_t cmd[4];
     uint16_t cmd_pec;
     uint8_t rx_data;
     uint32_t tick;
 
-    cmd[0] = 0b00000111;
-    cmd[1] = 0b00010100;
-    cmd_pec = ltc6810_pec15(cmd,2);
+    cmd[0]  = 0b00000111;
+    cmd[1]  = 0b00010100;
+    cmd_pec = ltc6810_pec15(cmd, 2);
     cmd[2]  = (uint8_t)(cmd_pec >> 8);
     cmd[3]  = (uint8_t)(cmd_pec);
 
@@ -341,31 +339,30 @@ HAL_StatusTypeDef ltc6810_pladc(SPI_HandleTypeDef *spi, uint32_t timeout){
     // Wait until the SDO line is pulled up high
     // When SDO is low the ADC is still converting
     // When SDO is pulled high the ADC has finished the conversion
-    do{
-        HAL_SPI_TransmitReceive(spi, dummy_data, &rx_data, 1,1);
-    }while(rx_data == 0x0 && (HAL_GetTick()-tick < timeout));
+    do {
+        HAL_SPI_TransmitReceive(spi, dummy_data, &rx_data, 1, 1);
+    } while (rx_data == 0x0 && (HAL_GetTick() - tick < timeout));
     ltc6810_disable_cs(spi);
 
     return rx_data ? HAL_OK : HAL_TIMEOUT;
 }
 
-
-void ltc6810_build_dcc(bms_balancing_cells cells, uint8_t cfgr[8]){
-    for(uint8_t i = 0; i < LV_CELLS_COUNT; i++){
-        if( (( cells & (1 << i) ) >> i) == 1){ //extracts single bit and checks if it's 1
+void ltc6810_build_dcc(bms_balancing_cells cells, uint8_t cfgr[8]) {
+    for (uint8_t i = 0; i < LV_CELLS_COUNT; i++) {
+        if (((cells & (1 << i)) >> i) == 1) {  //extracts single bit and checks if it's 1
             cfgr[4] |= (1 << i);
         }
     }
     uint16_t pec = ltc6810_pec15(cfgr, 6);
-    cfgr[2]  = (uint8_t)(pec >> 8);
-    cfgr[3]  = (uint8_t)(pec);
+    cfgr[2]      = (uint8_t)(pec >> 8);
+    cfgr[3]      = (uint8_t)(pec);
 }
 
-void ltc6810_set_balancing(SPI_HandleTypeDef *spi, bms_balancing_cells cells, int dcto){
-    uint8_t cfgr[8] = {0}; // configuration register
+void ltc6810_set_balancing(SPI_HandleTypeDef *spi, bms_balancing_cells cells, int dcto) {
+    uint8_t cfgr[8] = {0};  // configuration register
 
-    cfgr[0] |= 0b10; // set DTEN ON
-    cfgr[5] |= dcto << 4; //Set timer value 
+    cfgr[0] |= 0b10;       // set DTEN ON
+    cfgr[5] |= dcto << 4;  //Set timer value
     ltc6810_build_dcc(cells, cfgr);
     ltc6810_wakeup_idle(spi);
     ltc6810_wrcfg(spi, cfgr);

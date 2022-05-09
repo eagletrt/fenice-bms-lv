@@ -31,10 +31,12 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 //#include "../Lib/micro-libs/pid/pid.h"
+#include "adc.h"
 #include "buzzer.h"
 #include "common.h"
 #include "current_sensor.h"
 #include "dac_pump.h"
+#include "dma.h"
 #include "fenice-config.h"
 #include "logger.h"
 #include "mcp23017.h"
@@ -188,7 +190,6 @@ int main(void) {
     MX_DMA_Init();
     MX_ADC1_Init();
 
-
     // Start DMA handled readings for the current sensor, battery and DCDC(12/24v) temperature sensors
     ADC_start_dma_readings();
 
@@ -214,12 +215,6 @@ int main(void) {
     pwm_set_period(&FAN6_HTIM, 0.04);
     pwm_set_duty_cicle(&FAN6_HTIM, FAN6_PWM_TIM_CHNL, 0.20);
     pwm_start_channel(&FAN6_HTIM, FAN6_PWM_TIM_CHNL);
-
-    //TOGGLE FUNZIONA
-    // HAL_GPIO_WritePin(FAN_GPIO_Port, FAN_Pin, GPIO_PIN_SET);
-    // HAL_GPIO_WritePin(FAN_GPIO_Port, FAN_Pin, GPIO_PIN_RESET);
-    // HAL_GPIO_WritePin(FAN_GPIO_Port, FAN_Pin, GPIO_PIN_SET);
-    // HAL_GPIO_WritePin(FAN_GPIO_Port, FAN_Pin, GPIO_PIN_RESET);
 
     // RAD_L configuration
     //pwm_set_period(&RAD_L_HTIM, 0.04);

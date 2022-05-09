@@ -11,8 +11,9 @@
  */
 /* Includes ------------------------------------------------------------------*/
 #include "buzzer.h"
-#include "usart.h"
+
 #include "inttypes.h"
+#include "usart.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -36,7 +37,7 @@ COMM_StatusTypeDef BZZR_play_pulses(uint32_t pulse_period, uint8_t numb_of_pulse
     // }
 
     printl("Buzzer Start pulses", NORM_HEADER);
-    //BZZR_HTIM.Instance->CCR1 = 500; 
+    //BZZR_HTIM.Instance->CCR1 = 500;
     for (int i = 0; i < numb_of_pulses; i++) {
         HAL_TIM_PWM_Start(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
         HAL_Delay(pulse_period);

@@ -49,4 +49,3 @@ void MX_DAC_Init(void);
 #endif
 
 #endif /* __DAC_H__ */
-

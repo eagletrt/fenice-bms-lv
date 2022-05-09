@@ -13,3 +13,4 @@ build/
 !**/.vscode/settings.json
 !**/.vscode/extensions.json
 **/fenice-bms-lv-cppcheck-build-dir/*
+.DS_Store

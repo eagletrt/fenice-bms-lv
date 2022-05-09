@@ -63,4 +63,3 @@ uint32_t TIM_GetInternalClkFreq(TIM_HandleTypeDef *htim);
 #endif
 
 #endif /* __TIM_H__ */
-

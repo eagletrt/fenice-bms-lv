@@ -195,4 +195,3 @@ void CAN_id_tostring(CAN_NetTypeDef net, uint32_t msg_id, char buf[static 50]);
 #endif
 
 #endif /* __CAN_H__ */
-

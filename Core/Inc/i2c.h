@@ -49,4 +49,3 @@ void MX_I2C3_Init(void);
 #endif
 
 #endif /* __I2C_H__ */
-

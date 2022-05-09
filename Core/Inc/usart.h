@@ -117,4 +117,3 @@ bool UART_is_log_on();
 #endif
 
 #endif /* __USART_H__ */
-
