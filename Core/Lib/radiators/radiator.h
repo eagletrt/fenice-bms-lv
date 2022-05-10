@@ -15,7 +15,7 @@
 #include "main.h"
 
 /**
- * @brief Fans works with a negative duty cycle in fail safe configuration, 
+ * @brief Fans in fail safe configuration works with a negative duty cycle, 
  * time_on it's based on low output value instead of tipical high output value
  * 
  * @param dt 

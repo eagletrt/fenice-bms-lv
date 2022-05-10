@@ -99,3 +99,45 @@ uint8_t volt_read_and_print() {
     }
     return return_code;
 }
+
+/**
+ * @brief Reads and store voltages into buf
+ * 
+ * @param buf Buffer where voltage message are stored
+ * @return uint8_t Return 1 if total voltage on board is above 10.5V, 0 if it's under 10.5V, 
+ * -1 if there's even just one cell over MAX_VOLTAGE_ALLOWED
+ */
+uint8_t volt_read_and_store(char *buf) {
+    uint8_t return_code    = 1;
+    voltage_min_index      = -1;
+    total_voltage_on_board = 0.0;
+    HAL_Delay(200);
+    volt_start_basic_measure();
+    HAL_Delay(200);
+    if (volt_read() == 1) {
+        sprintf(buf, "LTC ERROR! \r\n");
+    } else {
+        voltage_min_index = volt_get_min();
+    }
+    memset(buff, 0, sizeof(buff));
+    for (uint8_t i = 0; i < LV_CELLS_COUNT; i++) {
+        if (i == voltage_min_index && voltage_min_index != -1) {
+            sprintf(buff, "Cell %u: %.3fV M \r\n", i, (float)voltages[i] / 10000);
+        } else {
+            if ((float)voltages[i] / 10000 >= VOLT_MAX_ALLOWED_VOLTAGE) {
+                sprintf(
+                    buff, "Error! Max allowed voltage exceeded (Cell %u: %.3fV) \r\n", i, (float)voltages[i] / 10000);
+                return_code = -1;
+            } else {
+                sprintf(buff, "Cell %u: %.3fV \r\n", i, (float)voltages[i] / 10000);
+            }
+        }
+        sprintf(buf + strlen(buf), "%s", buff);
+        total_voltage_on_board += (float)voltages[i] / 10000;
+    }
+    if (total_voltage_on_board < 10.5) {
+        sprintf(buf, "UNDERVOLTAGE! \r\n");
+        return_code = 0;
+    }
+    return return_code;
+}

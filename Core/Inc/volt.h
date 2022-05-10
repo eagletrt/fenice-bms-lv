@@ -24,6 +24,7 @@ void volt_start_basic_measure();
 void volt_start_measure(uint8_t MD, uint8_t DCP, uint8_t CH);
 uint8_t volt_read();
 uint8_t volt_read_and_print();
+uint8_t volt_read_and_store(char *buf);
 
 /**
  * @brief Returns the lower-voltage cell

@@ -33,6 +33,7 @@
 //#include "../Lib/micro-libs/pid/pid.h"
 #include "adc.h"
 #include "buzzer.h"
+#include "cli_bms_lv.h"
 #include "common.h"
 #include "current_sensor.h"
 #include "dac_pump.h"
@@ -199,10 +200,12 @@ int main(void) {
 
     //HAL_GPIO_WritePin(L_ERR_GPIO_Port, L_ERR_Pin, GPIO_PIN_SET);
 
+    cli_bms_lv_init();
+
     ltc6810_disable_cs(&SPI);
     HAL_GPIO_WritePin(L_ERR_GPIO_Port, L_ERR_Pin, GPIO_PIN_SET);
-    sprintf(main_buff, "LTC ID %s", ltc6810_return_serial_id());
-    printl(main_buff, NO_HEADER);
+    // sprintf(main_buff, "LTC ID %s", ltc6810_return_serial_id());
+    // printl(main_buff, NO_HEADER);
     printl("Relay out disabled, waiting 5 seconds before reading voltages\r\n", NO_HEADER);
     HAL_Delay(5000);
 
@@ -217,8 +220,6 @@ int main(void) {
     pwm_set_duty_cicle(&FAN6_HTIM, FAN6_PWM_TIM_CHNL, 0.20);
 
     radiator_init();
-    set_radiator_dt(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, 1);
-    set_radiator_dt(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, 1);
 
     // RAD_L configuration
     //pwm_set_period(&RAD_L_HTIM, 0.04);
@@ -270,20 +271,24 @@ int main(void) {
         HAL_Delay(200);
     }
 
-    mcp23017_read_and_print_both(&hmcp, &hi2c3);
+    mcp23017_read_both(&hmcp, &hi2c3);
 
     if (FDBK_12V_FANS_get_state()) {
         pwm_start_channel(&FAN6_HTIM, FAN6_PWM_TIM_CHNL);
     }
 
-    if (FDBK_12V_RADIATORS_get_state()) {
-        start_both_radiator(&RAD_R_HTIM, RAD_L_PWM_TIM_CHNL, RAD_R_PWM_TIM_CHNL);
-    }
+    // if(FDBK_12V_RADIATORS_get_state()){
+    //     start_both_radiator(&RAD_R_HTIM, RAD_L_PWM_TIM_CHNL, RAD_R_PWM_TIM_CHNL);
+    // }
 
     if (FDBK_24V_PUMPS_get_state()) {
         dac_pump_sample_test(&hdac_pump);
     }
     CAN_start_all();  //TODO manage false can start
+
+    while (1) {
+        cli_loop(&cli_bms_lv);
+    }
 #if 0
   LTC_init(&ltc, &hspi2, 0, GPIOD, GPIO_PIN_4);  // init function of LTC_6810
 

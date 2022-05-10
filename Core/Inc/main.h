@@ -248,6 +248,11 @@ static inline bool FDBK_24V_INVERTERS_get_state() {
     return mcp23017_get_state(&hmcp, MCP23017_PORTA, FB_INVERTERS) == 0x1 ? true : false;
 }
 
+#define MAX_FAN_DUTY_CYCLE 1.0
+#define MIN_FAN_DUTY_CYCLE 0.8
+#define MIN_MOTOR_TEMP     20.0  // Maybe change it to 40?
+#define MAX_MOTOR_TEMP     60.0
+
 #define LOG_HUART huart1
 /* Radiator1 -> TIM4 CH3 */
 /* Radiator2 -> TIM4 CH4 */
@@ -309,11 +314,6 @@ static inline bool FDBK_24V_INVERTERS_get_state() {
 // Commented: enable debugging, Uncommented: disable debugging
 //#define NDEBUG
 /* USER CODE END Private defines */
-
-#define MAX_FAN_DUTY_CYCLE 1.0
-#define MIN_FAN_DUTY_CYCLE 0.8
-#define MIN_MOTOR_TEMP     20.0
-#define MAX_MOTOR_TEMP     60.0
 
 #ifdef __cplusplus
 }

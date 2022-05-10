@@ -21,6 +21,7 @@
 #include "usart.h"
 
 /* USER CODE BEGIN 0 */
+#include "cli_bms_lv.h"
 #include "common.h"
 #include "stdio.h"
 #include "string.h"
@@ -78,6 +79,9 @@ void HAL_UART_MspInit(UART_HandleTypeDef *uartHandle) {
         GPIO_InitStruct.Alternate = GPIO_AF7_USART1;
         HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
+        /* USART1 interrupt Init */
+        HAL_NVIC_SetPriority(USART1_IRQn, 0, 0);
+        HAL_NVIC_EnableIRQ(USART1_IRQn);
         /* USER CODE BEGIN USART1_MspInit 1 */
 
         /* USER CODE END USART1_MspInit 1 */
@@ -98,6 +102,8 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef *uartHandle) {
     */
         HAL_GPIO_DeInit(GPIOA, GPIO_PIN_9 | GPIO_PIN_10);
 
+        /* USART1 interrupt Deinit */
+        HAL_NVIC_DisableIRQ(USART1_IRQn);
         /* USER CODE BEGIN USART1_MspDeInit 1 */
 
         /* USER CODE END USART1_MspDeInit 1 */
@@ -160,5 +166,9 @@ void printl(char *txt, UART_HeaderTypeDef header_type) {
 static void _log_wlcm_header() {
     HAL_UART_Transmit(
         &LOG_HUART, (uint8_t *)LOG_WLCM_HEADER_STR, M_STATIC_FIXED_STRING_STRLEN(LOG_WLCM_HEADER_STR), 100);
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
+    cli_handle_interrupt(&cli_bms_lv);
 }
 /* USER CODE END 1 */

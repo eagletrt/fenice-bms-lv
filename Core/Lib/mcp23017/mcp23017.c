@@ -87,7 +87,7 @@ HAL_StatusTypeDef mcp23017_write_gpio(MCP23017_HandleTypeDef *hdev, uint8_t port
     return mcp23017_write(hdev, REGISTER_GPIOA | port, data);
 }
 
-void mcp23017_print_gpioA(MCP23017_HandleTypeDef *hdev) {
+void mcp23017_print_gpioA(MCP23017_HandleTypeDef *hdev, char *out) {
     char mcp_buff[30];
     for (uint8_t i = 0; i < GPIOA_TOTAL_FB; i++) {
         switch (i) {
@@ -116,12 +116,15 @@ void mcp23017_print_gpioA(MCP23017_HandleTypeDef *hdev) {
                 sprintf(mcp_buff, "GPIOA VAL: %d [GPA%d]", ((hdev->gpio[0] & (1 << i)) >> i), i);
                 break;
         }
-        //sprintf(mcp_buff, "GPA %d: %d", i, ((hdev->gpio[0] & (1 << i)) >> i));
-        printl(mcp_buff, NO_HEADER);
+        if (out == NULL) {
+            printl(mcp_buff, NO_HEADER);
+        } else {
+            sprintf(out + strlen(out), "%s \r\n", mcp_buff);
+        }
     }
 }
 
-void mcp23017_print_gpioB(MCP23017_HandleTypeDef *hdev) {
+void mcp23017_print_gpioB(MCP23017_HandleTypeDef *hdev, char *out) {
     char mcp_buff[30];
     for (uint8_t i = 0; i < GPIOB_TOTAL_FB; i++) {
         switch (i) {
@@ -138,8 +141,12 @@ void mcp23017_print_gpioB(MCP23017_HandleTypeDef *hdev) {
                 sprintf(mcp_buff, "GPIOB VAL: %d [GPB%d]", ((hdev->gpio[1] & (1 << i)) >> i), i);
                 break;
         }
-        //sprintf(mcp_buff, "GPB %d: %d", i, ((hdev->gpio[1] & (1 << i)) >> i));
-        printl(mcp_buff, NO_HEADER);
+
+        if (out == NULL) {
+            printl(mcp_buff, NO_HEADER);
+        } else {
+            sprintf(out + strlen(out), "%s \r\n", mcp_buff);
+        }
     }
 }
 /**
@@ -181,13 +188,13 @@ void mcp23017_read_and_print_both(MCP23017_HandleTypeDef *hdev, I2C_HandleTypeDe
     if (res != HAL_OK) {
         printl("GPIOA READ ERROR", ERR_HEADER);
     } else {
-        mcp23017_print_gpioA(hdev);
+        mcp23017_print_gpioA(hdev, NULL);
     }
     res = HAL_I2C_Mem_Read(hi2c, hdev->addr, REGISTER_GPIOB, 1, hdev->gpio + 1, 1, 100);
     if (res != HAL_OK) {
         printl("GPIOB READ ERROR", ERR_HEADER);
     } else {
-        mcp23017_print_gpioB(hdev);
+        mcp23017_print_gpioB(hdev, NULL);
     }
 }
 

@@ -22,6 +22,7 @@ void radiator_init() {
     pwm_set_period(&RAD_L_HTIM, 0.04);  //Set frequency to 25kHz
     pwm_set_duty_cicle(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, 1.0);
     pwm_set_duty_cicle(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, 1.0);
+    start_both_radiator(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, RAD_R_PWM_TIM_CHNL);
 }
 
 /**
@@ -41,7 +42,7 @@ void start_radiator(TIM_HandleTypeDef *rad_tim, uint8_t channel) {
  * @param channel Radiator pwm channel
  */
 void stop_radiator(TIM_HandleTypeDef *rad_tim, uint8_t channel) {
-    pwm_start_channel(rad_tim, channel);
+    pwm_stop_channel(rad_tim, channel);
 }
 
 /**
