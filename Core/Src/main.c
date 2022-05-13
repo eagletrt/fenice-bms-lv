@@ -42,6 +42,7 @@
 #include "fenice-config.h"
 #include "logger.h"
 #include "mcp23017.h"
+#include "notes_buzzer.h"
 #include "pwm.h"
 #include "radiator.h"
 #include "stdio.h"

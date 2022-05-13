@@ -18,12 +18,13 @@
 #include "tim.h"
 #include "dac.h"
 #include "adc.h"
+#include "notes_buzzer.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define N_COMMANDS 8
+#define N_COMMANDS 9
 
 cli_command_func_t _cli_volts;
 cli_command_func_t _cli_radiator;
@@ -33,6 +34,7 @@ cli_command_func_t _cli_feedbacks;
 cli_command_func_t _cli_dmesg;
 cli_command_func_t _cli_reset;
 cli_command_func_t _cli_help;
+cli_command_func_t _cli_wizard;
 
 cli_command_func_t *commands[N_COMMANDS] = {
     & _cli_volts,
@@ -42,11 +44,12 @@ cli_command_func_t *commands[N_COMMANDS] = {
     & _cli_feedbacks,
     & _cli_dmesg,
     & _cli_reset,
+    & _cli_wizard,
     & _cli_help
 };
 
 char *command_names[N_COMMANDS] = 
-{"volts", "radiator", "pumps", "temps", "feedbacks", "dmesg", "reset", "?"};
+{"volts", "radiator", "pumps", "temps", "feedbacks", "dmesg", "reset", "wizard","?"};
 
 char *volt_status_name[VOLT_ENUM_SIZE] = {
     [VOLT_OK] = "VOLT OK",
@@ -179,4 +182,9 @@ void _cli_help(uint16_t argc, char **argv, char *out) {
     for (uint8_t i = 0; i < N_COMMANDS; i++) {
         sprintf(out + strlen(out), "- %s\r\n", cli_bms_lv.cmds.names[i]);
     }
+}
+
+void _cli_wizard(uint16_t argc, char **argv, char *out){
+    sprintf(out, "Dj Khaled: another one!\r\n");
+    BUZ_sborati(&BZZR_HTIM);
 }

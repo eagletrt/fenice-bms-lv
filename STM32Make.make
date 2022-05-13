@@ -50,6 +50,7 @@ Core/Lib/micro-libs/pid/pid.c \
 Core/Lib/micro-libs/priority-queue/priority_queue_fast_insert.c \
 Core/Lib/micro-libs/pwm/pwm.c \
 Core/Lib/micro-libs/timer-utils/timer_utils.c \
+Core/Lib/notes_buzzer/notes_buzzer.c \
 Core/Lib/radiators/radiator.c \
 Core/Src/adc.c \
 Core/Src/can.c \
@@ -191,6 +192,7 @@ C_INCLUDES =  \
 -ICore/Lib/micro-libs/priority-queue \
 -ICore/Lib/micro-libs/pwm \
 -ICore/Lib/micro-libs/timer-utils \
+-ICore/Lib/notes_buzzer \
 -ICore/Lib/radiators \
 -IDrivers/CMSIS/Device/ST/STM32F4xx/Include \
 -IDrivers/CMSIS/Include \
