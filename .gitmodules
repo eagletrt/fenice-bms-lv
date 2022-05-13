@@ -3,5 +3,5 @@
 	url = git@github.com:eagletrt/micro-libs.git
 [submodule "Core/Lib/can-cicd"]
 	path = Core/Lib/can-cicd
-	url = git@github.com:eagletrt/can-cicd.git
+	url = git@github.com:eagletrt/can-cicd-forkme.git
 	branch = build

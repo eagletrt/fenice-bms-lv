@@ -71,6 +71,7 @@ excludes:
   - "**/micro-libs/m95256/**"
   - "**/test.c"
   - "**/test/**"
+  - "**/*.pb.*"
 
 # Include directories (directories containing .h or .hpp files)
 # If a CubeMX makefile is present it will automatically include the include directories from that makefile.

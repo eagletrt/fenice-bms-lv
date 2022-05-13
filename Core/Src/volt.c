@@ -12,10 +12,13 @@
 #include "usart.h"
 
 voltage_t voltages[LV_CELLS_COUNT] = {0};
+float total_voltage_on_board       = 0.0;
 bms_balancing_cells cells          = 0b0;
 char buff[500];
 uint8_t voltage_min_index;
-double total_voltage_on_board;
+uint8_t volt_status;
+float total_voltage_on_board;
+
 //bms_balancing_cells cells_to_discharge;
 /**
  * @brief Start ADCV with standard parameters
@@ -63,18 +66,19 @@ uint8_t volt_get_min() {
 /**
  * @brief Read and print voltages
  * 
- * @return Return 1 if total voltage on board is above 10.5V, 0 if it's under 10.5V, 
- * -1 if there's even just one cell over MAX_VOLTAGE_ALLOWED
+ * @return Return VOLT_OK if total voltage on board is above MIN_POWER_ON_VOLTAGE, VOLT_UNDER_VOLTAGE if it's under MIN_POWER_ON_VOLTAGE, 
+ * VOLT_OVER_VOLTAGE if there's even just one cell over MAX_VOLTAGE_ALLOWED
  */
 uint8_t volt_read_and_print() {
-    uint8_t return_code    = 1;
+    volt_status            = VOLT_OK;
     voltage_min_index      = -1;
     total_voltage_on_board = 0.0;
-    HAL_Delay(200);
+    //HAL_Delay(200);
     volt_start_basic_measure();
-    HAL_Delay(200);
+    HAL_Delay(1);
     if (volt_read() == 1) {
         printl("LTC ERROR!", ERR_HEADER);
+        volt_status = VOLT_ERR;
     } else {
         voltage_min_index = volt_get_min();
     }
@@ -85,7 +89,7 @@ uint8_t volt_read_and_print() {
         } else {
             if ((float)voltages[i] / 10000 >= VOLT_MAX_ALLOWED_VOLTAGE) {
                 sprintf(buff, "Error! Max allowed voltage exceeded (Cell %u: %.3fV)", i, (float)voltages[i] / 10000);
-                return_code = -1;
+                volt_status = VOLT_OVER_VOLTAGE;
             } else {
                 sprintf(buff, "Cell %u: %.3fV", i, (float)voltages[i] / 10000);
             }
@@ -93,29 +97,30 @@ uint8_t volt_read_and_print() {
         total_voltage_on_board += (float)voltages[i] / 10000;
         printl(buff, NO_HEADER);
     }
-    if (total_voltage_on_board < 10.5) {
+    if (total_voltage_on_board < MIN_POWER_ON_VOLTAGE) {
         printl("UNDERVOLTAGE!", ERR_HEADER);
-        return_code = 0;
+        volt_status = VOLT_UNDER_VOLTAGE;
     }
-    return return_code;
+    return volt_status;
 }
 
 /**
  * @brief Reads and store voltages into buf
  * 
  * @param buf Buffer where voltage message are stored
- * @return uint8_t Return 1 if total voltage on board is above 10.5V, 0 if it's under 10.5V, 
- * -1 if there's even just one cell over MAX_VOLTAGE_ALLOWED
+ * @return Return VOLT_OK if total voltage on board is above MIN_POWER_ON_VOLTAGE, VOLT_UNDER_VOLTAGE if it's under MIN_POWER_ON_VOLTAGE, 
+ * VOLT_OVER_VOLTAGE if there's even just one cell over MAX_VOLTAGE_ALLOWED
  */
 uint8_t volt_read_and_store(char *buf) {
-    uint8_t return_code    = 1;
+    volt_status            = VOLT_OK;
     voltage_min_index      = -1;
     total_voltage_on_board = 0.0;
-    HAL_Delay(200);
+    //HAL_Delay(200);
     volt_start_basic_measure();
-    HAL_Delay(200);
+    HAL_Delay(1);
     if (volt_read() == 1) {
         sprintf(buf, "LTC ERROR! \r\n");
+        volt_status = VOLT_ERR;
     } else {
         voltage_min_index = volt_get_min();
     }
@@ -127,7 +132,7 @@ uint8_t volt_read_and_store(char *buf) {
             if ((float)voltages[i] / 10000 >= VOLT_MAX_ALLOWED_VOLTAGE) {
                 sprintf(
                     buff, "Error! Max allowed voltage exceeded (Cell %u: %.3fV) \r\n", i, (float)voltages[i] / 10000);
-                return_code = -1;
+                volt_status = VOLT_OVER_VOLTAGE;
             } else {
                 sprintf(buff, "Cell %u: %.3fV \r\n", i, (float)voltages[i] / 10000);
             }
@@ -135,9 +140,9 @@ uint8_t volt_read_and_store(char *buf) {
         sprintf(buf + strlen(buf), "%s", buff);
         total_voltage_on_board += (float)voltages[i] / 10000;
     }
-    if (total_voltage_on_board < 10.5) {
+    if (total_voltage_on_board < MIN_POWER_ON_VOLTAGE) {
         sprintf(buf, "UNDERVOLTAGE! \r\n");
-        return_code = 0;
+        volt_status = VOLT_UNDER_VOLTAGE;
     }
-    return return_code;
+    return volt_status;
 }

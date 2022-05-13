@@ -26,4 +26,15 @@
 #define ACC_TEMP_ASK_ID  0xAA   // Accumulator temperatures
 #define ECU_ASK_ID       0xF8   // ECU initial check ID
 
+/**
+ * Maximum can payload. for CAN 2.0A is 8 bytes
+ */
+#define CAN_MAX_PAYLOAD_LENGTH 8
+
+/**
+ * BMS LV COSTRAINTS
+ */
+
+#define MIN_POWER_ON_VOLTAGE 10.5
+
 #endif

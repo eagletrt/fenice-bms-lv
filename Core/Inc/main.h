@@ -253,6 +253,9 @@ static inline bool FDBK_24V_INVERTERS_get_state() {
 #define MIN_MOTOR_TEMP     20.0  // Maybe change it to 40?
 #define MAX_MOTOR_TEMP     60.0
 
+#define CANP hcan1
+#define CANS hcan2
+
 #define LOG_HUART huart1
 /* Radiator1 -> TIM4 CH3 */
 /* Radiator2 -> TIM4 CH4 */

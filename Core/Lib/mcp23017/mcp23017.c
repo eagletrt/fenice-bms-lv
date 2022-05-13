@@ -15,6 +15,8 @@
 #include "stdio.h"
 #include "usart.h"
 
+#include <string.h>
+
 // Registers
 #define REGISTER_IODIRA   0x00
 #define REGISTER_IODIRB   0x01

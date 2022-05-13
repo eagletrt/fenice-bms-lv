@@ -36,15 +36,7 @@ BUILD_DIR = build
 ######################################
 # C sources
 C_SOURCES =  \
-Core/Lib/can-cicd/external/flatcc/runtime/builder.c \
-Core/Lib/can-cicd/external/flatcc/runtime/emitter.c \
-Core/Lib/can-cicd/external/flatcc/runtime/json_parser.c \
-Core/Lib/can-cicd/external/flatcc/runtime/json_printer.c \
-Core/Lib/can-cicd/external/flatcc/runtime/refmap.c \
-Core/Lib/can-cicd/external/flatcc/runtime/verifier.c \
-Core/Lib/can-cicd/naked_generator/BMSinternal/c/BMSinternal.c \
-Core/Lib/can-cicd/naked_generator/Primary/c/Primary.c \
-Core/Lib/can-cicd/naked_generator/Secondary/c/Secondary.c \
+Core/Lib/can-comm/can_comm.c \
 Core/Lib/cli_bms_lv/cli_bms_lv.c \
 Core/Lib/dac_pump/dac_pump.c \
 Core/Lib/ltc6810/ltc6810-driver.c \
@@ -176,16 +168,16 @@ AS_INCLUDES = \
 C_INCLUDES =  \
 -ICore/Inc \
 -ICore/Inc/peripherals \
--ICore/Lib/can-cicd/external/flatcc \
--ICore/Lib/can-cicd/external/flatcc/portable \
--ICore/Lib/can-cicd/external/flatcc/reflection \
--ICore/Lib/can-cicd/external/flatcc/support \
--ICore/Lib/can-cicd/includes_generator/BMSinternal \
--ICore/Lib/can-cicd/includes_generator/Primary \
--ICore/Lib/can-cicd/includes_generator/Secondary \
--ICore/Lib/can-cicd/naked_generator/BMSinternal/c \
--ICore/Lib/can-cicd/naked_generator/Primary/c \
--ICore/Lib/can-cicd/naked_generator/Secondary/c \
+-ICore/Lib/can-cicd/includes_generator/bms \
+-ICore/Lib/can-cicd/includes_generator/primary \
+-ICore/Lib/can-cicd/includes_generator/secondary \
+-ICore/Lib/can-cicd/naked_generator/bms/c \
+-ICore/Lib/can-cicd/naked_generator/primary/c \
+-ICore/Lib/can-cicd/naked_generator/secondary/c \
+-ICore/Lib/can-cicd/protobuf_generator/gen/bms/cpp \
+-ICore/Lib/can-cicd/protobuf_generator/gen/primary/cpp \
+-ICore/Lib/can-cicd/protobuf_generator/gen/secondary/cpp \
+-ICore/Lib/can-comm \
 -ICore/Lib/cli_bms_lv \
 -ICore/Lib/dac_pump \
 -ICore/Lib/ltc6810 \

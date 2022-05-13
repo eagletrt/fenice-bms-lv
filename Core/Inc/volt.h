@@ -9,6 +9,7 @@
 #ifndef VOLT_H
 #define VOLT_H
 
+#include "fenice-config.h"
 #include "ltc6810-driver.h"
 #include "ltc_config.h"
 #include "spi.h"
@@ -17,7 +18,11 @@
 #define VOLT_MAX_ATTEMPTS        5
 
 extern voltage_t voltages[LV_CELLS_COUNT];
+extern float total_voltage_on_board;
 extern bms_balancing_cells cells;
+extern uint8_t volt_status;
+
+typedef enum { VOLT_OK = 0U, VOLT_UNDER_VOLTAGE, VOLT_OVER_VOLTAGE, VOLT_ERR, VOLT_ENUM_SIZE } voltage_meas_status;
 
 void volt_initialization();
 void volt_start_basic_measure();

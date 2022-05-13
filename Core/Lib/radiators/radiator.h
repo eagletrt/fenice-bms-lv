@@ -25,6 +25,15 @@ inline float duty_cycle_to_fan_duty_cycle(float dt) {
     return (dt <= 1.0) ? 1.0 - dt : 1;
 }
 
+typedef struct {
+    float duty_cycle_l;
+    float duty_cycle_r;
+    uint8_t left_is_on;
+    uint8_t right_is_on;
+} radiator_t;
+
+extern radiator_t radiator_handle;
+
 void radiator_init();
 void start_radiator(TIM_HandleTypeDef *rad_tim, uint8_t channel);
 void stop_radiator(TIM_HandleTypeDef *rad_tim, uint8_t channel);

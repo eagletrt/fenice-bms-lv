@@ -33,6 +33,7 @@
 //#include "../Lib/micro-libs/pid/pid.h"
 #include "adc.h"
 #include "buzzer.h"
+#include "can_comm.h"
 #include "cli_bms_lv.h"
 #include "common.h"
 #include "current_sensor.h"
@@ -111,9 +112,6 @@ temperatures_struct lv_temp;
 temperatures_struct hv_temp;
 temperatures_struct pump_temp;
 
-// LTC
-extern canStruct can1, can3;
-
 // ERROR LED
 LED_STATE led_state;
 
@@ -141,6 +139,9 @@ int m_sec_timer                    = 0;
 uint32_t led_last_tick;
 HAL_StatusTypeDef status;
 bool flag;
+CAN_TxHeaderTypeDef TxHeader;
+CAN_RxHeaderTypeDef RxHeader;
+uint32_t TxMailbox;
 
 char main_buff[500];
 /* USER CODE END 0 */
@@ -203,7 +204,6 @@ int main(void) {
     cli_bms_lv_init();
 
     ltc6810_disable_cs(&SPI);
-    HAL_GPIO_WritePin(L_ERR_GPIO_Port, L_ERR_Pin, GPIO_PIN_SET);
     // sprintf(main_buff, "LTC ID %s", ltc6810_return_serial_id());
     // printl(main_buff, NO_HEADER);
     printl("Relay out disabled, waiting 5 seconds before reading voltages\r\n", NO_HEADER);
@@ -215,48 +215,17 @@ int main(void) {
     pwm_set_period(&BZZR_HTIM, 1);
     pwm_set_duty_cicle(&BZZR_HTIM, BZZR_PWM_TIM_CHNL, 0.5);
 
-    //FAN 25KHZ
+    // Other fan, set at 25 KHz
     pwm_set_period(&FAN6_HTIM, 0.04);
     pwm_set_duty_cicle(&FAN6_HTIM, FAN6_PWM_TIM_CHNL, 0.20);
 
     radiator_init();
 
-    // RAD_L configuration
-    //pwm_set_period(&RAD_L_HTIM, 0.04);
-    //low on- high on
-    // pwm_set_duty_cicle(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, 0.2);
-    // pwm_start_channel(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL);
-
-    // // RAD_R configuration
-    // pwm_set_duty_cicle(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, 0.2);
-    // pwm_start_channel(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL);
-
-    // }; // 2.25V
-    // uint32_t var;
-    // float val = 1.2;
-    // HAL_DAC_Start(&PUMP_DAC, DAC_CHANNEL_1);
-    // HAL_DAC_Start(&PUMP_DAC, DAC_CHANNEL_2);
-    // for(uint u = 0; u < 10; u++){
-    //     var = (uint32_t)(val*4096)/3.3;
-    //     HAL_DAC_SetValue(&PUMP_DAC, DAC_CHANNEL_1, DAC_ALIGN_12B_R, var);
-    //     HAL_DAC_SetValue(&PUMP_DAC, DAC_CHANNEL_2, DAC_ALIGN_12B_R, var);
-    //     val += 0.5;
-    //     HAL_Delay(2000);
-    //     if(val > 3) {val = 0.2;}
-    // }
-    //status = HAL_DAC_SetValue(&PUMP_DAC, DAC_CHANNEL_1, DAC_ALIGN_12B_R, (4096*1.5)/3.3);
-    //status = HAL_DAC_SetValue(&PUMP_DAC, DAC_CHANNEL_2, DAC_ALIGN_12B_R, (2048*1.5)/3.3);
-    // if(status != HAL_OK){
-    //     printl("PUMP ERROR", NO_HEADER);
-    // // }
-    // HAL_DAC_Stop(&PUMP_DAC, DAC_CHANNEL_1);
-    // HAL_DAC_Stop(&PUMP_DAC, DAC_CHANNEL_2);
-
-    sprintf(main_buff, "Checking if total voltage on board is above 10.5V");
+    sprintf(main_buff, "Checking if total voltage on board is above %.2fV", MIN_POWER_ON_VOLTAGE);
     for (uint8_t i = 0; i < VOLT_MAX_ATTEMPTS; i++) {
         sprintf(main_buff, "Closing relay phase: attempt %d of %d", i + 1, VOLT_MAX_ATTEMPTS);
         printl(main_buff, NO_HEADER);
-        if (volt_read_and_print() == 1) {
+        if (volt_read_and_print() == VOLT_OK) {
             HAL_GPIO_WritePin(L_ERR_GPIO_Port, L_ERR_Pin, GPIO_PIN_RESET);
             printl("Relay on", NORM_HEADER);
             HAL_GPIO_WritePin(L_OTHER_GPIO_Port, L_OTHER_Pin, GPIO_PIN_SET);
@@ -271,21 +240,30 @@ int main(void) {
         HAL_Delay(200);
     }
 
+    if (volt_status != VOLT_OK) {
+        HAL_GPIO_WritePin(L_ERR_GPIO_Port, L_ERR_Pin, GPIO_PIN_SET);
+    }
+
     mcp23017_read_both(&hmcp, &hi2c3);
 
     if (FDBK_12V_FANS_get_state()) {
         pwm_start_channel(&FAN6_HTIM, FAN6_PWM_TIM_CHNL);
     }
 
-    // if(FDBK_12V_RADIATORS_get_state()){
-    //     start_both_radiator(&RAD_R_HTIM, RAD_L_PWM_TIM_CHNL, RAD_R_PWM_TIM_CHNL);
-    // }
+    if (FDBK_12V_RADIATORS_get_state()) {
+        start_both_radiator(&RAD_R_HTIM, RAD_L_PWM_TIM_CHNL, RAD_R_PWM_TIM_CHNL);
+    }
 
     if (FDBK_24V_PUMPS_get_state()) {
         dac_pump_sample_test(&hdac_pump);
     }
-    CAN_start_all();  //TODO manage false can start
 
+    can_primary_init();
+    can_secondary_init();
+
+    //CAN_start_all();  //TODO manage false can start
+    can_primary_send(0x1);
+    can_secondary_send(0x1);
     while (1) {
         cli_loop(&cli_bms_lv);
     }
@@ -394,112 +372,9 @@ int main(void) {
         //if (CAN_get(&hcanP, &rx_data) != COMM_ERROR) {
         //    CAN_print_rxdata(&rx_data);
         //}
-#if 0
-            currentTick = HAL_GetTick();
+        /* USER CODE END WHILE */
 
-            if (is_sensors_update_time) {
-                is_sensors_update_time = false;
-
-                // LTC
-                read_voltages(&ltc);
-
-                // Temperatures
-                // TODO: read temperatures from adc and read from CANBUS
-
-                lv_pid.input   = lv_temp.value;
-                hv_pid.input   = hv_temp.value;
-                pump_pid.input = pump_temp.value;
-
-                // PID
-                PIDCompute(&lv_pid);
-                PIDCompute(&hv_pid);
-                PIDCompute(&pump_pid);
-
-                // PWM
-                lv_pwm.value   = lv_pid.output;
-                hv_pwm.value   = hv_pid.output;
-                pump_pwm.value = pump_pid.output;
-
-                check_over_temperature();
-                check_under_voltage();
-            }
-
-            if (currentTick % 200 == 0) {
-                write_pwm_value(&lv_pwm);
-                write_pwm_value(&hv_pwm);
-                write_pwm_value(&pump_pwm);
-            }
-
-#ifndef NDEBUG_VALUES
-            M_LOG_STRING("\r\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
-
-            {  // this graphs are used to keep buf[] on the stack and in this
-                // local scope
-                char buf[100];
-                sprintf(buf, "is_bms_on: %d, overT: %d, underV: %d\r\n", is_bms_on, OVER_TEMPERATURE, UNDER_VOLTAGE);
-                HAL_UART_Transmit(&huart4, (uint8_t *)buf, strlen(buf), 10);
-                sprintf(
-                    buf,
-                    "PID outputs lv: %d hv: %d pump: %d\r\n",
-                    (int)PIDOutputGet(&lv_pid),
-                    (int)PIDOutputGet(&hv_pid),
-                    (int)PIDOutputGet(&pump_pid));
-                HAL_UART_Transmit(&huart4, (uint8_t *)buf, strlen(buf), 10);
-                sprintf(
-                    buf,
-                    "Voltages %d %d %d %d %d %d\r\n",
-                    ltc.voltage[0],
-                    ltc.voltage[1],
-                    ltc.voltage[2],
-                    ltc.voltage[3],
-                    ltc.voltage[4],
-                    ltc.voltage[5]);
-                HAL_UART_Transmit(&huart4, (uint8_t *)buf, strlen(buf), 10);
-                sprintf(buf, "Current from sensor: %lu\r\n", get_current());
-                HAL_UART_Transmit(&huart4, (uint8_t *)buf, strlen(buf), 10);
-            }
-#endif
-
-            if (previous_millis != currentTick) {
-                bool ret        = old_CAN_Send_data(currentTick);
-                previous_millis = currentTick;
-#ifndef NDEBUG_CAN_SEND
-                if (ret != 0) {
-                    char buf[50];
-                    sprintf(buf, "Sent message: %d\r\n", sent);
-                    HAL_UART_Transmit(&huart4, (uint8_t *)buf, strlen(buf), 10);
-                }
-#endif
-            }
-
-            if (is_bms_on) {
-                HAL_GPIO_WritePin(RELAY_GPIO_Port, RELAY_Pin, GPIO_PIN_SET);
-                led_state = ON;
-            } else {
-                HAL_GPIO_WritePin(RELAY_GPIO_Port, RELAY_Pin, GPIO_PIN_RESET);
-                if (UNDER_VOLTAGE) {
-                    led_state = BLINK_underV;
-                    if (OVER_TEMPERATURE)
-                        led_state = BLINK_error;
-                } else {
-                    if (OVER_TEMPERATURE)
-                        led_state = BLINK_overT;
-                    else
-                        led_state = OFF;
-                }
-            }
-            write_error_led(led_state);
-
-            bms_on_off();
-
-            if (HAL_GetTick() - led_last_tick > 1000) {
-                led_last_tick = HAL_GetTick();
-                HAL_GPIO_TogglePin(LED_1_GPIO_Port, LED_1_Pin);
-            }
-    /* USER CODE END WHILE */
-
-    /* USER CODE BEGIN 3 */
-#endif
+        /* USER CODE BEGIN 3 */
     }
     /* USER CODE END 3 */
 }
@@ -515,7 +390,7 @@ void SystemClock_Config(void) {
     /** Configure the main internal regulator output voltage
   */
     __HAL_RCC_PWR_CLK_ENABLE();
-    __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE3);
+    __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
     /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
@@ -524,11 +399,16 @@ void SystemClock_Config(void) {
     RCC_OscInitStruct.PLL.PLLState   = RCC_PLL_ON;
     RCC_OscInitStruct.PLL.PLLSource  = RCC_PLLSOURCE_HSE;
     RCC_OscInitStruct.PLL.PLLM       = 8;
-    RCC_OscInitStruct.PLL.PLLN       = 84;
+    RCC_OscInitStruct.PLL.PLLN       = 180;
     RCC_OscInitStruct.PLL.PLLP       = RCC_PLLP_DIV2;
     RCC_OscInitStruct.PLL.PLLQ       = 2;
     RCC_OscInitStruct.PLL.PLLR       = 2;
     if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
+        Error_Handler();
+    }
+    /** Activate the Over-Drive mode
+  */
+    if (HAL_PWREx_EnableOverDrive() != HAL_OK) {
         Error_Handler();
     }
     /** Initializes the CPU, AHB and APB buses clocks
@@ -536,10 +416,10 @@ void SystemClock_Config(void) {
     RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
     RCC_ClkInitStruct.SYSCLKSource   = RCC_SYSCLKSOURCE_PLLCLK;
     RCC_ClkInitStruct.AHBCLKDivider  = RCC_SYSCLK_DIV1;
-    RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
-    RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+    RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
+    RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV2;
 
-    if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK) {
+    if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK) {
         Error_Handler();
     }
 }
