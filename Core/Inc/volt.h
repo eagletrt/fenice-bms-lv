@@ -14,9 +14,11 @@
 #include "ltc_config.h"
 #include "spi.h"
 
+/** BASED ON LIPO STANDARD */
 #define VOLT_MAX_ALLOWED_VOLTAGE 4.2
-#define VOLT_MIN_ALLOWED_VOLTAGE 3
-#define VOLT_MAX_ATTEMPTS        5
+#define VOLT_MIN_ALLOWED_VOLTAGE 3.3
+
+#define VOLT_MAX_ATTEMPTS 5
 
 extern voltage_t voltages[LV_CELLS_COUNT];
 extern float total_voltage_on_board;

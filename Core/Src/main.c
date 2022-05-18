@@ -180,6 +180,7 @@ int main(void) {
     MX_USART1_UART_Init();
     MX_TIM8_Init();
     MX_SPI3_Init();
+    MX_TIM12_Init();
     /* USER CODE BEGIN 2 */
     /* USER CODE BEGIN 2 */
 

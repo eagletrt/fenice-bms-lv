@@ -39,6 +39,8 @@ C_SOURCES =  \
 Core/Lib/can-comm/can_comm.c \
 Core/Lib/cli_bms_lv/cli_bms_lv.c \
 Core/Lib/dac_pump/dac_pump.c \
+Core/Lib/errors/error.c \
+Core/Lib/errors/error_list_ref.c \
 Core/Lib/ltc6810/ltc6810-driver.c \
 Core/Lib/mcp23017/mcp23017.c \
 Core/Lib/measurements/measurements.c \
@@ -175,6 +177,7 @@ C_INCLUDES =  \
 -ICore/Lib/can-comm \
 -ICore/Lib/cli_bms_lv \
 -ICore/Lib/dac_pump \
+-ICore/Lib/errors \
 -ICore/Lib/ltc6810 \
 -ICore/Lib/mcp23017 \
 -ICore/Lib/measurements \
