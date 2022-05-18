@@ -203,7 +203,7 @@ uint8_t ltc6810_read_voltages(SPI_HandleTypeDef *spi, voltage_t *volts) {
 
     cmd[0] = 0;
 
-    if (ltc6810_pladc(spi, 10) == HAL_TIMEOUT) {
+    if (ltc6810_pladc(spi, 5) == HAL_TIMEOUT) {
         ltc_error = 1;
     }
 
@@ -247,7 +247,9 @@ uint8_t ltc6810_read_voltages(SPI_HandleTypeDef *spi, voltage_t *volts) {
             // For every cell in the register
             for (uint8_t cell = 0; cell < LTC6810_REG_CELL_COUNT; cell++) {
                 uint16_t index = (reg * LTC6810_REG_CELL_COUNT) + cell;
-                volts[index]   = ltc6810_convert_voltages(&rx_data[sizeof(voltage_t) * cell]);
+                if (index > 3)
+                    break;
+                volts[index] = ltc6810_convert_voltages(&rx_data[sizeof(voltage_t) * cell]);
             }
         }
 #endif

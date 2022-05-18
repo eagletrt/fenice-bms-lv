@@ -90,6 +90,11 @@ uint8_t volt_read_and_print() {
             if ((float)voltages[i] / 10000 >= VOLT_MAX_ALLOWED_VOLTAGE) {
                 sprintf(buff, "Error! Max allowed voltage exceeded (Cell %u: %.3fV)", i, (float)voltages[i] / 10000);
                 volt_status = VOLT_OVER_VOLTAGE;
+                voltages[i] = 0xff;
+            } else if ((float)voltages[i] / 10000 <= VOLT_MIN_ALLOWED_VOLTAGE) {
+                sprintf(buff, "Error! Min allowed voltage exceeded (Cell %u: %.3fV)", i, (float)voltages[i] / 10000);
+                volt_status = VOLT_UNDER_VOLTAGE;
+                voltages[i] = 0x00;
             } else {
                 sprintf(buff, "Cell %u: %.3fV", i, (float)voltages[i] / 10000);
             }
@@ -133,6 +138,7 @@ uint8_t volt_read_and_store(char *buf) {
                 sprintf(
                     buff, "Error! Max allowed voltage exceeded (Cell %u: %.3fV) \r\n", i, (float)voltages[i] / 10000);
                 volt_status = VOLT_OVER_VOLTAGE;
+                voltages[i] = 0xff;
             } else {
                 sprintf(buff, "Cell %u: %.3fV \r\n", i, (float)voltages[i] / 10000);
             }
@@ -143,6 +149,11 @@ uint8_t volt_read_and_store(char *buf) {
     if (total_voltage_on_board < MIN_POWER_ON_VOLTAGE) {
         sprintf(buf, "UNDERVOLTAGE! \r\n");
         volt_status = VOLT_UNDER_VOLTAGE;
+        voltages[0] = 0x00;
+        voltages[1] = 0x00;
+        voltages[2] = 0x00;
+        voltages[3] = 0x00;
     }
+    sprintf(buf + strlen(buf), "Total voltage on board: %.3fV \r\n", total_voltage_on_board);
     return volt_status;
 }

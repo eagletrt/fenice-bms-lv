@@ -39,7 +39,7 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
-
+extern float fan_duty_cycle;
 typedef struct temperatures_struct {
     uint32_t value;
 
@@ -70,52 +70,50 @@ void set_sensor_update_time();
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define SD_CS_Pin             GPIO_PIN_13
-#define SD_CS_GPIO_Port       GPIOC
-#define EEPROM_HOLD_Pin       GPIO_PIN_14
-#define EEPROM_HOLD_GPIO_Port GPIOC
-#define SD_DETECT_Pin         GPIO_PIN_15
-#define SD_DETECT_GPIO_Port   GPIOC
-#define HALL_Pin              GPIO_PIN_0
-#define HALL_GPIO_Port        GPIOC
-#define HALL_OCD_Pin          GPIO_PIN_1
-#define HALL_OCD_GPIO_Port    GPIOC
-#define TMP_DCDC12_Pin        GPIO_PIN_2
-#define TMP_DCDC12_GPIO_Port  GPIOC
-#define TMP_DCDC24_Pin        GPIO_PIN_3
-#define TMP_DCDC24_GPIO_Port  GPIOC
-#define TMP_BATT1_Pin         GPIO_PIN_0
-#define TMP_BATT1_GPIO_Port   GPIOA
-#define TMP_BATT2_Pin         GPIO_PIN_1
-#define TMP_BATT2_GPIO_Port   GPIOA
-#define PUMP_L_Pin            GPIO_PIN_4
-#define PUMP_L_GPIO_Port      GPIOA
-#define PUMP_R_Pin            GPIO_PIN_5
-#define PUMP_R_GPIO_Port      GPIOA
-#define RAD_L_Pin             GPIO_PIN_6
-#define RAD_L_GPIO_Port       GPIOA
-#define RAD_R_Pin             GPIO_PIN_7
-#define RAD_R_GPIO_Port       GPIOA
-#define INV_FRG_Pin           GPIO_PIN_4
-#define INV_FRG_GPIO_Port     GPIOC
-#define INV_RFE_Pin           GPIO_PIN_5
-#define INV_RFE_GPIO_Port     GPIOC
-#define FAN_Pin               GPIO_PIN_0
-#define FAN_GPIO_Port         GPIOB
-#define RELAY_Pin             GPIO_PIN_1
-#define RELAY_GPIO_Port       GPIOB
-#define LTC_CS_Pin            GPIO_PIN_10
-#define LTC_CS_GPIO_Port      GPIOB
-#define BUZZER_Pin            GPIO_PIN_6
-#define BUZZER_GPIO_Port      GPIOC
-#define L_ERR_Pin             GPIO_PIN_7
-#define L_ERR_GPIO_Port       GPIOC
-#define L_OTHER_Pin           GPIO_PIN_8
-#define L_OTHER_GPIO_Port     GPIOC
-#define EEPROM_WP_Pin         GPIO_PIN_15
-#define EEPROM_WP_GPIO_Port   GPIOA
-#define EEPROM_CS_Pin         GPIO_PIN_4
-#define EEPROM_CS_GPIO_Port   GPIOB
+#define SD_CS_Pin            GPIO_PIN_13
+#define SD_CS_GPIO_Port      GPIOC
+#define SD_DETECT_Pin        GPIO_PIN_15
+#define SD_DETECT_GPIO_Port  GPIOC
+#define HALL_Pin             GPIO_PIN_0
+#define HALL_GPIO_Port       GPIOC
+#define HALL_OCD_Pin         GPIO_PIN_1
+#define HALL_OCD_GPIO_Port   GPIOC
+#define TMP_DCDC12_Pin       GPIO_PIN_2
+#define TMP_DCDC12_GPIO_Port GPIOC
+#define TMP_DCDC24_Pin       GPIO_PIN_3
+#define TMP_DCDC24_GPIO_Port GPIOC
+#define TMP_BATT1_Pin        GPIO_PIN_0
+#define TMP_BATT1_GPIO_Port  GPIOA
+#define TMP_BATT2_Pin        GPIO_PIN_1
+#define TMP_BATT2_GPIO_Port  GPIOA
+#define PUMP_L_Pin           GPIO_PIN_4
+#define PUMP_L_GPIO_Port     GPIOA
+#define PUMP_R_Pin           GPIO_PIN_5
+#define PUMP_R_GPIO_Port     GPIOA
+#define RAD_L_Pin            GPIO_PIN_6
+#define RAD_L_GPIO_Port      GPIOA
+#define RAD_R_Pin            GPIO_PIN_7
+#define RAD_R_GPIO_Port      GPIOA
+#define INV_FRG_Pin          GPIO_PIN_4
+#define INV_FRG_GPIO_Port    GPIOC
+#define INV_RFE_Pin          GPIO_PIN_5
+#define INV_RFE_GPIO_Port    GPIOC
+#define FAN_Pin              GPIO_PIN_0
+#define FAN_GPIO_Port        GPIOB
+#define RELAY_Pin            GPIO_PIN_1
+#define RELAY_GPIO_Port      GPIOB
+#define LTC_CS_Pin           GPIO_PIN_10
+#define LTC_CS_GPIO_Port     GPIOB
+#define BUZZER_Pin           GPIO_PIN_6
+#define BUZZER_GPIO_Port     GPIOC
+#define L_ERR_Pin            GPIO_PIN_7
+#define L_ERR_GPIO_Port      GPIOC
+#define L_OTHER_Pin          GPIO_PIN_8
+#define L_OTHER_GPIO_Port    GPIOC
+#define EEPROM_WP_Pin        GPIO_PIN_15
+#define EEPROM_WP_GPIO_Port  GPIOA
+#define EEPROM_CS_Pin        GPIO_PIN_4
+#define EEPROM_CS_GPIO_Port  GPIOB
 /* USER CODE BEGIN Private defines */
 
 /**
@@ -293,6 +291,15 @@ static inline bool FDBK_24V_INVERTERS_get_state() {
 #define PUMP_DAC    hdac
 #define PUMP_L_CHNL DAC_CHANNEL_2
 #define PUMP_R_CHNL DAC_CHANNEL_1
+
+/* MEASUREMENTS */
+#define MEASUREMENTS_TIMER                          htim2
+#define COOLING_AND_LV_VERSION_TIMER_CHANNEL        TIM_CHANNEL_1
+#define CURRENT_TIMER_CHANNEL                       TIM_CHANNEL_2
+#define VOLTAGE_AND_TEMPS_TIMER_CHANNEL             TIM_CHANNEL_3
+#define COOLING_AND_LV_VERSION_TIMER_ACTIVE_CHANNEL HAL_TIM_ACTIVE_CHANNEL_1
+#define CURRENT_TIMER_ACTIVE_CHANNEL                HAL_TIM_ACTIVE_CHANNEL_2
+#define VOLTAGE_AND_TEMPS_TIMER_ACTIVE_CHANNEL      HAL_TIM_ACTIVE_CHANNEL_3
 
 /* HALL (Current sensor) -> ADC 1 CHANNEL10*/
 #define I_SENS_HADC     hadc1

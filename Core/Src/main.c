@@ -32,7 +32,6 @@
 /* USER CODE BEGIN Includes */
 //#include "../Lib/micro-libs/pid/pid.h"
 #include "adc.h"
-#include "buzzer.h"
 #include "can_comm.h"
 #include "cli_bms_lv.h"
 #include "common.h"
@@ -40,8 +39,8 @@
 #include "dac_pump.h"
 #include "dma.h"
 #include "fenice-config.h"
-#include "logger.h"
 #include "mcp23017.h"
+#include "measurements.h"
 #include "notes_buzzer.h"
 #include "pwm.h"
 #include "radiator.h"
@@ -129,6 +128,8 @@ static void _signal_mx_init_succes();
 static inline void check_over_temperature();
 static inline void check_under_voltage();
 static inline bool bms_on_off();
+static inline void check_initial_voltage();
+static inline void fans_and_radiators_init();
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -137,14 +138,9 @@ static bool is_sensors_update_time = 0;
 int debug_flag                     = 0;
 int m_sec_timer                    = 0;
 
-uint32_t led_last_tick;
 HAL_StatusTypeDef status;
-bool flag;
-CAN_TxHeaderTypeDef TxHeader;
-CAN_RxHeaderTypeDef RxHeader;
-uint32_t TxMailbox;
-
 char main_buff[500];
+float fan_duty_cycle = 0.8;
 /* USER CODE END 0 */
 
 /**
@@ -185,6 +181,7 @@ int main(void) {
     MX_TIM8_Init();
     MX_SPI3_Init();
     /* USER CODE BEGIN 2 */
+    /* USER CODE BEGIN 2 */
 
     //  MX_DMA_Init() must be executed before MX_ADC_Init() otherwise the ADC doesnt' work in DMA mode correctly
     //  but since __CUBEMIX e' stronzo__(cit.), this isn't enforced by the code generator
@@ -194,22 +191,23 @@ int main(void) {
     MX_DMA_Init();
     MX_ADC1_Init();
 
+#ifdef DEBUG_TIMER_MCU
+    DBGMCU->APB1FZ = DBGMCU_APB1_FZ_DBG_TIM2_STOP;
+#endif
     // Start DMA handled readings for the current sensor, battery and DCDC(12/24v) temperature sensors
     ADC_start_dma_readings();
 
     // Blink to signal correct MX_XXX_init processes (usuefull for CAN transciever)
     _signal_mx_init_succes();
-
-    //HAL_GPIO_WritePin(L_ERR_GPIO_Port, L_ERR_Pin, GPIO_PIN_SET);
-
     cli_bms_lv_init();
 
     ltc6810_disable_cs(&SPI);
     // sprintf(main_buff, "LTC ID %s", ltc6810_return_serial_id());
     // printl(main_buff, NO_HEADER);
-    printl("Relay out disabled, waiting 5 seconds before reading voltages\r\n", NO_HEADER);
-    HAL_Delay(5000);
+    printl("Relay out disabled, waiting 1 seconds before reading voltages\r\n", NO_HEADER);
+    HAL_Delay(1000);
 
+    //Init feedbacks chip
     mcp23017_basic_config_init(&hmcp, &hi2c3);
 
     // Buzzer congiguration
@@ -221,110 +219,31 @@ int main(void) {
     pwm_set_duty_cicle(&FAN6_HTIM, FAN6_PWM_TIM_CHNL, 0.20);
 
     radiator_init();
+    measurements_init(&MEASUREMENTS_TIMER);
 
-    sprintf(main_buff, "Checking if total voltage on board is above %.2fV", MIN_POWER_ON_VOLTAGE);
-    for (uint8_t i = 0; i < VOLT_MAX_ATTEMPTS; i++) {
-        sprintf(main_buff, "Closing relay phase: attempt %d of %d", i + 1, VOLT_MAX_ATTEMPTS);
-        printl(main_buff, NO_HEADER);
-        if (volt_read_and_print() == VOLT_OK) {
-            HAL_GPIO_WritePin(L_ERR_GPIO_Port, L_ERR_Pin, GPIO_PIN_RESET);
-            printl("Relay on", NORM_HEADER);
-            HAL_GPIO_WritePin(L_OTHER_GPIO_Port, L_OTHER_Pin, GPIO_PIN_SET);
-            pwm_start_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
-            //BZZR_play_pulses(300, 4);
-            LV_MASTER_RELAY_set_state(GPIO_PIN_SET);
-            HAL_Delay(BUZZER_ALARM_TIME);
-            pwm_stop_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
-            i = VOLT_MAX_ATTEMPTS;
-            printl("DONE!\r\n", NORM_HEADER);
-        }
-        HAL_Delay(200);
-    }
-
-    if (volt_status != VOLT_OK) {
-        HAL_GPIO_WritePin(L_ERR_GPIO_Port, L_ERR_Pin, GPIO_PIN_SET);
-    }
+    check_initial_voltage();
 
     mcp23017_read_both(&hmcp, &hi2c3);
 
-    if (FDBK_12V_FANS_get_state()) {
-        pwm_start_channel(&FAN6_HTIM, FAN6_PWM_TIM_CHNL);
-    }
+    fans_and_radiators_init();
 
-    if (FDBK_12V_RADIATORS_get_state()) {
-        start_both_radiator(&RAD_R_HTIM, RAD_L_PWM_TIM_CHNL, RAD_R_PWM_TIM_CHNL);
-    }
-
-    if (FDBK_24V_PUMPS_get_state()) {
-        dac_pump_sample_test(&hdac_pump);
-    }
-
+    //init for both can
     can_primary_init();
     can_secondary_init();
 
-    //CAN_start_all();  //TODO manage false can start
-    can_primary_send(0x1);
-    can_secondary_send(0x1);
+    // can_primary_send(0x1);
+    // can_secondary_send(0x1);
     while (1) {
         cli_loop(&cli_bms_lv);
+        measurements_flags_check();
     }
-#if 0
-  LTC_init(&ltc, &hspi2, 0, GPIOD, GPIO_PIN_4);  // init function of LTC_6810
+    /* USER CODE END 2 */
 
-
-  UserAdcConfig.Channel      = ADC_CHANNEL_2;
-  UserAdcConfig.Rank         = ADC_REGULAR_RANK_1;
-  UserAdcConfig.SamplingTime = ADC_SAMPLETIME_480CYCLES;
-  if (HAL_ADC_ConfigChannel(&hadc1, &UserAdcConfig) != HAL_OK) {
-      Error_Handler();
-  }
-  HAL_ADC_Start_IT(&hadc1);
-
-  HAL_TIM_Base_Start_IT(&htim8);
-  HAL_TIM_Base_Start(&htim8);
-
-  // Initializing PWM
-  Init_pwm(&hv_pwm, &htim2, TIM_CHANNEL_1);
-  Init_pwm(&lv_pwm, &htim3, TIM_CHANNEL_1);
-  Init_pwm(&pump_pwm, &htim4, TIM_CHANNEL_1);
-
-  // Initializing temperatures
-  lv_temp.desired   = 45;
-  hv_temp.desired   = 45;
-  pump_temp.desired = 45;
-
-  lv_temp.max_temp   = 70;
-  hv_temp.max_temp   = 70;
-  pump_temp.max_temp = 70;
-
-  // Initializing PID
-  double sample_time = (htim8.Init.Prescaler * htim8.Init.Period) / 108000000;
-  PID_Init(&lv_pid, 10, 0.01, 0.01, (float)sample_time, 100, 1000, PID_MODE_AUTOMATIC, PID_CONTROL_ACTION_REVERSE);
-  PID_Init(&hv_pid, 10, 0.01, 0.01, 0.5, 100, 1000, PID_MODE_AUTOMATIC, PID_CONTROL_ACTION_REVERSE);
-  PID_Init(&pump_pid, 10, 0.01, 0.01, 0.5, 100, 1000, PID_MODE_AUTOMATIC, PID_CONTROL_ACTION_REVERSE);
-
-  lv_pid.setpoint   = lv_temp.desired;
-  hv_pid.setpoint   = hv_temp.desired;
-  pump_pid.setpoint = pump_temp.desired;
-
-  lv_temp.value   = 65;
-  hv_temp.value   = 50;
-  pump_temp.value = 50;
-
-  /* USER CODE END 2 */
-
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
-  m_sec_timer         = HAL_GetTick();
-  int currentTick     = m_sec_timer;
-  int previous_millis = HAL_GetTick();
-  led_last_tick       = HAL_GetTick();
-#endif
-    //CAN_RxPQFI_Data_TypeDef rx_data = {};
+    /* Infinite loop */
+    /* USER CODE BEGIN WHILE */
     uint32_t tim_1s_next    = HAL_GetTick();
     uint32_t tim_10ms_next  = HAL_GetTick();
     uint32_t tim_100ms_next = HAL_GetTick();
-
     while (1) {
         if (HAL_GetTick() >= tim_1s_next) {
             if (volt_read_and_print() == 1) {
@@ -332,19 +251,6 @@ int main(void) {
             }
             printl("\r\nReading Feedbacks", NO_HEADER);
             mcp23017_read_both(&hmcp, &hi2c3);
-
-            flag = LV_MASTER_RELAY_get_state();
-            sprintf(main_buff, "MASTER RELAY: %d\r\n", flag);
-            printl(main_buff, NO_HEADER);
-            flag = FDBK_DCDC_12V_get_state();
-            sprintf(main_buff, "DCDC 12V: %d\r\n", flag);
-            printl(main_buff, NO_HEADER);
-            flag = FDBK_DCDC_24V_get_state();
-            sprintf(main_buff, "DCDC 24V: %d\r\n", flag);
-            printl(main_buff, NO_HEADER);
-
-            printl("WAIT\r\n", NO_HEADER);
-            // Update Timer
             tim_1s_next = HAL_GetTick() + 1000;
         }
 
@@ -369,10 +275,6 @@ int main(void) {
             // Update Timer
             tim_100ms_next = HAL_GetTick() + 100;
         }
-
-        //if (CAN_get(&hcanP, &rx_data) != COMM_ERROR) {
-        //    CAN_print_rxdata(&rx_data);
-        //}
         /* USER CODE END WHILE */
 
         /* USER CODE BEGIN 3 */
@@ -488,6 +390,50 @@ static inline void check_under_voltage() {
     // }
 }
 
+/**
+ * @brief Checks if total voltage is above MIN_POWER_ON_VOLTAGE within VOLT_MAX_ATTEMPTS times
+ * If total voltage is above the minimum level required the buzzer starts up for BUZZER_ALARM_TIME
+ * 
+ */
+static inline void check_initial_voltage() {
+    sprintf(main_buff, "Checking if total voltage on board is above %.2fV", MIN_POWER_ON_VOLTAGE);
+    for (uint8_t i = 0; i < VOLT_MAX_ATTEMPTS; i++) {
+        sprintf(main_buff, "Closing relay phase: attempt %d of %d", i + 1, VOLT_MAX_ATTEMPTS);
+        printl(main_buff, NO_HEADER);
+        if (volt_read_and_print() == VOLT_OK) {
+            HAL_GPIO_WritePin(L_ERR_GPIO_Port, L_ERR_Pin, GPIO_PIN_RESET);
+            printl("Relay on", NORM_HEADER);
+            HAL_GPIO_WritePin(L_OTHER_GPIO_Port, L_OTHER_Pin, GPIO_PIN_SET);
+            pwm_start_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
+            LV_MASTER_RELAY_set_state(GPIO_PIN_SET);
+            HAL_Delay(BUZZER_ALARM_TIME);
+            pwm_stop_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
+            i = VOLT_MAX_ATTEMPTS;
+            printl("DONE!\r\n", NORM_HEADER);
+        }
+        HAL_Delay(200);
+    }
+
+    if (volt_status != VOLT_OK) {
+        HAL_GPIO_WritePin(L_ERR_GPIO_Port, L_ERR_Pin, GPIO_PIN_SET);
+    }
+}
+
+static inline void fans_and_radiators_init() {
+    if (FDBK_12V_FANS_get_state()) {
+        pwm_start_channel(&FAN6_HTIM, FAN6_PWM_TIM_CHNL);
+    }
+
+    if (FDBK_12V_RADIATORS_get_state()) {
+        start_both_radiator(&RAD_R_HTIM, RAD_L_PWM_TIM_CHNL, RAD_R_PWM_TIM_CHNL);
+    }
+#ifdef PUMP_SAMPLE_TEST
+    if (FDBK_24V_PUMPS_get_state()) {
+        dac_pump_sample_test(&hdac_pump);
+    }
+#endif
+}
+
 static inline void check_over_temperature() {
     if (lv_temp.value > lv_temp.max_temp) {
         OVER_TEMPERATURE = 1;
@@ -513,46 +459,6 @@ void is_sensor_update_time() {
 }
 static void _signal_mx_init_succes() {
     printl("MX_INIT Success!", NORM_HEADER);
-
-    //HAL_GPIO_WritePin(LED_1_GPIO_Port, LED_1_Pin, GPIO_PIN_RESET);
-    //HAL_GPIO_WritePin(LED_2_GPIO_Port, LED_2_Pin, GPIO_PIN_RESET);
-    //HAL_GPIO_WritePin(LED_3_GPIO_Port, LED_3_Pin, GPIO_PIN_RESET);
-    //HAL_GPIO_WritePin(LED_4_GPIO_Port, LED_4_Pin, GPIO_PIN_RESET);
-    //HAL_GPIO_WritePin(LED_5_GPIO_Port, LED_5_Pin, GPIO_PIN_RESET);
-    //for (int i = 0; i < 2; i++) {
-    //    HAL_GPIO_WritePin(LED_5_GPIO_Port, LED_5_Pin, GPIO_PIN_RESET);
-    //    HAL_GPIO_WritePin(LED_1_GPIO_Port, LED_1_Pin, GPIO_PIN_SET);
-    //    HAL_Delay(50);
-    //    HAL_GPIO_WritePin(LED_1_GPIO_Port, LED_1_Pin, GPIO_PIN_RESET);
-    //    HAL_GPIO_WritePin(LED_2_GPIO_Port, LED_2_Pin, GPIO_PIN_SET);
-    //    HAL_Delay(50);
-    //    HAL_GPIO_WritePin(LED_2_GPIO_Port, LED_2_Pin, GPIO_PIN_RESET);
-    //    HAL_GPIO_WritePin(LED_3_GPIO_Port, LED_3_Pin, GPIO_PIN_SET);
-    //    HAL_Delay(50);
-    //    HAL_GPIO_WritePin(LED_3_GPIO_Port, LED_3_Pin, GPIO_PIN_RESET);
-    //    HAL_GPIO_WritePin(LED_4_GPIO_Port, LED_4_Pin, GPIO_PIN_SET);
-    //    HAL_Delay(50);
-    //    HAL_GPIO_WritePin(LED_4_GPIO_Port, LED_4_Pin, GPIO_PIN_RESET);
-    //    HAL_GPIO_WritePin(LED_5_GPIO_Port, LED_5_Pin, GPIO_PIN_SET);
-    //    HAL_Delay(100);
-    //    HAL_GPIO_WritePin(LED_5_GPIO_Port, LED_5_Pin, GPIO_PIN_RESET);
-    //    HAL_GPIO_WritePin(LED_4_GPIO_Port, LED_4_Pin, GPIO_PIN_SET);
-    //    HAL_Delay(50);
-    //    HAL_GPIO_WritePin(LED_4_GPIO_Port, LED_4_Pin, GPIO_PIN_RESET);
-    //    HAL_GPIO_WritePin(LED_3_GPIO_Port, LED_3_Pin, GPIO_PIN_SET);
-    //    HAL_Delay(50);
-    //    HAL_GPIO_WritePin(LED_3_GPIO_Port, LED_3_Pin, GPIO_PIN_RESET);
-    //    HAL_GPIO_WritePin(LED_2_GPIO_Port, LED_2_Pin, GPIO_PIN_SET);
-    //    HAL_Delay(50);
-    //    HAL_GPIO_WritePin(LED_2_GPIO_Port, LED_2_Pin, GPIO_PIN_RESET);
-    //    HAL_GPIO_WritePin(LED_1_GPIO_Port, LED_1_Pin, GPIO_PIN_SET);
-    //    HAL_Delay(50);
-    //}
-    //HAL_GPIO_WritePin(LED_1_GPIO_Port, LED_1_Pin, GPIO_PIN_RESET);
-    //HAL_GPIO_WritePin(LED_2_GPIO_Port, LED_2_Pin, GPIO_PIN_RESET);
-    //HAL_GPIO_WritePin(LED_3_GPIO_Port, LED_3_Pin, GPIO_PIN_RESET);
-    //HAL_GPIO_WritePin(LED_4_GPIO_Port, LED_4_Pin, GPIO_PIN_RESET);
-    //HAL_GPIO_WritePin(LED_5_GPIO_Port, LED_5_Pin, GPIO_PIN_RESET);
 }
 #if 0
     static void _test_buzzer() {

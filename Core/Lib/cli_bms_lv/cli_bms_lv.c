@@ -19,12 +19,17 @@
 #include "dac.h"
 #include "adc.h"
 #include "notes_buzzer.h"
+#include "can.h"
+#include "can_comm.h"
+
+/* CAN CI-CD */
+#include "../can-cicd/includes_generator/primary/ids.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define N_COMMANDS 9
+#define N_COMMANDS 10
 
 cli_command_func_t _cli_volts;
 cli_command_func_t _cli_radiator;
@@ -33,8 +38,10 @@ cli_command_func_t _cli_temps;
 cli_command_func_t _cli_feedbacks;
 cli_command_func_t _cli_dmesg;
 cli_command_func_t _cli_reset;
-cli_command_func_t _cli_help;
 cli_command_func_t _cli_wizard;
+cli_command_func_t _cli_help;
+cli_command_func_t _cli_can_send;
+
 
 cli_command_func_t *commands[N_COMMANDS] = {
     & _cli_volts,
@@ -45,11 +52,12 @@ cli_command_func_t *commands[N_COMMANDS] = {
     & _cli_dmesg,
     & _cli_reset,
     & _cli_wizard,
+    & _cli_can_send,
     & _cli_help
 };
 
 char *command_names[N_COMMANDS] = 
-{"volts", "radiator", "pumps", "temps", "feedbacks", "dmesg", "reset", "wizard","?"};
+{"volts", "radiator", "pumps", "temps", "feedbacks", "dmesg", "reset", "wizard","can","?"};
 
 char *volt_status_name[VOLT_ENUM_SIZE] = {
     [VOLT_OK] = "VOLT OK",
@@ -187,4 +195,13 @@ void _cli_help(uint16_t argc, char **argv, char *out) {
 void _cli_wizard(uint16_t argc, char **argv, char *out){
     sprintf(out, "Dj Khaled: another one!\r\n");
     BUZ_sborati(&BZZR_HTIM);
+}
+
+void _cli_can_send(uint16_t argc, char **argv, char *out) {
+    if(strcmp(argv[1],"volts")==0){
+        can_primary_send(PRIMARY_ID_LV_VOLTAGE);
+    }else if(strcmp(argv[1],"cooling")==0){
+        can_primary_send(PRIMARY_ID_COOLING_STATUS);
+    }
+    can_secondary_send(PRIMARY_ID_COOLING_STATUS);
 }

@@ -41,11 +41,11 @@ Core/Lib/cli_bms_lv/cli_bms_lv.c \
 Core/Lib/dac_pump/dac_pump.c \
 Core/Lib/ltc6810/ltc6810-driver.c \
 Core/Lib/mcp23017/mcp23017.c \
+Core/Lib/measurements/measurements.c \
 Core/Lib/micro-libs/blink/blink.c \
 Core/Lib/micro-libs/cli/cli.c \
 Core/Lib/micro-libs/ctrl-nwk-utils/ctrl-nwk-utils.c \
 Core/Lib/micro-libs/llist/llist.c \
-Core/Lib/micro-libs/logger/logger.c \
 Core/Lib/micro-libs/pid/pid.c \
 Core/Lib/micro-libs/priority-queue/priority_queue_fast_insert.c \
 Core/Lib/micro-libs/pwm/pwm.c \
@@ -61,8 +61,6 @@ Core/Src/dma.c \
 Core/Src/gpio.c \
 Core/Src/i2c.c \
 Core/Src/main.c \
-Core/Src/peripherals/buzzer.c \
-Core/Src/peripherals/fan.c \
 Core/Src/spi.c \
 Core/Src/stm32f4xx_hal_msp.c \
 Core/Src/stm32f4xx_it.c \
@@ -168,26 +166,22 @@ AS_INCLUDES = \
 # C includes
 C_INCLUDES =  \
 -ICore/Inc \
--ICore/Inc/peripherals \
 -ICore/Lib/can-cicd/includes_generator/bms \
 -ICore/Lib/can-cicd/includes_generator/primary \
 -ICore/Lib/can-cicd/includes_generator/secondary \
 -ICore/Lib/can-cicd/naked_generator/bms/c \
 -ICore/Lib/can-cicd/naked_generator/primary/c \
 -ICore/Lib/can-cicd/naked_generator/secondary/c \
--ICore/Lib/can-cicd/protobuf_generator/gen/bms/cpp \
--ICore/Lib/can-cicd/protobuf_generator/gen/primary/cpp \
--ICore/Lib/can-cicd/protobuf_generator/gen/secondary/cpp \
 -ICore/Lib/can-comm \
 -ICore/Lib/cli_bms_lv \
 -ICore/Lib/dac_pump \
 -ICore/Lib/ltc6810 \
 -ICore/Lib/mcp23017 \
+-ICore/Lib/measurements \
 -ICore/Lib/micro-libs/blink \
 -ICore/Lib/micro-libs/cli \
 -ICore/Lib/micro-libs/ctrl-nwk-utils \
 -ICore/Lib/micro-libs/llist \
--ICore/Lib/micro-libs/logger \
 -ICore/Lib/micro-libs/pid \
 -ICore/Lib/micro-libs/priority-queue \
 -ICore/Lib/micro-libs/pwm \

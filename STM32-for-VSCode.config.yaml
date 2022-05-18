@@ -67,11 +67,14 @@ excludes:
   - "**/micro-libs/fsm/**"
   - "**/micro-libs/fsm/**"
   - "**/micro-libs/munit/**"
+  - "**/micro-libs/logger/**"
   - "**/micro-libs/can-sensor-programmer/**"
   - "**/micro-libs/m95256/**"
   - "**/test.c"
   - "**/test/**"
   - "**/*.pb.*"
+  - "**/can-cicd/can-cicd/**"
+  - "**/peripherals/**"
 
 # Include directories (directories containing .h or .hpp files)
 # If a CubeMX makefile is present it will automatically include the include directories from that makefile.
