@@ -38,6 +38,7 @@
 #include "current_sensor.h"
 #include "dac_pump.h"
 #include "dma.h"
+#include "error.h"
 #include "fenice-config.h"
 #include "mcp23017.h"
 #include "measurements.h"
@@ -125,11 +126,13 @@ void SystemClock_Config(void);
 static void _signal_mx_init_succes();
 //static void _test_buzzer();
 //static void write_error_led();
+void bms_error_state();
 static inline void check_over_temperature();
 static inline void check_under_voltage();
 static inline bool bms_on_off();
 static inline void check_initial_voltage();
-static inline void fans_and_radiators_init();
+static inline void check_DCDCs_voltages();
+static inline void fans_radiators_pumps_init();
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -180,7 +183,6 @@ int main(void) {
     MX_USART1_UART_Init();
     MX_TIM8_Init();
     MX_SPI3_Init();
-    MX_TIM12_Init();
     /* USER CODE BEGIN 2 */
     /* USER CODE BEGIN 2 */
 
@@ -201,6 +203,7 @@ int main(void) {
     // Blink to signal correct MX_XXX_init processes (usuefull for CAN transciever)
     _signal_mx_init_succes();
     cli_bms_lv_init();
+    error_init();
 
     ltc6810_disable_cs(&SPI);
     // sprintf(main_buff, "LTC ID %s", ltc6810_return_serial_id());
@@ -225,15 +228,16 @@ int main(void) {
     check_initial_voltage();
 
     mcp23017_read_both(&hmcp, &hi2c3);
+    check_DCDCs_voltages();
 
-    fans_and_radiators_init();
+    fans_radiators_pumps_init();
 
     //init for both can
     can_primary_init();
     can_secondary_init();
 
-    // can_primary_send(0x1);
-    // can_secondary_send(0x1);
+    can_primary_send(0x1);
+    can_secondary_send(0x1);
     while (1) {
         cli_loop(&cli_bms_lv);
         measurements_flags_check();
@@ -416,17 +420,32 @@ static inline void check_initial_voltage() {
     }
 
     if (volt_status != VOLT_OK) {
-        HAL_GPIO_WritePin(L_ERR_GPIO_Port, L_ERR_Pin, GPIO_PIN_SET);
+        error_set(ERROR_RELAY, 0, HAL_GetTick());
+        bms_error_state();
+    } else {
+        error_reset(ERROR_RELAY, 0);
     }
 }
 
-static inline void fans_and_radiators_init() {
+static inline void fans_radiators_pumps_init() {
     if (FDBK_12V_FANS_get_state()) {
         pwm_start_channel(&FAN6_HTIM, FAN6_PWM_TIM_CHNL);
+        error_reset(ERROR_FAN, 0);
+    } else {
+        error_set(ERROR_FAN, 0, HAL_GetTick());
     }
 
     if (FDBK_12V_RADIATORS_get_state()) {
         start_both_radiator(&RAD_R_HTIM, RAD_L_PWM_TIM_CHNL, RAD_R_PWM_TIM_CHNL);
+        error_reset(ERROR_RADIATOR, 1);
+    } else {
+        error_set(ERROR_RADIATOR, 1, HAL_GetTick());
+    }
+    if (FDBK_24V_PUMPS_get_state()) {
+        dac_pump_handle_init(&hdac_pump, 0.0, 0.0);
+        error_reset(ERROR_PUMP, 0);
+    } else {
+        error_set(ERROR_PUMP, 0, HAL_GetTick());
     }
 #ifdef PUMP_SAMPLE_TEST
     if (FDBK_24V_PUMPS_get_state()) {
@@ -435,6 +454,21 @@ static inline void fans_and_radiators_init() {
 #endif
 }
 
+static inline void check_DCDCs_voltages() {
+    error_reset(ERROR_DCDC12, 0);
+    if (!FDBK_DCDC_12V_get_state()) {
+        error_set(ERROR_DCDC12, 0, HAL_GetTick());
+    }
+    error_reset(ERROR_DCDC24, 0);
+    if (!FDBK_DCDC_24V_get_state()) {
+        error_set(ERROR_DCDC24, 0, HAL_GetTick());
+    }
+}
+
+void bms_error_state() {
+    HAL_GPIO_WritePin(L_ERR_GPIO_Port, L_ERR_Pin, GPIO_PIN_SET);
+    printl("ERROR STATE", ERR_HEADER);
+}
 static inline void check_over_temperature() {
     if (lv_temp.value > lv_temp.max_temp) {
         OVER_TEMPERATURE = 1;

@@ -32,13 +32,15 @@
     the name of the peripheral/device error list reference is defined as follows:
     node_t* error_list_ref_<insert the relative data name in data.c>;
 */
+llist_node error_list_ref_relay[1]                        = {NULL};
 llist_node error_list_ref_ltc6810[1]                      = {NULL};
 llist_node error_list_ref_low_voltages[LV_CELLS_COUNT]    = {NULL};
 llist_node error_list_ref_high_voltages[LV_CELLS_COUNT]   = {NULL};
 llist_node error_list_ref_mcp23017[1]                     = {NULL};
 llist_node error_list_ref_can[TOTAL_CAN_PHERIPERALS]      = {NULL};
-llist_node error_list_ref_radiators[1]                    = {NULL};
-llist_node error_list_ref_pumps[1]                        = {NULL};
+llist_node error_list_ref_radiators[2]                    = {NULL};
+llist_node error_list_ref_fan[1]                          = {NULL};
+llist_node error_list_ref_pumps[2]                        = {NULL};
 llist_node error_list_ref_adc_init[1]                     = {NULL};
 llist_node error_list_ref_adc_timeout[1]                  = {NULL};
 llist_node error_list_ref_dcdc12_low_temp[1]              = {NULL};
@@ -52,14 +54,15 @@ llist_node error_list_ref_dcdc12[1]                       = {NULL};
 llist_node error_list_ref_dcdc24[1]                       = {NULL};
 
 llist_node *const error_list_ref_array[ERROR_NUM_ERRORS] = {
-
+    [ERROR_RELAY]                    = error_list_ref_relay,
     [ERROR_LTC6810]                  = error_list_ref_ltc6810,
     [ERROR_CELL_UNDERVOLTAGE]        = error_list_ref_low_voltages,
     [ERROR_CELL_OVERVOLTAGE]         = error_list_ref_high_voltages,
     [ERROR_MCP23017]                 = error_list_ref_mcp23017,
     [ERROR_CAN]                      = error_list_ref_can,
-    [ERROR_RADIATORS]                = error_list_ref_radiators,
-    [ERROR_PUMPS]                    = error_list_ref_pumps,
+    [ERROR_RADIATOR]                 = error_list_ref_radiators,
+    [ERROR_FAN]                      = error_list_ref_fan,
+    [ERROR_PUMP]                     = error_list_ref_pumps,
     [ERROR_ADC_INIT]                 = error_list_ref_adc_init,
     [ERROR_ADC_TIMEOUT]              = error_list_ref_adc_timeout,
     [ERROR_DCDC12_UNDER_TEMPERATURE] = error_list_ref_dcdc12_low_temp,

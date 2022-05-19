@@ -16,6 +16,7 @@
 #include "cli_bms_lv.h"
 #include "timer_utils.h"
 #include "volt.h"
+#include "error.h"
 
 #ifdef MEAS_DEBUG
 #include "usart.h"
@@ -42,10 +43,12 @@ void measurements_init(TIM_HandleTypeDef *htim) {
 
 void measurements_flags_check() {
     
+    //TODO: add errors on measurements check
     if (flags & MEAS_VOLTS_AND_TEMPS_READ_FLAG) {
         if (volt_read() != 1) {
             can_primary_send(PRIMARY_ID_LV_VOLTAGE);
             can_primary_send(PRIMARY_ID_LV_TOTAL_VOLTAGE);
+            // set/reset flags  
         }
         can_primary_send(PRIMARY_ID_LV_TEMPERATURE);
         #ifdef MEAS_DEBUG

@@ -11,6 +11,7 @@
 #include "error_list_ref.h"
 #include "tim.h"
 #include "timer_utils.h"
+#include "cli_bms_lv.h"
 
 #include <stdlib.h>
 #ifndef max
@@ -25,6 +26,7 @@
  * 	- 1s for temperatures
  */
 const error_timeout error_timeouts[ERROR_NUM_ERRORS] = {
+    [ERROR_RELAY] = 1000,
     [ERROR_LTC6810] = SOFT,
     [ERROR_CELL_UNDERVOLTAGE] = SOFT,
     [ERROR_CELL_OVERVOLTAGE] = SOFT,
@@ -32,8 +34,9 @@ const error_timeout error_timeouts[ERROR_NUM_ERRORS] = {
     [ERROR_MCP23017] = SOFT,
     [ERROR_CAN] = SOFT,
     
-    [ERROR_RADIATORS] = SOFT,
-    [ERROR_PUMPS] = SOFT,
+    [ERROR_RADIATOR] = SOFT,
+    [ERROR_FAN] = SOFT,
+    [ERROR_PUMP] = SOFT,
 
     [ERROR_ADC_INIT] = SOFT,
     [ERROR_ADC_TIMEOUT] = SOFT,
@@ -87,7 +90,7 @@ bool error_set_timer(error_t *error) {
         volatile uint16_t delta = get_timeout_delta(error);
         uint16_t cnt            = __HAL_TIM_GET_COUNTER(&HTIM_ERR);
         __HAL_TIM_SET_COMPARE(&HTIM_ERR, ERR_TIM_CHANNEL, cnt + TIM_MS_TO_TICKS(&HTIM_ERR, delta));
-        __HAL_TIM_CLEAR_FLAG(&HTIM_ERR, TIM_IT_CC1);
+        __HAL_TIM_CLEAR_FLAG(&HTIM_ERR, TIM_IT_CC4);
         HAL_TIM_OC_Start_IT(&HTIM_ERR, ERR_TIM_CHANNEL);
 
         //HAL_GPIO_WritePin(GPIO1_GPIO_Port, GPIO1_Pin, GPIO_PIN_SET);
@@ -229,5 +232,7 @@ void error_dump(error_t errors[]) {
 void _error_handle_tim_oc_irq() {
     //fsm_transition(bms.fsm, BMS_FAULT);
     error_set_fatal(error_get_top());
-    //HAL_TIM_OC_Stop_IT(&HTIM_ERR, TIM_CHANNEL_1);
+    HAL_TIM_OC_Stop_IT(&HTIM_ERR, ERR_TIM_CHANNEL);
+    cli_bms_debug("FATAL ERROR \r\n",14);
+    bms_error_state();
 }

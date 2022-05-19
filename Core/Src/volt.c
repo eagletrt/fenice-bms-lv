@@ -147,7 +147,6 @@ uint8_t volt_read_and_store(char *buf) {
         total_voltage_on_board += (float)voltages[i] / 10000;
     }
     if (total_voltage_on_board < MIN_POWER_ON_VOLTAGE) {
-        sprintf(buf, "UNDERVOLTAGE! \r\n");
         volt_status = VOLT_UNDER_VOLTAGE;
         voltages[0] = 0x00;
         voltages[1] = 0x00;

@@ -63,7 +63,6 @@ extern CAN_HandleTypeDef hcan1;
 extern CAN_HandleTypeDef hcan2;
 extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim8;
-extern TIM_HandleTypeDef htim12;
 extern UART_HandleTypeDef huart1;
 /* USER CODE BEGIN EV */
 
@@ -279,7 +278,6 @@ void TIM8_BRK_TIM12_IRQHandler(void) {
 
     /* USER CODE END TIM8_BRK_TIM12_IRQn 0 */
     HAL_TIM_IRQHandler(&htim8);
-    HAL_TIM_IRQHandler(&htim12);
     /* USER CODE BEGIN TIM8_BRK_TIM12_IRQn 1 */
 
     /* USER CODE END TIM8_BRK_TIM12_IRQn 1 */

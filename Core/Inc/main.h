@@ -66,6 +66,7 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
 void set_sensor_update_time();
+void bms_error_state();
 
 /* USER CODE END EFP */
 
@@ -302,8 +303,8 @@ static inline bool FDBK_24V_INVERTERS_get_state() {
 #define VOLTAGE_AND_TEMPS_TIMER_ACTIVE_CHANNEL      HAL_TIM_ACTIVE_CHANNEL_3
 
 /* ERRORS TIMER*/
-#define HTIM_ERR        htim12
-#define ERR_TIM_CHANNEL TIM_CHANNEL_1
+#define HTIM_ERR        htim2
+#define ERR_TIM_CHANNEL TIM_CHANNEL_4
 
 /* HALL (Current sensor) -> ADC 1 CHANNEL10*/
 #define I_SENS_HADC     hadc1

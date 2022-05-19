@@ -9,7 +9,7 @@
  * 
  */
 #include "can_comm.h"
-
+#include "error.h"
 #include "../can-cicd/includes_generator/primary/ids.h"
 #include "../can-cicd/naked_generator/primary/c/primary.h"
 
@@ -80,10 +80,17 @@ HAL_StatusTypeDef can_send(CAN_HandleTypeDef *hcan, uint8_t *buffer, CAN_TxHeade
 
     HAL_StatusTypeDef status = HAL_CAN_AddTxMessage(hcan, header, buffer, NULL);
     if (status != HAL_OK) {
-        //error_set(ERROR_CAN, 0, HAL_GetTick());
-
+        if(hcan->Instance == CANP.Instance){
+            error_set(ERROR_CAN, 0, HAL_GetTick());
+        }else if(hcan->Instance == CANS.Instance){
+            error_set(ERROR_CAN, 1, HAL_GetTick());
+        }
     } else {
-        //error_reset(ERROR_CAN, 0);
+        if(hcan->Instance == CANP.Instance){ 
+            error_reset(ERROR_CAN, 0);
+        }else if(hcan->Instance == CANS.Instance){
+            error_reset(ERROR_CAN, 1);
+        }
     }
 
     return status;
@@ -93,7 +100,6 @@ HAL_StatusTypeDef can_primary_send(uint16_t id) {
     uint8_t buffer[CAN_MAX_PAYLOAD_LENGTH] = {0, 0, 0, 0, 0, 0, 0, 0};
 
     tx_header.StdId = id;
-    tx_header.DLC   = 8;  //TODO: remove
 
     if (id == PRIMARY_ID_LV_VERSION) {
         serialize_PrimaryLvVersion(buffer, 1, 1);
@@ -134,11 +140,12 @@ HAL_StatusTypeDef can_secondary_send(uint16_t id) {
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
     //volatile uint8_t x = 0;
     uint8_t rx_data[8] = {'\0'};
-    HAL_CAN_GetRxMessage(&CANP, CAN_RX_FIFO0, &rx_header, rx_data);
+    error_toggle_check(HAL_CAN_GetRxMessage(&CANP, CAN_RX_FIFO0, &rx_header, rx_data),ERROR_CAN, 0);
+    
 }
 
 void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan) {
     //volatile uint8_t x = 0;
     uint8_t rx_data[8] = {'\0'};
-    HAL_CAN_GetRxMessage(&CANS, CAN_RX_FIFO1, &rx_header, rx_data);
+    error_toggle_check(HAL_CAN_GetRxMessage(&CANS, CAN_RX_FIFO1, &rx_header, rx_data), ERROR_CAN, 1);
 }
