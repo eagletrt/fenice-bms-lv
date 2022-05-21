@@ -38,6 +38,7 @@ BUILD_DIR = build
 C_SOURCES =  \
 Core/Lib/can-comm/can_comm.c \
 Core/Lib/cli_bms_lv/cli_bms_lv.c \
+Core/Lib/current_transducer/current_transducer.c \
 Core/Lib/dac_pump/dac_pump.c \
 Core/Lib/errors/error.c \
 Core/Lib/errors/error_list_ref.c \
@@ -114,7 +115,7 @@ PREFIX = arm-none-eabi-
 POSTFIX = "
 # The gcc compiler bin path can be either defined in make command via GCC_PATH variable (> make GCC_PATH=xxx)
 # either it can be added to the PATH environment variable.
-GCC_PATH="/Users/tommasocanova/Library/Application Support/Code/User/globalStorage/bmd.stm32-for-vscode/@xpack-dev-tools/arm-none-eabi-gcc/10.2.1-1.1.2/.content/bin
+GCC_PATH="/run/current-system/sw/bin
 ifdef GCC_PATH
 CXX = $(GCC_PATH)/$(PREFIX)g++$(POSTFIX)
 CC = $(GCC_PATH)/$(PREFIX)gcc$(POSTFIX)
@@ -176,6 +177,7 @@ C_INCLUDES =  \
 -ICore/Lib/can-cicd/naked_generator/secondary/c \
 -ICore/Lib/can-comm \
 -ICore/Lib/cli_bms_lv \
+-ICore/Lib/current_transducer \
 -ICore/Lib/dac_pump \
 -ICore/Lib/errors \
 -ICore/Lib/ltc6810 \
@@ -281,13 +283,13 @@ $(BUILD_DIR):
 # flash
 #######################################
 flash: $(BUILD_DIR)/$(TARGET).elf
-	"/usr/local/bin/openocd" -f ./openocd.cfg -c "program $(BUILD_DIR)/$(TARGET).elf verify reset exit"
+	"/run/current-system/sw/bin/openocd" -f ./openocd.cfg -c "program $(BUILD_DIR)/$(TARGET).elf verify reset exit"
 
 #######################################
 # erase
 #######################################
 erase: $(BUILD_DIR)/$(TARGET).elf
-	"/usr/local/bin/openocd" -f ./openocd.cfg -c "init; reset halt; stm32f4x mass_erase 0; exit"
+	"/run/current-system/sw/bin/openocd" -f ./openocd.cfg -c "init; reset halt; stm32f4x mass_erase 0; exit"
 
 #######################################
 # clean up

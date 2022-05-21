@@ -10,7 +10,8 @@
  */
 #include "cli_bms_lv.h"
 
-#include "adc.h"
+#include "../current_transducer/current_transducer.h"
+#include "adc.h"  // TODO: remove this eventually
 #include "can.h"
 #include "can_comm.h"
 #include "dac.h"
@@ -190,9 +191,9 @@ void _cli_pumps(uint16_t argc, char **argv, char *out) {
 void _cli_temps(uint16_t argc, char **argv, char *out) {
     sprintf(
         out,
-        "ADC sensors:\r\n\tCurrent: %i [A]\r\n\tBatt1: %i [°C]\r\n\tBatt2: %i [°C]\r\n\tDCDC 12V: %i[°C]\r\n\tDCDC "
+        "ADC sensors:\r\n\tCurrent: %f [A]\r\n\tBatt1: %i [°C]\r\n\tBatt2: %i [°C]\r\n\tDCDC 12V: %i[°C]\r\n\tDCDC "
         "24V: %i[°C]\r\n",
-        ADC_get_i_sensor_val(),
+        CT_get_electric_current_mA(),
         ADC_get_t_batt1_val(),
         ADC_get_t_batt2_val(),
         ADC_get_t_dcdc12_val(),

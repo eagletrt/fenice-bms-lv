@@ -262,9 +262,10 @@ int main(void) {
         if (HAL_GetTick() > tim_10ms_next) {
             sprintf(
                 main_buff,
-                "main ADC: %lu %i %i %i %i %i",
-                HAL_GetTick(),
-                ADC_get_i_sensor_val(),
+                "ADC sensors:\r\n\tCurrent: %f [mA]\r\n\tBatt1: %i [°C]\r\n\tBatt2: %i [°C]\r\n\tDCDC 12V: "
+                "%i[°C]\r\n\tDCDC "
+                "24V: %i[°C]\r\n",
+                CT_get_electric_current_mA(),
                 ADC_get_t_batt1_val(),
                 ADC_get_t_batt2_val(),
                 ADC_get_t_dcdc12_val(),

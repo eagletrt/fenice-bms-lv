@@ -9,15 +9,16 @@
  * 
  */
 #include "can_comm.h"
-#include "error.h"
+
 #include "../can-cicd/includes_generator/primary/ids.h"
 #include "../can-cicd/naked_generator/primary/c/primary.h"
-
+#include "../current_transducer/current_transducer.h"
+#include "adc.h"  // TODO: remove this eventually
 #include "dac_pump.h"
+#include "error.h"
 #include "fenice-config.h"
 #include "radiator.h"
 #include "volt.h"
-#include "adc.h"
 
 CAN_TxHeaderTypeDef tx_header;
 CAN_RxHeaderTypeDef rx_header;
@@ -80,15 +81,15 @@ HAL_StatusTypeDef can_send(CAN_HandleTypeDef *hcan, uint8_t *buffer, CAN_TxHeade
 
     HAL_StatusTypeDef status = HAL_CAN_AddTxMessage(hcan, header, buffer, NULL);
     if (status != HAL_OK) {
-        if(hcan->Instance == CANP.Instance){
+        if (hcan->Instance == CANP.Instance) {
             error_set(ERROR_CAN, 0, HAL_GetTick());
-        }else if(hcan->Instance == CANS.Instance){
+        } else if (hcan->Instance == CANS.Instance) {
             error_set(ERROR_CAN, 1, HAL_GetTick());
         }
     } else {
-        if(hcan->Instance == CANP.Instance){ 
+        if (hcan->Instance == CANP.Instance) {
             error_reset(ERROR_CAN, 0);
-        }else if(hcan->Instance == CANS.Instance){
+        } else if (hcan->Instance == CANS.Instance) {
             error_reset(ERROR_CAN, 1);
         }
     }
@@ -107,11 +108,11 @@ HAL_StatusTypeDef can_primary_send(uint16_t id) {
     } else if (id == PRIMARY_ID_LV_VOLTAGE) {
         serialize_PrimaryLvVoltage(buffer, voltages[0], voltages[1], voltages[2], voltages[3]);
         tx_header.DLC = PRIMARY_LV_VOLTAGE_SIZE;
-    } else if(id == PRIMARY_ID_LV_TOTAL_VOLTAGE){
+    } else if (id == PRIMARY_ID_LV_TOTAL_VOLTAGE) {
         serialize_PrimaryLvTotalVoltage(buffer, (uint16_t)total_voltage_on_board * 100);
         tx_header.DLC = PRIMARY_LV_TOTAL_VOLTAGE_SIZE;
     } else if (id == PRIMARY_ID_LV_CURRENT) {
-        serialize_PrimaryLvCurrent(buffer, ADC_get_i_sensor_val());
+        serialize_PrimaryLvCurrent(buffer, CT_get_electric_current_mA());
         tx_header.DLC = PRIMARY_LV_CURRENT_SIZE;
     } else if (id == PRIMARY_ID_LV_TEMPERATURE) {
         //TODO: check which one battery and which dcdc
@@ -140,8 +141,7 @@ HAL_StatusTypeDef can_secondary_send(uint16_t id) {
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
     //volatile uint8_t x = 0;
     uint8_t rx_data[8] = {'\0'};
-    error_toggle_check(HAL_CAN_GetRxMessage(&CANP, CAN_RX_FIFO0, &rx_header, rx_data),ERROR_CAN, 0);
-    
+    error_toggle_check(HAL_CAN_GetRxMessage(&CANP, CAN_RX_FIFO0, &rx_header, rx_data), ERROR_CAN, 0);
 }
 
 void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan) {

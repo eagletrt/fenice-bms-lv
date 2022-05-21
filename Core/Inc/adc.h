@@ -43,10 +43,39 @@ void MX_ADC1_Init(void);
 /* USER CODE BEGIN Prototypes */
 
 /**
- * @brief This functions is a wrapper HAL_ADC_Start_DMA(...)it, starts ADC in DMA mode 
- * @note  The necessity of this function was due to confine the array of ADC values into the ADC module.
- *        Proper getters will be used to acces the values retirived from the adc
- * @return see @ref HAL_ADC_Start_DMA
+ * @brief  Get resoultion bits of the ADC
+ * @param  adcHandle @ref ADC_HandleTypeDef
+ * @return The adc bit-width resolution (12bit,10bit...) 
+ */
+uint8_t ADC_get_resolution_bits(ADC_HandleTypeDef *adcHandle);
+
+/**
+ * @brief  Get the ADC total number of voltage levels (range of resolution)
+ * @param  adcHandle @ref ADC_HandleTypeDef
+ * @return ADC voltage levels (2^resolution_bits) 
+ */
+uint32_t ADC_get_tot_voltage_levels(ADC_HandleTypeDef *adcHandle);
+
+/**
+ * @brief  Get the value in mV expressed by the output of value from the ADC
+ * @param  adcHandle @ref ADC_HandleTypeDef
+ * @param  value_from_adc output value from the adc
+ * @return Value in mV expressed by the adc
+ */
+float ADC_get_value_mV(ADC_HandleTypeDef *adcHandle, uint32_t value_from_adc);
+
+/**
+ * @brief Start a reading of all ADC values in DMA mode.
+ *        This functions is a wrapper HAL_ADC_Start_DMA(...)it, starts the ADC
+ *        of all sensors in DMA mode 
+ * @note  The necessity of this function was due to confine the array of ADC
+ *        values into the ADC module. Proper getters will be used to acces the
+ *        values retirived from the adc
+ *         Since we did not configure the ADC in circular mode we need to restart
+ *        the conversions each time Thus this function must be recalled in the
+ *        code if we want new values (by SFW timer or inside the interrupt of a
+ *        HW timer)
+ * @return HAL Status see @ref HAL_ADC_Start_DMA
  */
 HAL_StatusTypeDef ADC_start_dma_readings();
 
@@ -54,7 +83,7 @@ HAL_StatusTypeDef ADC_start_dma_readings();
  * @brief Current sensor value getter
  * @return current sensor value
  */
-uint16_t ADC_get_i_sensor_val();
+uint16_t ADC_get_HO_50S_SP33_sensor_val();
 
 /**
  * @brief Battery Temperature sensor #1 value getter

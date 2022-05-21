@@ -79,6 +79,7 @@ void bms_error_state();
 #define HALL_GPIO_Port       GPIOC
 #define HALL_OCD_Pin         GPIO_PIN_1
 #define HALL_OCD_GPIO_Port   GPIOC
+#define HALL_OCD_EXTI_IRQn   EXTI1_IRQn
 #define TMP_DCDC12_Pin       GPIO_PIN_2
 #define TMP_DCDC12_GPIO_Port GPIOC
 #define TMP_DCDC24_Pin       GPIO_PIN_3
@@ -306,9 +307,9 @@ static inline bool FDBK_24V_INVERTERS_get_state() {
 #define HTIM_ERR        htim2
 #define ERR_TIM_CHANNEL TIM_CHANNEL_4
 
-/* HALL (Current sensor) -> ADC 1 CHANNEL10*/
-#define I_SENS_HADC     hadc1
-#define I_SENS_ADC_CHNL ADC_CHANNEL_10
+/* HALL (Current transducer) -> ADC 1 CHANNEL10*/
+#define CURRENT_TRANSDUCER_HADC     hadc1
+#define CURRENT_TRANSDUCER_ADC_CHNL ADC_CHANNEL_10
 
 /* TMP_BATT1 (Battery Temperature sensor #1) -> ADC 1 CHANNEL0*/
 #define T_SENS_BATT1_HADC     hadc1
