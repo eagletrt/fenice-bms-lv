@@ -120,9 +120,9 @@
 
 /* WARNING: change the order of this enums if the rank order in the ADC changes */
 typedef enum {
-    adc_values_idx_HO_50S_SP33,
     adc_values_idx_term_couple_batt1,
     adc_values_idx_term_couple_batt2,
+    adc_values_idx_HO_50S_SP33,
     adc_values_idx_term_couple_dcdc12v,
     adc_values_idx_term_couple_dcdc24v,
     adc_values_idx_NUM_ADC_VALUES = N_ADC_CONVERSIONS,

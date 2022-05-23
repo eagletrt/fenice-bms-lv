@@ -190,14 +190,15 @@ void _cli_pumps(uint16_t argc, char **argv, char *out) {
 }
 void _cli_temps(uint16_t argc, char **argv, char *out) {
     sprintf(
-        out,
-        "ADC sensors:\r\n\tCurrent: %f [A]\r\n\tBatt1: %i [°C]\r\n\tBatt2: %i [°C]\r\n\tDCDC 12V: %i[°C]\r\n\tDCDC "
-        "24V: %i[°C]\r\n",
-        CT_get_electric_current_mA(),
-        ADC_get_t_batt1_val(),
-        ADC_get_t_batt2_val(),
-        ADC_get_t_dcdc12_val(),
-        ADC_get_t_dcdc24_val());
+                out,
+                "ADC sensors:\r\n\tCurrent: %f [mA]\r\n\tBatt1: %i [°C]\r\n\tBatt2: %i [°C]\r\n\tDCDC 12V: "
+                "%i[°C]\r\n\tDCDC "
+                "24V: %i[°C]\r\n",
+                CT_get_electric_current_mA(),
+                ADC_get_t_batt1_val(),
+                ADC_get_t_batt2_val(),
+                ADC_get_t_dcdc12_val(),
+                ADC_get_t_dcdc24_val());
     ADC_start_dma_readings();
 }
 void _cli_feedbacks(uint16_t argc, char **argv, char *out) {

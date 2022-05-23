@@ -36,6 +36,7 @@
 #include "cli_bms_lv.h"
 #include "common.h"
 #include "current_sensor.h"
+#include "current_transducer.h"
 #include "dac_pump.h"
 #include "dma.h"
 #include "error.h"
@@ -258,7 +259,7 @@ int main(void) {
             mcp23017_read_both(&hmcp, &hi2c3);
             tim_1s_next = HAL_GetTick() + 1000;
         }
-
+        cli_loop(&cli_bms_lv);
         if (HAL_GetTick() > tim_10ms_next) {
             sprintf(
                 main_buff,
