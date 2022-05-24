@@ -9,6 +9,8 @@
 
 #include "ltc6810-driver.h"
 
+#include "error.h"
+
 uint8_t dummy_data[6] = {0};
 uint8_t serial_id[6]  = {0};
 char buf[128];
@@ -205,6 +207,7 @@ uint8_t ltc6810_read_voltages(SPI_HandleTypeDef *spi, voltage_t *volts) {
 
     if (ltc6810_pladc(spi, 5) == HAL_TIMEOUT) {
         ltc_error = 1;
+        error_set(ERROR_LTC6810, 0, HAL_GetTick());
     }
 
     for (uint8_t reg = 0; reg < LTC6810_REG_COUNT; reg++) {
@@ -253,6 +256,9 @@ uint8_t ltc6810_read_voltages(SPI_HandleTypeDef *spi, voltage_t *volts) {
             }
         }
 #endif
+    }
+    if (ltc_error == 0) {
+        error_reset(ERROR_LTC6810, 0);
     }
     return ltc_error;
 }

@@ -17,6 +17,7 @@
 #include "timer_utils.h"
 #include "volt.h"
 #include "error.h"
+#include "main.h"
 
 #ifdef MEAS_DEBUG
 #include "usart.h"
@@ -25,7 +26,6 @@
 uint8_t flags;
 
 void measurements_init(TIM_HandleTypeDef *htim) {
-
     __HAL_TIM_SetCompare(htim, COOLING_AND_LV_VERSION_TIMER_CHANNEL, TIM_MS_TO_TICKS(htim, COOLING_STATUS_INTERVAL_MS));
     __HAL_TIM_SetCompare(htim, CURRENT_TIMER_CHANNEL, TIM_MS_TO_TICKS(htim, CURRENT_MEASURE_INTERVAL_MS));
     __HAL_TIM_SetCompare(htim, VOLTAGE_AND_TEMPS_TIMER_CHANNEL, TIM_MS_TO_TICKS(htim, VOLT_MEASURE_INTERVAL_MS));
@@ -45,10 +45,9 @@ void measurements_flags_check() {
     
     //TODO: add errors on measurements check
     if (flags & MEAS_VOLTS_AND_TEMPS_READ_FLAG) {
-        if (volt_read() != 1) {
+        if (volt_sample_and_read() != VOLT_ERR) {
             can_primary_send(PRIMARY_ID_LV_VOLTAGE);
             can_primary_send(PRIMARY_ID_LV_TOTAL_VOLTAGE);
-            // set/reset flags  
         }
         can_primary_send(PRIMARY_ID_LV_TEMPERATURE);
         #ifdef MEAS_DEBUG
@@ -60,6 +59,7 @@ void measurements_flags_check() {
     if (flags & MEAS_COOLING_AND_LV_VERSION_READ_FLAG) {
         can_primary_send(PRIMARY_ID_COOLING_STATUS);
         can_primary_send(PRIMARY_ID_LV_VERSION);
+        check_on_feedbacks();
         #ifdef MEAS_DEBUG
             cli_bms_debug("COOLING + LV VERSION", 20);
         #endif

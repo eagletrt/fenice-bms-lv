@@ -25,7 +25,15 @@
  * BMS LV COSTRAINTS
  */
 
-#define MIN_POWER_ON_VOLTAGE  10.5
+/** BASED ON LIPO STANDARD */
+#define VOLT_MAX_ALLOWED_VOLTAGE 4.2
+#define VOLT_MIN_ALLOWED_VOLTAGE 3.3
+
+/** Total number of attempts to read initial voltage needed to decide whether to close the relay */
+#define VOLT_MAX_ATTEMPTS 5
+
+#define MIN_POWER_ON_VOLTAGE  12.0
+#define MAX_POWER_ON_VOLTAGE  VOLT_MAX_ALLOWED_VOLTAGE * 4;
 #define TOTAL_CAN_PHERIPERALS 2
 
 #endif

@@ -14,12 +14,6 @@
 #include "ltc_config.h"
 #include "spi.h"
 
-/** BASED ON LIPO STANDARD */
-#define VOLT_MAX_ALLOWED_VOLTAGE 4.2
-#define VOLT_MIN_ALLOWED_VOLTAGE 3.3
-
-#define VOLT_MAX_ATTEMPTS 5
-
 extern voltage_t voltages[LV_CELLS_COUNT];
 extern float total_voltage_on_board;
 extern bms_balancing_cells cells;
@@ -31,6 +25,7 @@ void volt_initialization();
 void volt_start_basic_measure();
 void volt_start_measure(uint8_t MD, uint8_t DCP, uint8_t CH);
 uint8_t volt_read();
+uint8_t volt_sample_and_read();
 uint8_t volt_read_and_print();
 uint8_t volt_read_and_store(char *buf);
 

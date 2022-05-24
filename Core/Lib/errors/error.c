@@ -26,10 +26,10 @@
  * 	- 1s for temperatures
  */
 const error_timeout error_timeouts[ERROR_NUM_ERRORS] = {
-    [ERROR_RELAY] = 1000,
+    [ERROR_CELL_UNDERVOLTAGE] = 500,
+    [ERROR_CELL_OVERVOLTAGE] = 500,
+    [ERROR_RELAY] = SOFT,
     [ERROR_LTC6810] = SOFT,
-    [ERROR_CELL_UNDERVOLTAGE] = SOFT,
-    [ERROR_CELL_OVERVOLTAGE] = SOFT,
 
     [ERROR_MCP23017] = SOFT,
     [ERROR_CAN] = SOFT,
@@ -88,9 +88,14 @@ bool error_set_timer(error_t *error) {
     if (error != NULL && error->state == STATE_WARNING && error_timeouts[error->id] < SOFT) {
         // Set counter period register to the delta
         volatile uint16_t delta = get_timeout_delta(error);
-        uint16_t cnt            = __HAL_TIM_GET_COUNTER(&HTIM_ERR);
-        __HAL_TIM_SET_COMPARE(&HTIM_ERR, ERR_TIM_CHANNEL, cnt + TIM_MS_TO_TICKS(&HTIM_ERR, delta));
+        uint16_t cnt           = __HAL_TIM_GET_COUNTER(&HTIM_ERR); // = __HAL_TIM_GetCounter(&HTIM_ERR);  
+        
+         __HAL_TIM_SET_COMPARE(&HTIM_ERR, ERR_TIM_CHANNEL, cnt + TIM_MS_TO_TICKS(&HTIM_ERR, delta));
         __HAL_TIM_CLEAR_FLAG(&HTIM_ERR, TIM_IT_CC4);
+        /*
+        __HAL_TIM_SetCompare(&HTIM_ERR, ERR_TIM_CHANNEL, cnt + TIM_MS_TO_TICKS(&HTIM_ERR, 1000));
+        __HAL_TIM_CLEAR_IT(&HTIM_ERR, TIM_IT_CC4);
+        */
         HAL_TIM_OC_Start_IT(&HTIM_ERR, ERR_TIM_CHANNEL);
 
         //HAL_GPIO_WritePin(GPIO1_GPIO_Port, GPIO1_Pin, GPIO_PIN_SET);
@@ -152,7 +157,9 @@ bool error_set(error_id id, uint8_t offset, uint32_t timestamp) {
         // Re-set timer if first in list
         if (error_equals(llist_get_head(er_list), error)) {
             error_set_timer(error);
+            cli_bms_debug("SET TIMER ON", 12);
         }
+        
     }
 
     return true;
@@ -193,14 +200,16 @@ bool error_reset(error_id id, uint8_t offset) {
         if (llist_remove_by_node(er_list, (llist_node)error) != LLIST_SUCCESS) {
             return false;
         }
-
+        //cli_bms_debug("ERROR RESET TRUE", 16);
         //ERROR_GET_REF(id, offset) = NULL;
         (*error_list_ref_array_element(id, offset)) = NULL;
         //error_list_ref_array[id][offset] = NULL;
 
         return true;
     }
-
+    // char buff[40];
+    // sprintf(buff, "ERROR RESET FALSE INDEX %d-OFFSET %d", id, offset);
+    // cli_bms_debug(buff, 26);
     return false;
 }
 
@@ -232,7 +241,8 @@ void error_dump(error_t errors[]) {
 void _error_handle_tim_oc_irq() {
     //fsm_transition(bms.fsm, BMS_FAULT);
     error_set_fatal(error_get_top());
+    cli_bms_debug("ERROR TIM ELAPSED", 17);
     HAL_TIM_OC_Stop_IT(&HTIM_ERR, ERR_TIM_CHANNEL);
-    cli_bms_debug("FATAL ERROR \r\n",14);
-    bms_error_state();
+    //bms_error_state();
+    is_bms_on_fault = true;
 }

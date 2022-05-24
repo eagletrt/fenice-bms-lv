@@ -30,7 +30,6 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-//#include "../Lib/micro-libs/pid/pid.h"
 #include "adc.h"
 #include "can_comm.h"
 #include "cli_bms_lv.h"
@@ -72,6 +71,7 @@
 
 static bool is_bms_on_requested = true;
 static bool is_bms_on           = false;
+bool is_bms_on_fault            = false;
 
 int UNDER_VOLTAGE    = 0;
 int OVER_TEMPERATURE = 0;
@@ -129,6 +129,7 @@ static void _signal_mx_init_succes();
 //static void write_error_led();
 void bms_error_state();
 static inline void check_over_temperature();
+void check_on_feedbacks();
 static inline void check_under_voltage();
 static inline bool bms_on_off();
 static inline void check_initial_voltage();
@@ -198,6 +199,10 @@ int main(void) {
 #ifdef DEBUG_TIMER_MCU
     DBGMCU->APB1FZ = DBGMCU_APB1_FZ_DBG_TIM2_STOP;
 #endif
+
+    // Turn on startup button
+    HAL_GPIO_WritePin(L_ERR_GPIO_Port, L_ERR_Pin, GPIO_PIN_SET);
+
     // Start DMA handled readings for the current sensor, battery and DCDC(12/24v) temperature sensors
     ADC_start_dma_readings();
 
@@ -240,8 +245,13 @@ int main(void) {
     can_primary_send(0x1);
     can_secondary_send(0x1);
     while (1) {
-        cli_loop(&cli_bms_lv);
-        measurements_flags_check();
+        if (is_bms_on_fault) {
+            bms_error_state();
+        } else {
+            cli_loop(&cli_bms_lv);
+            measurements_flags_check();
+            check_on_feedbacks();
+        }
     }
     /* USER CODE END 2 */
 
@@ -408,7 +418,6 @@ static inline void check_initial_voltage() {
         sprintf(main_buff, "Closing relay phase: attempt %d of %d", i + 1, VOLT_MAX_ATTEMPTS);
         printl(main_buff, NO_HEADER);
         if (volt_read_and_print() == VOLT_OK) {
-            HAL_GPIO_WritePin(L_ERR_GPIO_Port, L_ERR_Pin, GPIO_PIN_RESET);
             printl("Relay on", NORM_HEADER);
             HAL_GPIO_WritePin(L_OTHER_GPIO_Port, L_OTHER_Pin, GPIO_PIN_SET);
             pwm_start_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
@@ -423,7 +432,7 @@ static inline void check_initial_voltage() {
 
     if (volt_status != VOLT_OK) {
         error_set(ERROR_RELAY, 0, HAL_GetTick());
-        bms_error_state();
+        //is_bms_on_fault = true;
     } else {
         error_reset(ERROR_RELAY, 0);
     }
@@ -457,19 +466,26 @@ static inline void fans_radiators_pumps_init() {
 }
 
 static inline void check_DCDCs_voltages() {
-    error_reset(ERROR_DCDC12, 0);
-    if (!FDBK_DCDC_12V_get_state()) {
-        error_set(ERROR_DCDC12, 0, HAL_GetTick());
-    }
-    error_reset(ERROR_DCDC24, 0);
-    if (!FDBK_DCDC_24V_get_state()) {
-        error_set(ERROR_DCDC24, 0, HAL_GetTick());
-    }
+    !FDBK_DCDC_12V_get_state() ? error_set(ERROR_DCDC12, 0, HAL_GetTick()) : error_reset(ERROR_DCDC12, 0);
+    !FDBK_DCDC_24V_get_state() ? error_set(ERROR_DCDC24, 0, HAL_GetTick()) : error_reset(ERROR_DCDC24, 0);
+}
+
+void check_on_feedbacks() {
+    check_DCDCs_voltages();
+    !FDBK_RELAY_get_state() ? error_set(ERROR_RELAY, 0, HAL_GetTick()) : error_reset(ERROR_RELAY, 0);
 }
 
 void bms_error_state() {
+    HAL_GPIO_WritePin(RELAY_GPIO_Port, RELAY_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(L_ERR_GPIO_Port, L_ERR_Pin, GPIO_PIN_SET);
     printl("ERROR STATE", ERR_HEADER);
+    HAL_GPIO_WritePin(L_OTHER_GPIO_Port, L_OTHER_Pin, GPIO_PIN_RESET);
+    while (1) {
+        cli_loop(&cli_bms_lv);
+        check_on_feedbacks();
+        HAL_GPIO_TogglePin(L_ERR_GPIO_Port, L_ERR_Pin);
+        HAL_Delay(100);
+    }
 }
 static inline void check_over_temperature() {
     if (lv_temp.value > lv_temp.max_temp) {

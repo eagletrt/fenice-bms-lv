@@ -344,9 +344,11 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef *tim_baseHandle) {
 
 void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim) {
     if (htim->Instance == MEASUREMENTS_TIMER.Instance) {
-        measurements_oc_handler(htim);
-    } else if (htim->Instance == HTIM_ERR.Instance) {
-        _error_handle_tim_oc_irq(htim);
+        if (htim->Channel == ERR_TIM_ACTIVE_CHANNEL) {
+            _error_handle_tim_oc_irq(htim);
+        } else {
+            measurements_oc_handler(htim);
+        }
     }
 }
 

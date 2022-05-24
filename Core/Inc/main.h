@@ -39,6 +39,7 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
+extern bool is_bms_on_fault;
 extern float fan_duty_cycle;
 typedef struct temperatures_struct {
     uint32_t value;
@@ -67,6 +68,7 @@ void Error_Handler(void);
 /* USER CODE BEGIN EFP */
 void set_sensor_update_time();
 void bms_error_state();
+void check_on_feedbacks();
 
 /* USER CODE END EFP */
 
@@ -304,8 +306,9 @@ static inline bool FDBK_24V_INVERTERS_get_state() {
 #define VOLTAGE_AND_TEMPS_TIMER_ACTIVE_CHANNEL      HAL_TIM_ACTIVE_CHANNEL_3
 
 /* ERRORS TIMER*/
-#define HTIM_ERR        htim2
-#define ERR_TIM_CHANNEL TIM_CHANNEL_4
+#define HTIM_ERR               htim2
+#define ERR_TIM_CHANNEL        TIM_CHANNEL_4
+#define ERR_TIM_ACTIVE_CHANNEL HAL_TIM_ACTIVE_CHANNEL_4
 
 /* HALL (Current transducer) -> ADC 1 CHANNEL10*/
 #define CURRENT_TRANSDUCER_HADC     hadc1

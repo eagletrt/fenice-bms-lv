@@ -30,10 +30,10 @@
  * link the error to the reference in the error_reference array.
  */
 typedef enum {
-    ERROR_RELAY,
-    ERROR_LTC6810,
     ERROR_CELL_UNDERVOLTAGE,
     ERROR_CELL_OVERVOLTAGE,
+    ERROR_RELAY,
+    ERROR_LTC6810,
 
     ERROR_MCP23017,
     ERROR_CAN,
