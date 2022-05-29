@@ -51,7 +51,7 @@ float CT_get_electric_current_mA();
 
 /**
  * @brief Get the average current over the last number_of_samples 
- * @param number_of_samples the number of samples in wich the average is calculated
+ * @param number_of_samples the number of samples over wich the average is calculated
  * @return float average current
  */
 float CT_get_average_electric_current(uint8_t number_of_samples);
