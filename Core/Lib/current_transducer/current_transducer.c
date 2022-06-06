@@ -24,8 +24,8 @@
   * Sensitivity: If in the transducer flows 1A of current then the output
   * voltage vould be Vout=Vref+(1A*Sensitivity)
   */
-#define HO_50S_SP33_THEORETICAL_SENSITIVITY (9.2f)  //
-//
+#define HO_50S_SP33_THEORETICAL_SENSITIVITY (9.2f)
+
 /**
  * @brief Voltage reference of the current tranducer
  * This value should not be static because the LEM HO 50S has an internal reference
@@ -49,7 +49,7 @@ static bool isOvercurrent            = false;
  * 
  * @param value electric current
  */
-void __push_into_history(float value);
+static void __push_into_history(float value);
 
 /**
  * @brief calculate the electric current in mA from the raw value got by ADC
@@ -57,7 +57,7 @@ void __push_into_history(float value);
  * @param adc_raw_value ADC output
  * @return electric current in mA
  */
-float __calculate_current_mA(uint32_t adc_raw_value);
+static float __calculate_current_mA(uint32_t adc_raw_value);
 
 /* Exported functions --------------------------------------------------------*/
 
@@ -69,12 +69,12 @@ float CT_get_electric_current_mA() {
     return current_in_mA;
 }
 
-void __push_into_history(float value) {
+static void __push_into_history(float value) {
     current_idx_in_array                           = (current_idx_in_array + 1) % CT_HISTORY_LENGTH;
     electric_current_history[current_idx_in_array] = value;
 }
 
-float __calculate_current_mA(uint32_t adc_raw_value) {
+static float __calculate_current_mA(uint32_t adc_raw_value) {
     float adc_val_mV = ADC_get_value_mV(&CURRENT_TRANSDUCER_HADC, adc_raw_value);
 
     // current [mA] = ((Vadc-Vref)[mV] / Sensibility [mV/A])*1000
@@ -90,18 +90,18 @@ float __calculate_current_mA(uint32_t adc_raw_value) {
     //return ADC_voltages = (uint32_t)(100 * ADC_voltages);
 }
 
-float CT_get_average_electric_current(uint8_t numer_of_samples) {
-    // check out of range on numer_of_samples
-    numer_of_samples = numer_of_samples > CT_HISTORY_LENGTH ? CT_HISTORY_LENGTH : numer_of_samples;
-    numer_of_samples = numer_of_samples < 1 ? 1 : numer_of_samples;
+float CT_get_average_electric_current(uint8_t number_of_samples) {
+    // check out of range on number_of_samples
+    number_of_samples = number_of_samples > CT_HISTORY_LENGTH ? CT_HISTORY_LENGTH : number_of_samples;
+    number_of_samples = number_of_samples < 1 ? 1 : number_of_samples;
 
     float accumulator = 0;
-    uint8_t idx       = (((CT_HISTORY_LENGTH + current_idx_in_array) - numer_of_samples) % CT_HISTORY_LENGTH) + 1;
-    for (int i = 0; i < numer_of_samples; i++) {
+    uint8_t idx       = (((CT_HISTORY_LENGTH + current_idx_in_array) - number_of_samples) % CT_HISTORY_LENGTH) + 1;
+    for (int i = 0; i < number_of_samples; i++) {
         accumulator += electric_current_history[idx];
         idx = (idx + 1) % CT_HISTORY_LENGTH;
     }
-    return accumulator / numer_of_samples;
+    return accumulator / number_of_samples;
 }
 
 bool CT_is_overcurrent() {
