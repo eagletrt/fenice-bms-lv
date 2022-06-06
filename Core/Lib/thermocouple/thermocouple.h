@@ -31,7 +31,7 @@
 #define THC_OVERTEMPERATURE_THRESHOLD_MC (60000U)
 
 /* Exported types ------------------------------------------------------------*/
-typedef struct __THC_Handle_TD THC_Handle_TD;
+typedef struct __THC_Handle THC_Handle_TD;
 
 /* Exported macros -----------------------------------------------------------*/
 
