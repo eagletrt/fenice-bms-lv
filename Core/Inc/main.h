@@ -310,24 +310,37 @@ static inline bool FDBK_24V_INVERTERS_get_state() {
 #define ERR_TIM_CHANNEL        TIM_CHANNEL_4
 #define ERR_TIM_ACTIVE_CHANNEL HAL_TIM_ACTIVE_CHANNEL_4
 
-/* HALL (Current transducer) -> ADC 1 CHANNEL10*/
+/* ADC STUFF */
+
+/* CURRENT TRANSDUCER */
+
+#define ADC_ELECTRICAL_CURRENT_READINGS_TIMER_HTIM    htim5
+#define ADC_ELECTRICAL_CURRENT_READINGS_TIMER_CHANNEL TIM_CHANNEL_1
+
+/* - HALL (Current transducer) -> ADC 1 CHANNEL10*/
 #define CURRENT_TRANSDUCER_HADC     hadc1
 #define CURRENT_TRANSDUCER_ADC_CHNL ADC_CHANNEL_10
 
-/* TMP_BATT1 (Battery Temperature sensor #1) -> ADC 1 CHANNEL0*/
-#define T_SENS_BATT1_HADC     hadc1
+#define CURRENT_TRANSDUCER_OCD_GPIO_PIN  HALL_OCD_Pin
+#define CURRENT_TRANSDUCER_OCD_GPIO_PORT HALL_OCD_GPIO_Port
+
+/* THERMOCOUPLES */
+#define ADC_TEMPERATURE_READINGS_TIMER_HTIM htim7
+
+/* - TMP_BATT1 (Battery Temperature sensor #1) -> ADC 1 CHANNEL0*/
+#define T_SENS_BATT1_HADC     hadc2
 #define T_SENS_BATT1_ADC_CHNL ADC_CHANNEL_0
 
-/* TMP_BATT2 (Battery Temperature sensor #2) -> ADC 1 CHANNEL1*/
-#define T_SENS_BATT2_HADC     hadc1
+/* - TMP_BATT2 (Battery Temperature sensor #2) -> ADC 1 CHANNEL1*/
+#define T_SENS_BATT2_HADC     hadc2
 #define T_SENS_BATT2_ADC_CHNL ADC_CHANNEL_1
 
-/* TMP_DCDC12 (12 volts DCDC converter Temperature sensor) -> ADC 1 CHANNEL12*/
-#define T_SENS_DCDC12V_HADC     hadc1
+/* - TMP_DCDC12 (12 volts DCDC converter Temperature sensor) -> ADC 1 CHANNEL12*/
+#define T_SENS_DCDC12V_HADC     hadc2
 #define T_SENS_DCDC12V_ADC_CHNL ADC_CHANNEL_12
 
-/* TMP_DCDC24 (24 volts DCDC converter Temperature sensor) -> ADC 1 CHANNEL13*/
-#define T_SENS_DCDC24V_HADC     hadc1
+/* - TMP_DCDC24 (24 volts DCDC converter Temperature sensor) -> ADC 1 CHANNEL13*/
+#define T_SENS_DCDC24V_HADC     hadc2
 #define T_SENS_DCDC24V_ADC_CHNL ADC_CHANNEL_13
 
 // Commented: enable debugging, Uncommented: disable debugging

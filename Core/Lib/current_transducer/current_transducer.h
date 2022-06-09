@@ -56,6 +56,14 @@ float CT_get_electric_current_mA();
  */
 float CT_get_average_electric_current(uint8_t number_of_samples);
 
+/**
+ * @brief Over-Current Detection callback (put this in the correct ISR)
+ * 
+ * @param isOn value of the OCD pin: true if rising edge false if falling edge
+ *             of OCD pin
+ */
+void CT_OCD_callback(bool isOn);
+
 /* Private types -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /* Private constants ---------------------------------------------------------*/

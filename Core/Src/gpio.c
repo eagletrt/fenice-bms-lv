@@ -23,6 +23,7 @@
 
 /* USER CODE BEGIN 0 */
 
+#include "current_transducer.h"
 /* USER CODE END 0 */
 
 /*----------------------------------------------------------------------------*/
@@ -94,5 +95,11 @@ void MX_GPIO_Init(void) {
 }
 
 /* USER CODE BEGIN 2 */
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+    if (GPIO_Pin == CURRENT_TRANSDUCER_OCD_GPIO_PIN) {
+        CT_OCD_callback(HAL_GPIO_ReadPin(CURRENT_TRANSDUCER_OCD_GPIO_PORT, CURRENT_TRANSDUCER_OCD_GPIO_PIN));
+    }
+}
 
 /* USER CODE END 2 */

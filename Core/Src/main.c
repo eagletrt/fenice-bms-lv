@@ -185,6 +185,8 @@ int main(void) {
     MX_USART1_UART_Init();
     MX_TIM8_Init();
     MX_SPI3_Init();
+    MX_TIM5_Init();
+    MX_TIM7_Init();
     /* USER CODE BEGIN 2 */
     /* USER CODE BEGIN 2 */
 
@@ -195,6 +197,7 @@ int main(void) {
 
     MX_DMA_Init();
     MX_ADC1_Init();
+    MX_ADC2_Init();
 
 #ifdef DEBUG_TIMER_MCU
     DBGMCU->APB1FZ = DBGMCU_APB1_FZ_DBG_TIM2_STOP;
@@ -204,7 +207,7 @@ int main(void) {
     HAL_GPIO_WritePin(L_ERR_GPIO_Port, L_ERR_Pin, GPIO_PIN_SET);
 
     // Start DMA handled readings for the current sensor, battery and DCDC(12/24v) temperature sensors
-    ADC_start_dma_readings();
+    ADC_start_DMA_readings();
 
     // Blink to signal correct MX_XXX_init processes (usuefull for CAN transciever)
     _signal_mx_init_succes();
@@ -244,6 +247,10 @@ int main(void) {
 
     can_primary_send(0x1);
     can_secondary_send(0x1);
+    /* USER CODE END 2 */
+
+    /* Infinite loop */
+    /* USER CODE BEGIN WHILE */
     while (1) {
         if (is_bms_on_fault) {
             bms_error_state();
@@ -251,46 +258,6 @@ int main(void) {
             cli_loop(&cli_bms_lv);
             measurements_flags_check();
             check_on_feedbacks();
-        }
-    }
-    /* USER CODE END 2 */
-
-    /* Infinite loop */
-    /* USER CODE BEGIN WHILE */
-    uint32_t tim_1s_next    = HAL_GetTick();
-    uint32_t tim_10ms_next  = HAL_GetTick();
-    uint32_t tim_100ms_next = HAL_GetTick();
-    while (1) {
-        if (HAL_GetTick() >= tim_1s_next) {
-            if (volt_read_and_print() == 1) {
-                printl("Correct voltage", NO_HEADER);
-            }
-            printl("\r\nReading Feedbacks", NO_HEADER);
-            mcp23017_read_both(&hmcp, &hi2c3);
-            tim_1s_next = HAL_GetTick() + 1000;
-        }
-        cli_loop(&cli_bms_lv);
-        if (HAL_GetTick() > tim_10ms_next) {
-            sprintf(
-                main_buff,
-                "ADC sensors:\r\n\tCurrent: %f [mA]\r\n\tBatt1: %i [°C]\r\n\tBatt2: %i [°C]\r\n\tDCDC 12V: "
-                "%i[°C]\r\n\tDCDC "
-                "24V: %i[°C]\r\n",
-                CT_get_electric_current_mA(),
-                ADC_get_t_batt1_val(),
-                ADC_get_t_batt2_val(),
-                ADC_get_t_dcdc12_val(),
-                ADC_get_t_dcdc24_val());
-            printl(main_buff, NORM_HEADER);
-            ADC_start_dma_readings();
-
-            // Update Timer
-            tim_10ms_next = HAL_GetTick() + 10;
-        }
-
-        if (HAL_GetTick() > tim_100ms_next) {
-            // Update Timer
-            tim_100ms_next = HAL_GetTick() + 100;
         }
         /* USER CODE END WHILE */
 

@@ -33,12 +33,14 @@ extern "C" {
 /* USER CODE END Includes */
 
 extern ADC_HandleTypeDef hadc1;
+extern ADC_HandleTypeDef hadc2;
 
 /* USER CODE BEGIN Private defines */
 extern ADC_ChannelConfTypeDef UserAdcConfig;
 /* USER CODE END Private defines */
 
 void MX_ADC1_Init(void);
+void MX_ADC2_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 
@@ -75,15 +77,14 @@ float ADC_get_value_mV(ADC_HandleTypeDef *adcHandle, uint32_t value_from_adc);
  *        the conversions each time Thus this function must be recalled in the
  *        code if we want new values (by SFW timer or inside the interrupt of a
  *        HW timer)
- * @return HAL Status see @ref HAL_ADC_Start_DMA
  */
-HAL_StatusTypeDef ADC_start_dma_readings();
+void ADC_start_DMA_readings();
 
 /**
  * @brief Current sensor value getter
  * @return current sensor value
  */
-uint16_t ADC_get_HO_50S_SP33_sensor_val();
+uint16_t ADC_get_HO_50S_SP33_1106_sensor_val();
 
 /**
  * @brief Battery Temperature sensor #1 value getter
