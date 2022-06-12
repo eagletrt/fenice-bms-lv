@@ -11,7 +11,7 @@
 
 #include "measurements.h"
 
-#include "../can-cicd/includes_generator/primary/ids.h"
+#include "../can-lib/lib/primary/c/ids.h"
 #include "can_comm.h"
 #include "cli_bms_lv.h"
 #include "timer_utils.h"
@@ -23,7 +23,7 @@
 #include "usart.h"
 #endif
 
-uint8_t flags;
+uint8_t volatile flags;
 
 void measurements_init(TIM_HandleTypeDef *htim) {
     __HAL_TIM_SetCompare(htim, COOLING_AND_LV_VERSION_TIMER_CHANNEL, TIM_MS_TO_TICKS(htim, COOLING_STATUS_INTERVAL_MS));
@@ -46,10 +46,10 @@ void measurements_flags_check() {
     //TODO: add errors on measurements check
     if (flags & MEAS_VOLTS_AND_TEMPS_READ_FLAG) {
         if (volt_sample_and_read() != VOLT_ERR) {
-            can_primary_send(PRIMARY_ID_LV_VOLTAGE);
-            can_primary_send(PRIMARY_ID_LV_TOTAL_VOLTAGE);
+            can_primary_send(primary_id_LV_VOLTAGE);
+            can_primary_send(primary_id_LV_TOTAL_VOLTAGE);
         }
-        can_primary_send(PRIMARY_ID_LV_TEMPERATURE);
+        can_primary_send(primary_id_LV_TEMPERATURE);
         #ifdef MEAS_DEBUG
             cli_bms_debug("VOLTS + TEMPS", 13);
         #endif
@@ -57,8 +57,8 @@ void measurements_flags_check() {
         flags &= ~MEAS_VOLTS_AND_TEMPS_READ_FLAG;
     }
     if (flags & MEAS_COOLING_AND_LV_VERSION_READ_FLAG) {
-        can_primary_send(PRIMARY_ID_COOLING_STATUS);
-        can_primary_send(PRIMARY_ID_LV_VERSION);
+        can_primary_send(primary_id_COOLING_STATUS);
+        can_primary_send(primary_id_LV_VERSION);
         check_on_feedbacks();
         #ifdef MEAS_DEBUG
             cli_bms_debug("COOLING + LV VERSION", 20);
@@ -66,7 +66,7 @@ void measurements_flags_check() {
         flags &= ~MEAS_COOLING_AND_LV_VERSION_READ_FLAG;
     }
     if (flags & MEAS_CURRENT_READ_FLAG) {
-        can_primary_send(PRIMARY_ID_LV_CURRENT);
+        can_primary_send(primary_id_LV_CURRENT);
         #ifdef MEAS_DEBUG
             cli_bms_debug("CURRENT", 7);
         #endif

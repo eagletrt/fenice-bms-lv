@@ -25,8 +25,8 @@
 #include "usart.h"
 #include "volt.h"
 
-/* CAN CI-CD */
-#include "../can-cicd/includes_generator/primary/ids.h"
+/* CAN LIB */
+#include "../can-lib/lib/primary/c/ids.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -167,9 +167,14 @@ void _cli_pumps(uint16_t argc, char **argv, char *out) {
     // p: proportional to MAX_OPAMP_OUT
     // v: volt
     if (argc < 2) {
-        sprintf(out, "Invalid arguments \r\nUsage: pumps {p/V} {max_out_percentage/voltage_level}\r\n");
+        sprintf(out, "Invalid arguments \r\nUsage: pumps {info/p/V} {max_out_percentage/voltage_level}\r\n");
     } else {
-        if (strcmp(argv[1], "p") == 0) {
+        if(strcmp(argv[1], "info") == 0){
+            sprintf(out,"Pumps status\r\n\tPumps L:%.2f R:%.2f\r\n", 
+            (hdac_pump.last_analog_value_L > 0) ? MAX_DAC_OUT / (float) hdac_pump.last_analog_value_L : 0.0, 
+            (hdac_pump.last_analog_value_R > 0) ? MAX_DAC_OUT / (float) hdac_pump.last_analog_value_R : 0.0);
+        }
+        else if (strcmp(argv[1], "p") == 0) {
             if (atof(argv[2]) <= 1.0) {
                 dac_pump_store_and_set_proportional_on_both_channels(&hdac_pump, atof(argv[2]), atof(argv[2]));
                 sprintf(out, "Pumps set at %.2fV\r\n", MAX_OPAMP_OUT * atof(argv[2]));
@@ -228,12 +233,21 @@ void _cli_wizard(uint16_t argc, char **argv, char *out) {
 }
 
 void _cli_can_send(uint16_t argc, char **argv, char *out) {
-    if (strcmp(argv[1], "volts") == 0) {
-        can_primary_send(PRIMARY_ID_LV_VOLTAGE);
+    if (argc < 2) {
+        sprintf(out, "Invalid arguments \r\nUsage: can {volts/cooling/current/temp}\r\n");
+    }else{
+         if (strcmp(argv[1], "volts") == 0) {
+        can_primary_send(primary_id_LV_VOLTAGE);
     } else if (strcmp(argv[1], "cooling") == 0) {
-        can_primary_send(PRIMARY_ID_COOLING_STATUS);
+        can_primary_send(primary_id_COOLING_STATUS);
+    } else if(strcmp(argv[1], "total") == 0){
+        can_primary_send(primary_id_LV_TOTAL_VOLTAGE);
+    } else if(strcmp(argv[1], "current") == 0){
+        can_primary_send(primary_id_LV_CURRENT);
+    }else if(strcmp(argv[1], "temp") == 0){
+        can_primary_send(primary_id_LV_TEMPERATURE);
     }
-    can_secondary_send(PRIMARY_ID_COOLING_STATUS);
+    }
 }
 
 void _cli_errors(uint16_t argc, char **argv, char *out) {

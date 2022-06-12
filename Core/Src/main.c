@@ -99,16 +99,6 @@ const uint32_t ERR_LED_BLINK_underV_OFF_MSEC = 900;
 
 int prev_toggle_msec = 0;
 
-// cooling system PWM
-// pwm_struct lv_pwm;
-// pwm_struct hv_pwm;
-// pwm_struct pump_pwm;
-
-// PID
-//PID_HandleTypeDef lv_pid;
-//PID_HandleTypeDef hv_pid;
-//PID_HandleTypeDef pump_pid;
-
 // Temperatures
 temperatures_struct lv_temp;
 temperatures_struct hv_temp;
@@ -130,6 +120,7 @@ static void _signal_mx_init_succes();
 void bms_error_state();
 static inline void check_over_temperature();
 void check_on_feedbacks();
+void cooling_routine(uint8_t);
 static inline void check_under_voltage();
 static inline bool bms_on_off();
 static inline void check_initial_voltage();
@@ -145,7 +136,7 @@ int m_sec_timer                    = 0;
 
 HAL_StatusTypeDef status;
 char main_buff[500];
-float fan_duty_cycle = 0.8;
+float bms_fan_duty_cycle = 0.2;
 /* USER CODE END 0 */
 
 /**
@@ -212,8 +203,10 @@ int main(void) {
     error_init();
 
     ltc6810_disable_cs(&SPI);
-    // sprintf(main_buff, "LTC ID %s", ltc6810_return_serial_id());
-    // printl(main_buff, NO_HEADER);
+#ifdef DEBUG_LTC_ID
+    sprintf(main_buff, "LTC ID %s", ltc6810_return_serial_id());
+    printl(main_buff, NO_HEADER);
+#endif
     printl("Relay out disabled, waiting 1 seconds before reading voltages\r\n", NO_HEADER);
     HAL_Delay(1000);
 
@@ -226,7 +219,7 @@ int main(void) {
 
     // Other fan, set at 25 KHz
     pwm_set_period(&FAN6_HTIM, 0.04);
-    pwm_set_duty_cicle(&FAN6_HTIM, FAN6_PWM_TIM_CHNL, 0.20);
+    pwm_set_duty_cicle(&FAN6_HTIM, FAN6_PWM_TIM_CHNL, bms_fan_duty_cycle);
 
     radiator_init();
     measurements_init(&MEASUREMENTS_TIMER);
@@ -242,8 +235,6 @@ int main(void) {
     can_primary_init();
     can_secondary_init();
 
-    can_primary_send(0x1);
-    can_secondary_send(0x1);
     while (1) {
         if (is_bms_on_fault) {
             bms_error_state();
@@ -251,6 +242,7 @@ int main(void) {
             cli_loop(&cli_bms_lv);
             measurements_flags_check();
             check_on_feedbacks();
+            //cooling_routine(50); -> read struct
         }
     }
     /* USER CODE END 2 */
@@ -360,44 +352,6 @@ void HAL_RCC_CSSCallback(void) {
     }
 }
 /* Private functions =--------------------------------------------------------*/
-//static void write_error_led() {
-// if (led_state == ON) {
-//     HAL_GPIO_WritePin(LED_ERR_GPIO_Port, LED_ERR_Pin, GPIO_PIN_SET);
-// } else if (led_state == BLINK_error) {
-//     if (HAL_GetTick() - prev_toggle_msec > ERR_LED_BLINK_error_MSEC) {
-//         HAL_GPIO_TogglePin(LED_ERR_GPIO_Port, LED_ERR_Pin);
-//         prev_toggle_msec = HAL_GetTick();
-//     }
-// } else if (led_state == BLINK_overT) {
-//     if (HAL_GPIO_ReadPin(LED_ERR_GPIO_Port, LED_ERR_Pin)) {
-//         if (HAL_GetTick() - prev_toggle_msec > ERR_LED_BLINK_overT_ON_MSEC) {
-//             HAL_GPIO_TogglePin(LED_ERR_GPIO_Port, LED_ERR_Pin);
-//             prev_toggle_msec = HAL_GetTick();
-//         }
-//     } else {
-//         if (HAL_GetTick() - prev_toggle_msec > ERR_LED_BLINK_overT_OFF_MSEC) {
-//             HAL_GPIO_TogglePin(LED_ERR_GPIO_Port, LED_ERR_Pin);
-//             prev_toggle_msec = HAL_GetTick();
-//         }
-//     }
-// } else if (led_state == BLINK_underV) {
-//     if (HAL_GPIO_ReadPin(LED_ERR_GPIO_Port, LED_ERR_Pin)) {
-//         if (HAL_GetTick() - prev_toggle_msec > ERR_LED_BLINK_underV_ON_MSEC) {
-//             HAL_GPIO_TogglePin(LED_ERR_GPIO_Port, LED_ERR_Pin);
-//             prev_toggle_msec = HAL_GetTick();
-//         }
-//     } else {
-//         if (HAL_GetTick() - prev_toggle_msec > ERR_LED_BLINK_underV_OFF_MSEC) {
-//             HAL_GPIO_TogglePin(LED_ERR_GPIO_Port, LED_ERR_Pin);
-//             prev_toggle_msec = HAL_GetTick();
-//         }
-//     }
-// } else if (led_state == OFF) {
-//     HAL_GPIO_WritePin(LED_ERR_GPIO_Port, LED_ERR_Pin, GPIO_PIN_RESET);
-// } else {
-//     HAL_GPIO_WritePin(LED_ERR_GPIO_Port, LED_ERR_Pin, GPIO_PIN_RESET);
-// }
-//}
 
 static inline void check_under_voltage() {
     // if (get_min_voltage(&ltc) < 10) {
@@ -471,6 +425,7 @@ static inline void check_DCDCs_voltages() {
 }
 
 void check_on_feedbacks() {
+    mcp23017_read_both(&hmcp, &hi2c3);
     check_DCDCs_voltages();
     !FDBK_RELAY_get_state() ? error_set(ERROR_RELAY, 0, HAL_GetTick()) : error_reset(ERROR_RELAY, 0);
 }
@@ -485,6 +440,17 @@ void bms_error_state() {
         check_on_feedbacks();
         HAL_GPIO_TogglePin(L_ERR_GPIO_Port, L_ERR_Pin);
         HAL_Delay(100);
+    }
+}
+
+void cooling_routine(uint8_t temp) {
+    if (radiator_handle.automatic_mode) {
+        set_radiator_dt(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, get_radiator_dt(temp));
+        set_radiator_dt(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, get_radiator_dt(temp));
+    }
+    if (hdac_pump.automatic_mode) {
+        dac_pump_store_and_set_value_on_both_channels(
+            &hdac_pump, dac_pump_get_voltage(temp), dac_pump_get_voltage(temp));
     }
 }
 static inline void check_over_temperature() {

@@ -73,7 +73,6 @@ excludes:
   - "**/test.c"
   - "**/test/**"
   - "**/*.pb.*"
-  - "**/can-cicd/can-cicd/**"
   - "**/peripherals/**"
 
 # Include directories (directories containing .h or .hpp files)

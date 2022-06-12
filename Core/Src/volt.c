@@ -97,8 +97,6 @@ uint8_t volt_sample_and_read() {
         }
         if (total_voltage_on_board < MIN_POWER_ON_VOLTAGE) {
             volt_status = VOLT_UNDER_VOLTAGE;
-        } else if (total_voltage_on_board > MIN_POWER_ON_VOLTAGE) {
-            volt_status = VOLT_OVER_VOLTAGE;
         }
     }
     return volt_status;
@@ -125,6 +123,7 @@ uint8_t volt_read_and_print() {
     }
     memset(buff, 0, sizeof(buff));
     for (uint8_t i = 0; i < LV_CELLS_COUNT; i++) {
+        total_voltage_on_board += (float)voltages[i] / 10000;
         if (i == voltage_min_index && voltage_min_index != -1 &&
             (float)voltages[i] / 10000 <= VOLT_MAX_ALLOWED_VOLTAGE &&
             (float)voltages[i] / 10000 >= VOLT_MIN_ALLOWED_VOLTAGE) {
@@ -146,7 +145,6 @@ uint8_t volt_read_and_print() {
                 error_reset(ERROR_CELL_OVERVOLTAGE, i);
             }
         }
-        total_voltage_on_board += (float)voltages[i] / 10000;
         printl(buff, NO_HEADER);
     }
     if (total_voltage_on_board < MIN_POWER_ON_VOLTAGE) {

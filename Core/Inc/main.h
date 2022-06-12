@@ -40,7 +40,7 @@ extern "C" {
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
 extern bool is_bms_on_fault;
-extern float fan_duty_cycle;
+extern float bms_fan_duty_cycle;
 typedef struct temperatures_struct {
     uint32_t value;
 
@@ -259,15 +259,7 @@ static inline bool FDBK_24V_INVERTERS_get_state() {
 #define CANS hcan2
 
 #define LOG_HUART huart1
-/* Radiator1 -> TIM4 CH3 */
-/* Radiator2 -> TIM4 CH4 */
 
-/* FAN1      -> TIM2 CH2 */
-#define FAN1_HTIM         htim2
-#define FAN1_PWM_TIM_CHNL TIM_CHANNEL_2
-/* FAN2      -> TIM2 CH1 */
-#define FAN2_HTIM         htim2
-#define FAN2_PWM_TIM_CHNL TIM_CHANNEL_1
 /* RAD_L      -> TIM3 CH1 */
 #define RAD_L_HTIM         htim3
 #define RAD_L_PWM_TIM_CHNL TIM_CHANNEL_1
@@ -281,17 +273,12 @@ static inline bool FDBK_24V_INVERTERS_get_state() {
 #define FAN6_HTIM         htim3
 #define FAN6_PWM_TIM_CHNL TIM_CHANNEL_3
 
-/* PUMP1     -> TIM4 CH2 */
-#define PMP1_HTIM         htim4
-#define PMP1_PWM_TIM_CHNL TIM_CHANNEL_2
-/* PUMP2     -> TIM4 CH1 */
-#define PMP2_HTIM         htim4
-#define PMP2_PWM_TIM_CHNL TIM_CHANNEL_1
 /* BUZZER    -> TIM8 CH1 */
 #define BZZR_HTIM         htim8
 #define BZZR_PWM_TIM_CHNL TIM_CHANNEL_1
-#define BUZZER_ALARM_TIME 50
+#define BUZZER_ALARM_TIME 1000
 
+/* PUMPS*/
 #define PUMP_DAC    hdac
 #define PUMP_L_CHNL DAC_CHANNEL_2
 #define PUMP_R_CHNL DAC_CHANNEL_1

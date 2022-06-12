@@ -48,8 +48,9 @@ void radiator_init() {
     pwm_set_duty_cicle(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, 1.0);
     pwm_set_duty_cicle(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, 1.0);
     start_both_radiator(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, RAD_R_PWM_TIM_CHNL);
-    radiator_handle.duty_cycle_l = 0.0;
-    radiator_handle.duty_cycle_r = 0.0;
+    radiator_handle.duty_cycle_l   = 0.0;
+    radiator_handle.duty_cycle_r   = 0.0;
+    radiator_handle.automatic_mode = true;
 }
 
 /**
@@ -84,8 +85,10 @@ void stop_radiator(TIM_HandleTypeDef *rad_tim, uint8_t channel) {
 void start_both_radiator(TIM_HandleTypeDef *rad_tim, uint8_t channel1, uint8_t channel2) {
     pwm_start_channel(rad_tim, channel1);
     pwm_start_channel(rad_tim, channel2);
-    radiator_handle.left_is_on  = 1;
-    radiator_handle.right_is_on = 1;
+    (radiator_handle.duty_cycle_l == 0.0) ? set_radiator_struct_channel_off(channel1)
+                                          : set_radiator_struct_channel_on(channel1);
+    (radiator_handle.duty_cycle_r == 0.0) ? set_radiator_struct_channel_off(channel2)
+                                          : set_radiator_struct_channel_on(channel2);
 }
 
 /**

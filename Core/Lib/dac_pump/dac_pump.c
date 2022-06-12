@@ -19,12 +19,16 @@ DAC_Pump_Handle hdac_pump;
  * @param hdp         DAC_Pump_Handle
  * @param pump_l_volt future left voltage
  * @param pump_r_volt future right voltage
+ * @param automatic_mode flag needed to decide wheters the control is assigned to the bms or to the steer
  */
 void dac_pump_handle_init(DAC_Pump_Handle *hdp, float pump_l_volt, float pump_r_volt) {
     hdp->last_analog_value_L = pump_l_volt;
     hdp->last_analog_value_R = pump_r_volt;
     hdp->is_L_on             = 0;
     hdp->is_R_on             = 0;
+    hdp->automatic_mode      = true;
+    // Wheter automatic mode is false tue pumps will be controlled by the steer,
+    // otherwise the pumps will be under the bms_lv_control as are designed to be
 }
 
 /**

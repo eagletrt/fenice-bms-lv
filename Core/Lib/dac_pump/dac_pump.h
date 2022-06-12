@@ -16,7 +16,7 @@
 #include "main.h"
 #include "usart.h"
 
-#define MAX_DAC_OUT       4096
+#define MAX_DAC_OUT       4096.0
 #define MAX_GPIO_OUT      3.3
 #define AMPLIFICATOR_GAIN 1.5
 #define MAX_OPAMP_OUT     MAX_GPIO_OUT *AMPLIFICATOR_GAIN
@@ -37,6 +37,7 @@ typedef struct {
     uint8_t is_L_on;
     uint32_t last_analog_value_R;
     uint8_t is_R_on;
+    bool automatic_mode;
 } DAC_Pump_Handle;
 
 extern DAC_Pump_Handle hdac_pump;
