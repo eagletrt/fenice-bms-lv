@@ -11,6 +11,7 @@
 #include "cli_bms_lv.h"
 
 #include "../current_transducer/current_transducer.h"
+#include "../thermocouple/thermocouple.h"
 #include "adc.h"  // TODO: remove this eventually
 #include "can.h"
 #include "can_comm.h"
@@ -195,16 +196,18 @@ void _cli_pumps(uint16_t argc, char **argv, char *out) {
 }
 void _cli_temps(uint16_t argc, char **argv, char *out) {
     sprintf(
-                out,
-                "ADC sensors:\r\n\tCurrent: %f [mA]\r\n\tBatt1: %i [°C]\r\n\tBatt2: %i [°C]\r\n\tDCDC 12V: "
-                "%i[°C]\r\n\tDCDC "
-                "24V: %i[°C]\r\n",
-                CT_get_electric_current_mA(),
-                ADC_get_t_batt1_val(),
-                ADC_get_t_batt2_val(),
-                ADC_get_t_dcdc12_val(),
-                ADC_get_t_dcdc24_val());
-    ADC_start_dma_readings();
+        out,
+        "ADC sensors:\r\n\t"
+        "Current: %f [mA]\r\n\t"
+        "Batt1: %f [°C]\r\n\t"
+        "Batt2: %f [°C]\r\n\t"
+        "DCDC 12V: %f[°C]\r\n\t"
+        "DCDC 24V: %f[°C]\r\n",
+        CT_get_electric_current_mA(),
+        THC_get_temperature_C(&hTHC_BATT1),
+        THC_get_temperature_C(&hTHC_BATT2),
+        THC_get_temperature_C(&hTHC_DCDC12V),
+        THC_get_temperature_C(&hTHC_DCDC24V));
 }
 void _cli_feedbacks(uint16_t argc, char **argv, char *out) {
     out[0] = '\0';

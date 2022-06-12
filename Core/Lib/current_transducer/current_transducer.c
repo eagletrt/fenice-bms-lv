@@ -24,8 +24,8 @@
   * Sensitivity: If in the transducer flows 1A of current then the output
   * voltage vould be Vout=Vref+(1A*Sensitivity)
   */
-#define HO_50S_SP33_THEORETICAL_SENSITIVITY (9.2f)  //
-//
+#define HO_50_SP33_1106_THEORETICAL_SENSITIVITY (9.2f)
+
 /**
  * @brief Voltage reference of the current tranducer
  * This value should not be static because the LEM HO 50S has an internal reference
@@ -35,7 +35,15 @@
  * Therefore we assume the optimal value given Vdd = 3.3V
  * (PROJECT_FOLDER/Doc/ho-s_sp33-1106_series.pdf page 4)
  */
-#define HO_50S_SP33_VREF_mV (1650U)
+#define HO_50_SP33_1106_VREF_mV (1650U)
+
+/**
+ * @brief OverCurrentDetection multiplier value:
+ *  OCD is on when the current flowing the current transducer is
+ *  OCD_MULT*Ipn  (Ipn = primary nominal current)
+ * 
+ */
+#define HO_50_SP33_1106_OCD_MULT (2.92f)
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -49,7 +57,7 @@ static bool isOvercurrent            = false;
  * 
  * @param value electric current
  */
-void __push_into_history(float value);
+static void __push_into_history(float value);
 
 /**
  * @brief calculate the electric current in mA from the raw value got by ADC
@@ -57,29 +65,29 @@ void __push_into_history(float value);
  * @param adc_raw_value ADC output
  * @return electric current in mA
  */
-float __calculate_current_mA(uint32_t adc_raw_value);
+static float __calculate_current_mA(uint32_t adc_raw_value);
 
 /* Exported functions --------------------------------------------------------*/
 
 float CT_get_electric_current_mA() {
-    uint32_t raw_value  = ADC_get_HO_50S_SP33_sensor_val();
+    uint32_t raw_value  = ADC_get_HO_50S_SP33_1106_sensor_val();
     float current_in_mA = __calculate_current_mA(raw_value);
     isOvercurrent       = (current_in_mA > CT_OVERCURRENT_THRESHOLD_MA);
     __push_into_history(current_in_mA);
     return current_in_mA;
 }
 
-void __push_into_history(float value) {
+static void __push_into_history(float value) {
     current_idx_in_array                           = (current_idx_in_array + 1) % CT_HISTORY_LENGTH;
     electric_current_history[current_idx_in_array] = value;
 }
 
-float __calculate_current_mA(uint32_t adc_raw_value) {
+static float __calculate_current_mA(uint32_t adc_raw_value) {
     float adc_val_mV = ADC_get_value_mV(&CURRENT_TRANSDUCER_HADC, adc_raw_value);
 
     // current [mA] = ((Vadc-Vref)[mV] / Sensibility [mV/A])*1000
 
-    float current = ((adc_val_mV - HO_50S_SP33_VREF_mV) / HO_50S_SP33_THEORETICAL_SENSITIVITY) * 1000;
+    float current = ((adc_val_mV - HO_50_SP33_1106_VREF_mV) / HO_50_SP33_1106_THEORETICAL_SENSITIVITY) * 1000;
     return current;
 
     //ADC_voltages = (uint32_t)((adcVAL * (Vcc * 1024 / RESOLUTION)) / 1024);
@@ -90,22 +98,34 @@ float __calculate_current_mA(uint32_t adc_raw_value) {
     //return ADC_voltages = (uint32_t)(100 * ADC_voltages);
 }
 
-float CT_get_average_electric_current(uint8_t numer_of_samples) {
-    // check out of range on numer_of_samples
-    numer_of_samples = numer_of_samples > CT_HISTORY_LENGTH ? CT_HISTORY_LENGTH : numer_of_samples;
-    numer_of_samples = numer_of_samples < 1 ? 1 : numer_of_samples;
+float CT_get_average_electric_current(uint8_t number_of_samples) {
+    // check out of range on number_of_samples
+    number_of_samples = number_of_samples > CT_HISTORY_LENGTH ? CT_HISTORY_LENGTH : number_of_samples;
+    number_of_samples = number_of_samples < 1 ? 1 : number_of_samples;
 
     float accumulator = 0;
-    uint8_t idx       = (((CT_HISTORY_LENGTH + current_idx_in_array) - numer_of_samples) % CT_HISTORY_LENGTH) + 1;
-    for (int i = 0; i < numer_of_samples; i++) {
+    uint8_t idx       = (((CT_HISTORY_LENGTH + current_idx_in_array) - number_of_samples) % CT_HISTORY_LENGTH) + 1;
+    for (int i = 0; i < number_of_samples; i++) {
         accumulator += electric_current_history[idx];
         idx = (idx + 1) % CT_HISTORY_LENGTH;
     }
-    return accumulator / numer_of_samples;
+    return accumulator / number_of_samples;
 }
 
 bool CT_is_overcurrent() {
     return isOvercurrent;
 };
 
-/* Private functions ---------------------------------------------------------*/
+void CT_OCD_callback(bool isOn) {
+    if (isOn && !isOvercurrent) {
+        // Do something here like toggle the LVMS or trigger a CAN MSG send
+        isOvercurrent = true;
+    } else if (isOn && isOvercurrent) {
+        // Already in Overcurrent
+    } else if (!isOn && isOvercurrent) {
+        // Overcurrent ended
+        isOvercurrent = false;
+    } else if (!isOn && !isOvercurrent) {
+        // impossible state: Nothing to do
+    }
+}
