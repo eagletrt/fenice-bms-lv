@@ -168,7 +168,7 @@ void MX_TIM5_Init(void) {
 
     /* USER CODE END TIM5_Init 1 */
     htim5.Instance               = TIM5;
-    htim5.Init.Prescaler         = 9 - 1;
+    htim5.Init.Prescaler         = 900 - 1;
     htim5.Init.CounterMode       = TIM_COUNTERMODE_UP;
     htim5.Init.Period            = 50 - 1;
     htim5.Init.ClockDivision     = TIM_CLOCKDIVISION_DIV1;
@@ -464,7 +464,7 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef *tim_baseHandle) {
 void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim) {
     if (htim->Instance == MEASUREMENTS_TIMER.Instance) {
         if (htim->Channel == ERR_TIM_ACTIVE_CHANNEL) {
-            _error_handle_tim_oc_irq(htim);
+            _error_handle_tim_oc_irq();
         } else {
             measurements_oc_handler(htim);
         }

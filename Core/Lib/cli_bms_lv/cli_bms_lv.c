@@ -170,12 +170,13 @@ void _cli_pumps(uint16_t argc, char **argv, char *out) {
     if (argc < 2) {
         sprintf(out, "Invalid arguments \r\nUsage: pumps {info/p/V} {max_out_percentage/voltage_level}\r\n");
     } else {
-        if(strcmp(argv[1], "info") == 0){
-            sprintf(out,"Pumps status\r\n\tPumps L:%.2f R:%.2f\r\n", 
-            (hdac_pump.last_analog_value_L > 0) ? MAX_DAC_OUT / (float) hdac_pump.last_analog_value_L : 0.0, 
-            (hdac_pump.last_analog_value_R > 0) ? MAX_DAC_OUT / (float) hdac_pump.last_analog_value_R : 0.0);
-        }
-        else if (strcmp(argv[1], "p") == 0) {
+        if (strcmp(argv[1], "info") == 0) {
+            sprintf(
+                out,
+                "Pumps status\r\n\tPumps L:%.2f R:%.2f\r\n",
+                (hdac_pump.last_analog_value_L > 0) ? MAX_DAC_OUT / (float)hdac_pump.last_analog_value_L : 0.0,
+                (hdac_pump.last_analog_value_R > 0) ? MAX_DAC_OUT / (float)hdac_pump.last_analog_value_R : 0.0);
+        } else if (strcmp(argv[1], "p") == 0) {
             if (atof(argv[2]) <= 1.0) {
                 dac_pump_store_and_set_proportional_on_both_channels(&hdac_pump, atof(argv[2]), atof(argv[2]));
                 sprintf(out, "Pumps set at %.2fV\r\n", MAX_OPAMP_OUT * atof(argv[2]));
@@ -238,18 +239,18 @@ void _cli_wizard(uint16_t argc, char **argv, char *out) {
 void _cli_can_send(uint16_t argc, char **argv, char *out) {
     if (argc < 2) {
         sprintf(out, "Invalid arguments \r\nUsage: can {volts/cooling/current/temp}\r\n");
-    }else{
-         if (strcmp(argv[1], "volts") == 0) {
-        can_primary_send(primary_id_LV_VOLTAGE);
-    } else if (strcmp(argv[1], "cooling") == 0) {
-        can_primary_send(primary_id_COOLING_STATUS);
-    } else if(strcmp(argv[1], "total") == 0){
-        can_primary_send(primary_id_LV_TOTAL_VOLTAGE);
-    } else if(strcmp(argv[1], "current") == 0){
-        can_primary_send(primary_id_LV_CURRENT);
-    }else if(strcmp(argv[1], "temp") == 0){
-        can_primary_send(primary_id_LV_TEMPERATURE);
-    }
+    } else {
+        if (strcmp(argv[1], "volts") == 0) {
+            can_primary_send(primary_id_LV_VOLTAGE);
+        } else if (strcmp(argv[1], "cooling") == 0) {
+            can_primary_send(primary_id_COOLING_STATUS);
+        } else if (strcmp(argv[1], "total") == 0) {
+            can_primary_send(primary_id_LV_TOTAL_VOLTAGE);
+        } else if (strcmp(argv[1], "current") == 0) {
+            can_primary_send(primary_id_LV_CURRENT);
+        } else if (strcmp(argv[1], "temp") == 0) {
+            can_primary_send(primary_id_LV_TEMPERATURE);
+        }
     }
 }
 
@@ -266,12 +267,14 @@ void _cli_errors(uint16_t argc, char **argv, char *out) {
             "\r\nid..........%i (%s)\r\n"
             "timestamp...T+%lu (%lums ago)\r\n"
             "offset......%u\r\n"
-            "state.......%s\r\n",
+            "state.......%s\r\n"
+            "timeout delta %lu\r\n",
             errors[i].id,
             error_names[errors[i].id],
             errors[i].timestamp,
             now - errors[i].timestamp,
             errors[i].offset,
-            errors[i].state == STATE_WARNING ? "warning" : "fatal");
+            errors[i].state == STATE_WARNING ? "warning" : "fatal",
+            get_timeout_delta(&errors[i]));
     }
 }

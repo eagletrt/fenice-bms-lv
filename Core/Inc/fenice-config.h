@@ -26,14 +26,24 @@
  */
 
 /** BASED ON LIPO STANDARD */
-#define VOLT_MAX_ALLOWED_VOLTAGE 4.2
-#define VOLT_MIN_ALLOWED_VOLTAGE 3.3
+#define VOLT_MAX_ALLOWED_VOLTAGE 4.18f  //4.18f TODO: check why there's an initial voltage drop
+#define VOLT_MIN_ALLOWED_VOLTAGE 3.3f
 
 /** Total number of attempts to read initial voltage needed to decide whether to close the relay */
 #define VOLT_MAX_ATTEMPTS 5
 
-#define MIN_POWER_ON_VOLTAGE  12.0
-#define MAX_POWER_ON_VOLTAGE  VOLT_MAX_ALLOWED_VOLTAGE * 4;
+#define MIN_POWER_ON_VOLTAGE  VOLT_MIN_ALLOWED_VOLTAGE * 4.0f  //12.0
+#define MAX_POWER_ON_VOLTAGE  VOLT_MAX_ALLOWED_VOLTAGE * 4.0f;
 #define TOTAL_CAN_PHERIPERALS 2
 
+#define MAX_CELLS_ALLOWED_TEMP 60.0f
+#define MIN_CELLS_ALLOWED_TEMP 0.0f
+
+#define MAX_DCDC12_ALLOWED_TEMP 70.0f
+#define MIN_DCDC12_ALLOWED_TEMP 0.0f
+
+#define MAX_DCDC24_ALLOWED_TEMP 70.0f
+#define MIN_DCDC24_ALLOWED_TEMP 0.0f
+
+#define MAX_CURRENT_ALLOWED 30000.0f
 #endif

@@ -8,6 +8,7 @@
 
 #include "volt.h"
 
+#include "cli_bms_lv.h"
 #include "error.h"
 #include "fenice-config.h"
 #include "main.h"
@@ -90,6 +91,7 @@ uint8_t volt_sample_and_read() {
                 volt_status = VOLT_OVER_VOLTAGE;
                 error_set(ERROR_CELL_OVERVOLTAGE, i, HAL_GetTick());
             } else {
+                //cli_bms_debug("SAMPLE AND READ, REMOVED UNDERVOLTAGE", 37);
                 error_reset(ERROR_CELL_UNDERVOLTAGE, i);
                 error_reset(ERROR_CELL_OVERVOLTAGE, i);
             }
@@ -141,6 +143,7 @@ uint8_t volt_read_and_print() {
                 voltages[i] = 0x00;
             } else {
                 sprintf(buff, "Cell %u: %.3fV", i, (float)voltages[i] / 10000);
+                //cli_bms_debug("READ AND PRINT, REMOVED UNDERVOLTAGE", 36);
                 error_reset(ERROR_CELL_UNDERVOLTAGE, i);
                 error_reset(ERROR_CELL_OVERVOLTAGE, i);
             }
@@ -194,6 +197,7 @@ uint8_t volt_read_and_store(char *buf) {
                 //voltages[i] = 0x00;
             } else {
                 sprintf(buff, "Cell %u: %.3fV \r\n", i, (float)voltages[i] / 10000);
+                //cli_bms_debug("READ AND STORE, REMOVED UNDERVOLTAGE", 36);
                 error_reset(ERROR_CELL_UNDERVOLTAGE, i);
                 error_reset(ERROR_CELL_OVERVOLTAGE, i);
             }

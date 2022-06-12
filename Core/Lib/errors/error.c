@@ -8,12 +8,15 @@
 
 #include "error.h"
 
+#include "cli_bms_lv.h"
+#include "common.h"
 #include "error_list_ref.h"
 #include "tim.h"
 #include "timer_utils.h"
-#include "cli_bms_lv.h"
 
 #include <stdlib.h>
+#include <string.h>
+
 #ifndef max
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #endif
@@ -26,26 +29,26 @@
  * 	- 1s for temperatures
  */
 const error_timeout error_timeouts[ERROR_NUM_ERRORS] = {
-    [ERROR_CELL_UNDERVOLTAGE] = 400,
-    [ERROR_CELL_OVERVOLTAGE] = 400,
-    [ERROR_OVER_CURRENT] = 1000,
-    [ERROR_DCDC12_OVER_TEMPERATURE] = 1000,
+    [ERROR_CELL_UNDERVOLTAGE]        = 400,
+    [ERROR_CELL_OVERVOLTAGE]         = 400,
+    [ERROR_OVER_CURRENT]             = 1000,
+    [ERROR_DCDC12_OVER_TEMPERATURE]  = 1000,
     [ERROR_DCDC12_UNDER_TEMPERATURE] = 1000,
-    [ERROR_DCDC24_OVER_TEMPERATURE] = 1000,
+    [ERROR_DCDC24_OVER_TEMPERATURE]  = 1000,
     [ERROR_DCDC24_UNDER_TEMPERATURE] = 1000,
-    [ERROR_CELL_UNDER_TEMPERATURE] = 1000,
-    [ERROR_CELL_OVER_TEMPERATURE] = 1000,
-    [ERROR_RELAY] = SOFT,
-    [ERROR_LTC6810] = SOFT,
+    [ERROR_CELL_UNDER_TEMPERATURE]   = 1000,
+    [ERROR_CELL_OVER_TEMPERATURE]    = 1000,
+    [ERROR_RELAY]                    = SOFT,
+    [ERROR_LTC6810]                  = SOFT,
 
     [ERROR_MCP23017] = SOFT,
-    [ERROR_CAN] = 500,
-    
-    [ERROR_RADIATOR] = SOFT,
-    [ERROR_FAN] = SOFT,
-    [ERROR_PUMP] = SOFT,
+    [ERROR_CAN]      = 500,
 
-    [ERROR_ADC_INIT] = SOFT,
+    [ERROR_RADIATOR] = SOFT,
+    [ERROR_FAN]      = SOFT,
+    [ERROR_PUMP]     = SOFT,
+
+    [ERROR_ADC_INIT]    = SOFT,
     [ERROR_ADC_TIMEOUT] = SOFT,
 
     [ERROR_DCDC12] = SOFT,
@@ -54,11 +57,37 @@ const error_timeout error_timeouts[ERROR_NUM_ERRORS] = {
 llist er_list = NULL;
 
 /**
- * @returns The time left before the error becomes fatal
+ * @returns The time left before the error becomes fatal 
  */
 uint32_t get_timeout_delta(error_t *error) {
-    uint32_t delta = error->timestamp + error_timeouts[error->id] - HAL_GetTick();
-    return delta <= error_timeouts[error->id] ? delta : 0;
+    uint32_t error_timeout = error->timestamp + error_timeouts[error->id];
+    uint32_t current_tick  = HAL_GetTick();
+    uint32_t delta         = 0;
+
+    // 2 options for delta
+    if (current_tick <= error_timeout) {
+        // 1) CurrentTick < error_timeout
+        //     err_arrival          error_timeout
+        //          |----------------------|
+        //          |------------| ← current_tick
+        //                       |  delta  |
+        delta = error_timeout - current_tick;
+    } else {
+        // 2) CurrentTick > error_timeout
+        //     err_arrival      err_timeout
+        //          |-----------------|
+        //          |-------------------------| ← current_tick
+        //          |                ↑      we missed the error timout
+        // we should have trigered here, therefore the delta will be 0 because we need to trigger instantly
+        delta = 0;
+    }
+
+    // WARNING: do not compute delta as an int becase some error_timouts[*] are
+    //          UINT32_MAX (overflow risk)
+    // EDGE CASE BUG: when current_tick overflows to 0 and err_timout not: this
+    //                happens when the uC stays on for more the 2^32 ms ~50 days
+
+    return delta;
 }
 
 bool error_equals(llist_node a, llist_node b) {
@@ -85,21 +114,33 @@ bool error_set_timer(error_t *error) {
 
     if (error != NULL && error->state == STATE_WARNING && error_timeouts[error->id] < SOFT) {
         // Set counter period register to the delta
-        volatile uint16_t delta = get_timeout_delta(error);
-        uint16_t cnt           = __HAL_TIM_GET_COUNTER(&HTIM_ERR); // = __HAL_TIM_GetCounter(&HTIM_ERR);  
-        
-         __HAL_TIM_SET_COMPARE(&HTIM_ERR, ERR_TIM_CHANNEL, cnt + TIM_MS_TO_TICKS(&HTIM_ERR, delta));
-        __HAL_TIM_CLEAR_FLAG(&HTIM_ERR, TIM_IT_CC4);
-        /*
-        __HAL_TIM_SetCompare(&HTIM_ERR, ERR_TIM_CHANNEL, cnt + TIM_MS_TO_TICKS(&HTIM_ERR, 1000));
-        __HAL_TIM_CLEAR_IT(&HTIM_ERR, TIM_IT_CC4);
-        */
-        HAL_TIM_OC_Start_IT(&HTIM_ERR, ERR_TIM_CHANNEL);
+        //char main_buff[50] = {};
 
+        volatile uint32_t delta = get_timeout_delta(error);
+        uint32_t cnt            = __HAL_TIM_GET_COUNTER(&HTIM_ERR);
+
+        //sprintf(main_buff, "err %li %li %d %li", delta, error->timestamp, error_timeouts[error->id], cnt);
+        //cli_bms_debug(main_buff, strlen(main_buff));
+
+        __HAL_TIM_SET_COMPARE(&HTIM_ERR, ERR_TIM_CHANNEL, cnt + TIM_MS_TO_TICKS(&HTIM_ERR, delta));
+        __HAL_TIM_CLEAR_FLAG(&HTIM_ERR, TIM_IT_CC4);
+
+        //if (HAL_TIM_OC_Start_IT(&HTIM_ERR, ERR_TIM_CHANNEL) == HAL_OK) {
+        //    cli_bms_debug("TIM 4 CC_IT ON", 14);
+        //}
+        HAL_TIM_OC_Start_IT(&HTIM_ERR, ERR_TIM_CHANNEL);
+        //uint32_t val1 = __HAL_TIM_GET_COUNTER(&HTIM_ERR);
+        //uint32_t val2 = __HAL_TIM_GET_COMPARE(&HTIM_ERR, ERR_TIM_CHANNEL);
+
+        //sprintf(main_buff, "err_set %li %li", val1, val2);
+        //cli_bms_debug(main_buff, strlen(main_buff));
         //HAL_GPIO_WritePin(GPIO1_GPIO_Port, GPIO1_Pin, GPIO_PIN_SET);
 
         return true;
     } else {
+        cli_bms_debug(
+            "error_set_timer: SOFT errors or NON WARNING",
+            M_STATIC_FIXED_STRING_STRLEN("error_set_timer: SOFT errors or NON WARNING"));
     }
 
     return false;
@@ -155,9 +196,10 @@ bool error_set(error_id id, uint8_t offset, uint32_t timestamp) {
         // Re-set timer if first in list
         if (error_equals(llist_get_head(er_list), error)) {
             error_set_timer(error);
-            cli_bms_debug("SET TIMER ON", 12);
+            char main_buff[50] = {};
+            sprintf(main_buff, "ADD ERROR ID: %i", error->id);
+            cli_bms_debug(main_buff, strlen(main_buff));
         }
-        
     }
 
     return true;
@@ -202,6 +244,10 @@ bool error_reset(error_id id, uint8_t offset) {
         //ERROR_GET_REF(id, offset) = NULL;
         (*error_list_ref_array_element(id, offset)) = NULL;
         //error_list_ref_array[id][offset] = NULL;
+
+        char main_buff[50] = {};
+        sprintf(main_buff, "DELL ERROR ID: %i", id);
+        cli_bms_debug(main_buff, strlen(main_buff));
 
         return true;
     }

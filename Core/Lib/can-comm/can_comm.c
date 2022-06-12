@@ -13,19 +13,17 @@
 /* CAN LIB */
 #define primary_IMPLEMENTATION
 
-
 #include "../can-lib/lib/primary/c/ids.h"
 #include "../can-lib/lib/primary/c/network.h"
-
-
 #include "../current_transducer/current_transducer.h"
 #include "adc.h"  // TODO: remove this eventually
 #include "dac_pump.h"
 #include "error.h"
 #include "fenice-config.h"
-#include "radiator.h"
-#include "volt.h"
 #include "main.h"
+#include "radiator.h"
+#include "thermocouple.h"
+#include "volt.h"
 
 CAN_TxHeaderTypeDef tx_header;
 CAN_RxHeaderTypeDef rx_header;
@@ -108,10 +106,10 @@ HAL_StatusTypeDef can_primary_send(uint16_t id) {
     uint8_t buffer[CAN_MAX_PAYLOAD_LENGTH] = {0, 1, 0, 1, 0, 1, 0, 1};
 
     tx_header.StdId = id;
-    tx_header.DLC = 8;
+    tx_header.DLC   = 8;
 
     if (id == primary_id_LV_VERSION) {
-        primary_serialize_LV_VERSION(buffer, 1,1);
+        primary_serialize_LV_VERSION(buffer, 1, 1);
         tx_header.DLC = primary_LV_VERSION_SIZE;
     } else if (id == primary_id_LV_VOLTAGE) {
         primary_message_LV_VOLTAGE raw_volts;
@@ -124,10 +122,10 @@ HAL_StatusTypeDef can_primary_send(uint16_t id) {
     } else if (id == primary_id_LV_TOTAL_VOLTAGE) {
         primary_message_LV_TOTAL_VOLTAGE raw_total_volt;
         primary_message_LV_TOTAL_VOLTAGE_conversion conv_total_volts;
-        conv_total_volts.total_voltage = total_voltage_on_board; //*100
+        conv_total_volts.total_voltage = total_voltage_on_board;  //*100
         primary_conversion_to_raw_struct_LV_TOTAL_VOLTAGE(&raw_total_volt, &conv_total_volts);
         primary_serialize_struct_LV_TOTAL_VOLTAGE(buffer, &raw_total_volt);
-       // primary_serialize_LV_TOTAL_VOLTAGE(buffer, (uint16_t) (total_voltage_on_board * 100));
+        // primary_serialize_LV_TOTAL_VOLTAGE(buffer, (uint16_t) (total_voltage_on_board * 100));
         tx_header.DLC = primary_LV_TOTAL_VOLTAGE_SIZE;
     } else if (id == primary_id_LV_CURRENT) {
         primary_message_LV_CURRENT raw_msg;
@@ -140,10 +138,10 @@ HAL_StatusTypeDef can_primary_send(uint16_t id) {
         primary_message_LV_TEMPERATURE raw_temps;
         primary_message_LV_TEMPERATURE_conversion conv_temps;
         //TODO: hcnage temps into float
-        conv_temps.bp_temperature_1 = ADC_get_t_batt1_val();
-        conv_temps.bp_temperature_2 = ADC_get_t_batt2_val();
-        conv_temps.dcdc12_temperature = ADC_get_t_dcdc12_val();
-        conv_temps.dcdc24_temperature = ADC_get_t_dcdc24_val();
+        conv_temps.bp_temperature_1   = THC_get_temperature_C(&hTHC_BATT1);
+        conv_temps.bp_temperature_2   = THC_get_temperature_C(&hTHC_BATT2);
+        conv_temps.dcdc12_temperature = THC_get_temperature_C(&hTHC_DCDC12V);
+        conv_temps.dcdc24_temperature = THC_get_temperature_C(&hTHC_DCDC24V);
         primary_conversion_to_raw_struct_LV_TEMPERATURE(&raw_temps, &conv_temps);
         primary_serialize_struct_LV_TEMPERATURE(buffer, &raw_temps);
         //primary_serialize_LV_TEMPERATURE(buffer, ADC_get_t_batt1_val(), ADC_get_t_dcdc12_val());
@@ -151,9 +149,10 @@ HAL_StatusTypeDef can_primary_send(uint16_t id) {
     } else if (id == primary_id_COOLING_STATUS) {
         primary_message_COOLING_STATUS raw_cooling;
         primary_message_COOLING_STATUS_conversion conv_cooling;
-        conv_cooling.hv_fan_speed = bms_fan_duty_cycle * 100; //TODO: hv fan is inteded as it is?
-        conv_cooling.lv_fan_speed = radiator_handle.duty_cycle_l*100;
-        conv_cooling.pump_speed = hdac_pump.last_analog_value_L > 0 ?  hdac_pump.last_analog_value_L / MAX_DAC_OUT * 100 : 0;
+        conv_cooling.hv_fan_speed = bms_fan_duty_cycle * 100;  //TODO: hv fan is inteded as it is?
+        conv_cooling.lv_fan_speed = radiator_handle.duty_cycle_l * 100;
+        conv_cooling.pump_speed = hdac_pump.last_analog_value_L > 0 ? hdac_pump.last_analog_value_L / MAX_DAC_OUT * 100
+                                                                    : 0;
         primary_conversion_to_raw_struct_COOLING_STATUS(&raw_cooling, &conv_cooling);
         primary_serialize_struct_COOLING_STATUS(buffer, &raw_cooling);
         // uint8_t volatile y = (uint8_t)(((float) hdac_pump.last_analog_value_L / MAX_DAC_OUT * 100));
@@ -182,17 +181,17 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
     //volatile uint8_t x = 0;
     uint8_t rx_data[8] = {'\0'};
     error_toggle_check(HAL_CAN_GetRxMessage(&CANP, CAN_RX_FIFO0, &rx_header, rx_data), ERROR_CAN, 0);
-    
-    if(rx_header.StdId == primary_id_SET_RADIATOR_SPEED){
-        if(rx_data[0] == primary_Cooling_RADIATORS_MAX){
+
+    if (rx_header.StdId == primary_id_SET_RADIATOR_SPEED) {
+        if (rx_data[0] == primary_Cooling_RADIATORS_MAX) {
             radiator_handle.automatic_mode = false;
-        }else if(rx_data[0] == primary_Cooling_RADIATORS_OFF){
+        } else if (rx_data[0] == primary_Cooling_RADIATORS_OFF) {
             radiator_handle.automatic_mode = true;
         }
-    }else if(rx_header.StdId == primary_id_SET_PUMPS_POWER){
-        if(rx_data[0] == primary_Cooling_PUMPS_MAX){
+    } else if (rx_header.StdId == primary_id_SET_PUMPS_POWER) {
+        if (rx_data[0] == primary_Cooling_PUMPS_MAX) {
             hdac_pump.automatic_mode = false;
-        }else if(rx_data[0] == primary_Cooling_PUMPS_OFF){
+        } else if (rx_data[0] == primary_Cooling_PUMPS_OFF) {
             hdac_pump.automatic_mode = true;
         }
     }

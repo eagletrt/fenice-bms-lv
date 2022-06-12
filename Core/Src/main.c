@@ -238,8 +238,8 @@ int main(void) {
     can_primary_init();
     can_secondary_init();
 
-    can_primary_send(0x1);
-    can_secondary_send(0x1);
+    // can_primary_send(0x1);
+    // can_secondary_send(0x1);
     /* USER CODE END 2 */
 
     /* Infinite loop */
@@ -248,9 +248,15 @@ int main(void) {
         if (is_bms_on_fault) {
             bms_error_state();
         } else {
+            // if(__HAL_TIM_GET_IT_SOURCE(&HTIM_ERR, TIM_IT_CC4) == SET){
+            //     cli_bms_debug("FLAG ON", 7);
+            // }else{
+            //     cli_bms_debug("FLAG OFF",8);
+            // }
             cli_loop(&cli_bms_lv);
             measurements_flags_check();
             check_on_feedbacks();
+
             //cooling_routine(50); -> read struct
         }
         /* USER CODE END WHILE */
@@ -422,29 +428,7 @@ void cooling_routine(uint8_t temp) {
             &hdac_pump, dac_pump_get_voltage(temp), dac_pump_get_voltage(temp));
     }
 }
-static inline void check_over_temperature() {
-    if (lv_temp.value > lv_temp.max_temp) {
-        OVER_TEMPERATURE = 1;
-    } else {
-        OVER_TEMPERATURE = 0;
-    }
-}
 
-static inline bool bms_on_off() {
-    if (is_bms_on_requested) {
-        if (!OVER_TEMPERATURE && !UNDER_VOLTAGE) {
-            is_bms_on = true;
-        } else {
-            is_bms_on = false;
-        }
-    } else {
-        is_bms_on = false;
-    }
-    return is_bms_on;
-}
-void is_sensor_update_time() {
-    is_sensors_update_time = true;
-}
 static void _signal_mx_init_succes() {
     printl("MX_INIT Success!", NORM_HEADER);
 }

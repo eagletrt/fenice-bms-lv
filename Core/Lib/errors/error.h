@@ -44,14 +44,13 @@ typedef enum {
     ERROR_LTC6810,
 
     ERROR_MCP23017,
-    
+
     ERROR_RADIATOR,
     ERROR_FAN,
     ERROR_PUMP,
 
     ERROR_ADC_INIT,
     ERROR_ADC_TIMEOUT,
-    
 
     ERROR_DCDC12,
     ERROR_DCDC24,
@@ -60,7 +59,14 @@ typedef enum {
 
 } __attribute__((__packed__)) error_id;
 
-typedef enum { SOFT = UINT32_MAX, SHORT = 500, REGULAR = 1000, INSTANT = 0 } __attribute__((__packed__)) error_timeout;
+// Do not use UIN32_MAX because this value is used internally for arithmetic calculations
+// having UINT32_MAX causes overflow errors
+typedef enum {
+    SOFT    = (uint32_t)(UINT32_MAX >> 1),  //@10KHz 2 d + 11 h + 39 min + 8.3648 s
+    SHORT   = 500,
+    REGULAR = 1000,
+    INSTANT = 0
+} __attribute__((__packed__)) error_timeout;
 
 /**
  * @brief an error is active when it enters the error list (ERROR_ACTIVE)
@@ -92,7 +98,7 @@ size_t error_get_fatal();
 size_t error_count();
 void error_dump(error_t errors[]);
 bool compare_timeouts(error_t *a, error_t *b);
-
+uint32_t get_timeout_delta(error_t *error);
 void _error_handle_tim_oc_irq();
 
 #endif /* ERROR_H_ */
