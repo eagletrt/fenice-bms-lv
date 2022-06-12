@@ -1,4 +1,4 @@
-*ioc -merge
+*ioc -diff -merge
 *.make -merge
 Core/Lib/dac_pump/* filter=clang_format
 Core/Lib/ltc6810/* filter=clang_format
