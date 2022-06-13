@@ -69,12 +69,7 @@
 
 /*----------------------------------- ERRORS ---------------------------------*/
 
-static bool is_bms_on_requested = true;
-static bool is_bms_on           = false;
-bool is_bms_on_fault            = false;
-
-int UNDER_VOLTAGE    = 0;
-int OVER_TEMPERATURE = 0;
+bool is_bms_on_fault = false;
 
 /* USER CODE END PTD */
 
@@ -91,24 +86,6 @@ int OVER_TEMPERATURE = 0;
 
 /* USER CODE BEGIN PV */
 
-const uint32_t ERR_LED_BLINK_error_MSEC      = 100;
-const uint32_t ERR_LED_BLINK_overT_ON_MSEC   = 800;
-const uint32_t ERR_LED_BLINK_overT_OFF_MSEC  = 200;
-const uint32_t ERR_LED_BLINK_underV_ON_MSEC  = 100;
-const uint32_t ERR_LED_BLINK_underV_OFF_MSEC = 900;
-
-int prev_toggle_msec = 0;
-
-// Temperatures
-temperatures_struct lv_temp;
-temperatures_struct hv_temp;
-temperatures_struct pump_temp;
-
-// ERROR LED
-LED_STATE led_state;
-
-uint32_t over_temp_start_msec, under_volt_start_msec;
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -118,11 +95,8 @@ static void _signal_mx_init_succes();
 //static void _test_buzzer();
 //static void write_error_led();
 void bms_error_state();
-static inline void check_over_temperature();
 void check_on_feedbacks();
 void cooling_routine(uint8_t);
-static inline void check_under_voltage();
-static inline bool bms_on_off();
 static inline void check_initial_voltage();
 static inline void check_DCDCs_voltages();
 static inline void fans_radiators_pumps_init();
@@ -130,9 +104,8 @@ static inline void fans_radiators_pumps_init();
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-static bool is_sensors_update_time = 0;
-int debug_flag                     = 0;
-int m_sec_timer                    = 0;
+int debug_flag  = 0;
+int m_sec_timer = 0;
 
 HAL_StatusTypeDef status;
 char main_buff[500];
@@ -248,15 +221,9 @@ int main(void) {
         if (is_bms_on_fault) {
             bms_error_state();
         } else {
-            // if(__HAL_TIM_GET_IT_SOURCE(&HTIM_ERR, TIM_IT_CC4) == SET){
-            //     cli_bms_debug("FLAG ON", 7);
-            // }else{
-            //     cli_bms_debug("FLAG OFF",8);
-            // }
             cli_loop(&cli_bms_lv);
-            measurements_flags_check();
-            check_on_feedbacks();
-
+            measurements_flags_check();  // measure and sends via can
+            check_on_feedbacks();        //check dcdcs and relay fb
             //cooling_routine(50); -> read struct
         }
         /* USER CODE END WHILE */
@@ -327,14 +294,6 @@ void HAL_RCC_CSSCallback(void) {
     }
 }
 /* Private functions =--------------------------------------------------------*/
-
-static inline void check_under_voltage() {
-    // if (get_min_voltage(&ltc) < 10) {
-    //     UNDER_VOLTAGE = 1;
-    // } else {
-    //     UNDER_VOLTAGE = 0;
-    // }
-}
 
 /**
  * @brief Checks if total voltage is above MIN_POWER_ON_VOLTAGE within VOLT_MAX_ATTEMPTS times
@@ -412,7 +371,7 @@ void bms_error_state() {
     HAL_GPIO_WritePin(L_OTHER_GPIO_Port, L_OTHER_Pin, GPIO_PIN_RESET);
     while (1) {
         cli_loop(&cli_bms_lv);
-        check_on_feedbacks();
+        measurements_flags_check();  // measure and sends via can
         HAL_GPIO_TogglePin(L_ERR_GPIO_Port, L_ERR_Pin);
         HAL_Delay(100);
     }
