@@ -34,8 +34,13 @@ void set_radiator_struct_channel_off(uint8_t channel) {
 void set_radiator_struct_dt(uint8_t channel, float dt) {
     if (channel == RAD_L_PWM_TIM_CHNL) {
         radiator_handle.duty_cycle_l = dt;
+        (radiator_handle.duty_cycle_l == 0.0) ? set_radiator_struct_channel_off(channel)
+                                              : set_radiator_struct_channel_on(channel);
+
     } else if (channel == RAD_R_PWM_TIM_CHNL) {
         radiator_handle.duty_cycle_r = dt;
+        (radiator_handle.duty_cycle_r == 0.0) ? set_radiator_struct_channel_off(channel)
+                                              : set_radiator_struct_channel_on(channel);
     }
 }
 

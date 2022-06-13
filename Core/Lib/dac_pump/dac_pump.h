@@ -16,7 +16,7 @@
 #include "main.h"
 #include "usart.h"
 
-#define MAX_DAC_OUT       4096.0
+#define MAX_DAC_OUT       4096.0f
 #define MAX_GPIO_OUT      3.3
 #define AMPLIFICATOR_GAIN 1.5
 #define MAX_OPAMP_OUT     MAX_GPIO_OUT *AMPLIFICATOR_GAIN
@@ -47,12 +47,16 @@ extern DAC_Pump_Handle hdac_pump;
  * note that the output value corresponds to the amplifier output, so the AMPLIFICATOR GAIN parameter 
  * is considered
  * 
- * 
+ * analog = digital * max dac out / max opamp out -> analog* maxopamp out / max dac out
  * @param val Desired digital value, not above MAX_OPAMP_OUT
  * @return uint32_t analog value
  */
 inline uint32_t dac_pump_digital_volt_to_analog(float val) {
     return (val <= MAX_OPAMP_OUT) ? (uint32_t)((val * MAX_DAC_OUT) / (MAX_OPAMP_OUT)) : (uint32_t)((MAX_DAC_OUT));
+}
+
+inline float dac_pump_analog_to_digital(uint32_t analog) {
+    return (float)analog * MAX_OPAMP_OUT / MAX_DAC_OUT;
 }
 
 /**

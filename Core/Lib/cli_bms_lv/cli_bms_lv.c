@@ -33,7 +33,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define N_COMMANDS 11
+#define N_COMMANDS 12
 
 cli_command_func_t _cli_volts;
 cli_command_func_t _cli_radiator;
@@ -45,6 +45,7 @@ cli_command_func_t _cli_reset;
 cli_command_func_t _cli_wizard;
 cli_command_func_t _cli_help;
 cli_command_func_t _cli_can_send;
+cli_command_func_t _cli_inv;
 cli_command_func_t _cli_errors;
 
 cli_command_func_t *commands[N_COMMANDS] = {
@@ -57,11 +58,12 @@ cli_command_func_t *commands[N_COMMANDS] = {
     &_cli_reset,
     &_cli_wizard,
     &_cli_can_send,
+    &_cli_inv,
     &_cli_errors,
     &_cli_help};
 
 char *command_names[N_COMMANDS] =
-    {"volts", "radiator", "pumps", "temps", "feedbacks", "dmesg", "reset", "wizard", "can", "errors", "?"};
+    {"volts", "radiator", "pumps", "temps", "feedbacks", "dmesg", "reset", "wizard", "can", "inv", "errors", "?"};
 
 char *volt_status_name[VOLT_ENUM_SIZE] = {
     [VOLT_OK]            = "VOLT OK",
@@ -168,14 +170,16 @@ void _cli_pumps(uint16_t argc, char **argv, char *out) {
     // p: proportional to MAX_OPAMP_OUT
     // v: volt
     if (argc < 2) {
-        sprintf(out, "Invalid arguments \r\nUsage: pumps {info/p/V} {max_out_percentage/voltage_level}\r\n");
+        sprintf(out, "Invalid arguments \r\nUsage: pumps {info/p/v} {max_out_percentage/voltage_level}\r\n");
     } else {
         if (strcmp(argv[1], "info") == 0) {
             sprintf(
                 out,
-                "Pumps status\r\n\tPumps L:%.2f R:%.2f\r\n",
-                (hdac_pump.last_analog_value_L > 0) ? MAX_DAC_OUT / (float)hdac_pump.last_analog_value_L : 0.0,
-                (hdac_pump.last_analog_value_R > 0) ? MAX_DAC_OUT / (float)hdac_pump.last_analog_value_R : 0.0);
+                "Pumps status\r\n\tPumps L:%.2f [%.2fV] R:%.2f [%.2fV]\r\n",
+                (hdac_pump.last_analog_value_L > 0) ? (float)(hdac_pump.last_analog_value_L) / MAX_DAC_OUT : 0.0,
+                dac_pump_analog_to_digital(hdac_pump.last_analog_value_L),
+                (hdac_pump.last_analog_value_R > 0) ? (float)(hdac_pump.last_analog_value_R) / MAX_DAC_OUT : 0.0,
+                dac_pump_analog_to_digital(hdac_pump.last_analog_value_R));
         } else if (strcmp(argv[1], "p") == 0) {
             if (atof(argv[2]) <= 1.0) {
                 dac_pump_store_and_set_proportional_on_both_channels(&hdac_pump, atof(argv[2]), atof(argv[2]));
@@ -277,4 +281,21 @@ void _cli_errors(uint16_t argc, char **argv, char *out) {
             errors[i].state == STATE_WARNING ? "warning" : "fatal",
             get_timeout_delta(&errors[i]));
     }
+}
+
+void _cli_inv(uint16_t argc, char **argv, char *out) {
+    if (strcmp(argv[1], "on") == 0) {
+        HAL_GPIO_WritePin(INV_RFE_GPIO_Port, INV_RFE_Pin, GPIO_PIN_SET);
+        HAL_Delay(1500);  // works
+        HAL_GPIO_WritePin(INV_FRG_GPIO_Port, INV_FRG_Pin, GPIO_PIN_SET);
+    } else if (strcmp(argv[1], "off") == 0) {
+        HAL_GPIO_WritePin(INV_RFE_GPIO_Port, INV_RFE_Pin, GPIO_PIN_RESET);
+        HAL_Delay(1500);  // works
+        HAL_GPIO_WritePin(INV_FRG_GPIO_Port, INV_FRG_Pin, GPIO_PIN_RESET);
+    }
+    sprintf(
+        out,
+        "[RFE]: %u\r\n[FRG]: %u\r\n",
+        HAL_GPIO_ReadPin(INV_RFE_GPIO_Port, INV_RFE_Pin),
+        HAL_GPIO_ReadPin(INV_FRG_GPIO_Port, INV_FRG_Pin));
 }
