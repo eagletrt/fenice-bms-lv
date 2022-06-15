@@ -86,13 +86,14 @@ void check_dcdc_12_24_temperatures() {
 }
 
 void measurements_flags_check() {
-    //TODO: add errors on measurements check
     if (flags & MEAS_VOLTS_AND_TEMPS_READ_FLAG) {
         if (volt_sample_and_read() != VOLT_ERR) {
             can_primary_send(primary_id_LV_VOLTAGE);
             can_primary_send(primary_id_LV_TOTAL_VOLTAGE);
         }
         can_primary_send(primary_id_LV_TEMPERATURE);
+        //TODO: reduce inverter connection status to 100ms
+        can_primary_send(primary_id_INVERTER_CONNECTION_STATUS);
 #ifdef MEAS_DEBUG
         cli_bms_debug("VOLTS + TEMPS", 13);
 #endif

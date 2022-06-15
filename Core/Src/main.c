@@ -40,6 +40,7 @@
 #include "dma.h"
 #include "error.h"
 #include "fenice-config.h"
+#include "inverters.h"
 #include "mcp23017.h"
 #include "measurements.h"
 #include "notes_buzzer.h"
@@ -53,19 +54,6 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
-/*----------------------------------------------------------------------------*/
-/* Radiator1 -> TIM4 CH3 */
-/* Radiator2 -> TIM4 CH4 */
-
-/* FAN1      -> TIM2 CH2 */
-/* FAN2      -> TIM2 CH1 */
-/* FAN3      -> TIM3 CH1 */
-/* FAN5      -> TIM2 CH4 */
-/* FAN6      -> TIM2 CH3 */
-
-/* PUMP1     -> TIM4 CH2 */
-/* PUMP2     -> TIM4 CH1 */
 
 /*----------------------------------- ERRORS ---------------------------------*/
 
@@ -83,7 +71,7 @@ bool is_bms_on_fault = false;
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-
+Inverters_struct car_inverters;
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -211,8 +199,6 @@ int main(void) {
     can_primary_init();
     can_secondary_init();
 
-    // can_primary_send(0x1);
-    // can_secondary_send(0x1);
     /* USER CODE END 2 */
 
     /* Infinite loop */
@@ -222,8 +208,11 @@ int main(void) {
             bms_error_state();
         } else {
             cli_loop(&cli_bms_lv);
-            measurements_flags_check();  // measure and sends via can
-            check_on_feedbacks();        //check dcdcs and relay fb
+            measurements_flags_check();        // measure and sends via can
+            check_on_feedbacks();              //check dcdcs and relay fb
+            if (!car_inverters.are_latched) {  // close/open the inverters if they aren't already reach them status
+                latch_inverters(&car_inverters);
+            }
             //cooling_routine(50); -> read struct
         }
         /* USER CODE END WHILE */
@@ -367,6 +356,7 @@ void check_on_feedbacks() {
 void bms_error_state() {
     HAL_GPIO_WritePin(RELAY_GPIO_Port, RELAY_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(L_ERR_GPIO_Port, L_ERR_Pin, GPIO_PIN_SET);
+    error_state_inverters(&car_inverters);
     printl("ERROR STATE", ERR_HEADER);
     HAL_GPIO_WritePin(L_OTHER_GPIO_Port, L_OTHER_Pin, GPIO_PIN_RESET);
     while (1) {

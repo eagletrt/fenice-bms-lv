@@ -26,8 +26,6 @@
 #include "stdio.h"
 #include "string.h"
 
-static void _log_wlcm_header();
-
 /* USER CODE END 0 */
 
 UART_HandleTypeDef huart1;
@@ -161,11 +159,6 @@ void printl(char *txt, UART_HeaderTypeDef header_type) {
         strncat(buf, txt, 200 - strlen(buf) - 1);
         HAL_UART_Transmit(&LOG_HUART, (uint8_t *)buf, strlen(buf), 100);
     }
-}
-
-static void _log_wlcm_header() {
-    HAL_UART_Transmit(
-        &LOG_HUART, (uint8_t *)LOG_WLCM_HEADER_STR, M_STATIC_FIXED_STRING_STRLEN(LOG_WLCM_HEADER_STR), 100);
 }
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {

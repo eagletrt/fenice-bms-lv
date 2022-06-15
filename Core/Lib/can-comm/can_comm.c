@@ -20,6 +20,7 @@
 #include "dac_pump.h"
 #include "error.h"
 #include "fenice-config.h"
+#include "inverters.h"
 #include "main.h"
 #include "radiator.h"
 #include "thermocouple.h"
@@ -149,20 +150,17 @@ HAL_StatusTypeDef can_primary_send(uint16_t id) {
     } else if (id == primary_id_COOLING_STATUS) {
         primary_message_COOLING_STATUS raw_cooling;
         primary_message_COOLING_STATUS_conversion conv_cooling;
-        conv_cooling.hv_fan_speed = bms_fan_duty_cycle * 100;  //TODO: hv fan is inteded as it is?
-        conv_cooling.lv_fan_speed = radiator_handle.duty_cycle_l * 100;
+        //TODO: left and right assignments are correct?
+        conv_cooling.inverters_radiator_speed = radiator_handle.duty_cycle_r * 100;
+        conv_cooling.motors_radiator_speed    = radiator_handle.duty_cycle_l * 100;
         conv_cooling.pump_speed = hdac_pump.last_analog_value_L > 0 ? hdac_pump.last_analog_value_L / MAX_DAC_OUT * 100
                                                                     : 0;
         primary_conversion_to_raw_struct_COOLING_STATUS(&raw_cooling, &conv_cooling);
         primary_serialize_struct_COOLING_STATUS(buffer, &raw_cooling);
-        // uint8_t volatile y = (uint8_t)(((float) hdac_pump.last_analog_value_L / MAX_DAC_OUT * 100));
-        // // TODO: add duty cycle right as message
-        // primary_serialize_COOLING_STATUS(
-        //     buffer,
-        //     (uint8_t)(radiator_handle.duty_cycle_l * 100),
-        //     (uint8_t)(fan_duty_cycle * 100),
-        //     (uint8_t)(hdac_pump.last_analog_value_L / MAX_DAC_OUT * 100));
         tx_header.DLC = primary_COOLING_STATUS_SIZE;
+    } else if (id == primary_id_INVERTER_CONNECTION_STATUS) {
+        //TODO: check if is it working
+        primary_serialize_INVERTER_CONNECTION_STATUS(buffer, car_inverters.status);
     }
 
     return can_send(&CANP, buffer, &tx_header);
@@ -183,17 +181,25 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
     error_toggle_check(HAL_CAN_GetRxMessage(&CANP, CAN_RX_FIFO0, &rx_header, rx_data), ERROR_CAN, 0);
 
     if (rx_header.StdId == primary_id_SET_RADIATOR_SPEED) {
-        if (rx_data[0] == primary_Cooling_RADIATORS_MAX) {
+        primary_message_SET_RADIATOR_SPEED rads_speed_msg;
+        primary_deserialize_SET_RADIATOR_SPEED(&rads_speed_msg, rx_data);
+        if (rx_data[0] == primary_Cooling_SET_MAX) {
             radiator_handle.automatic_mode = false;
-        } else if (rx_data[0] == primary_Cooling_RADIATORS_OFF) {
+        } else if (rx_data[0] == primary_Cooling_SET_OFF) {
             radiator_handle.automatic_mode = true;
         }
-    } else if (rx_header.StdId == primary_id_SET_PUMPS_POWER) {
-        if (rx_data[0] == primary_Cooling_PUMPS_MAX) {
+    } else if (rx_header.StdId == primary_id_SET_PUMPS_SPEED) {
+        primary_message_SET_PUMPS_SPEED pumps_speed_msg;
+        primary_deserialize_SET_PUMPS_SPEED(&pumps_speed_msg, rx_data);
+        if (rx_data[0] == primary_Cooling_SET_MAX) {
             hdac_pump.automatic_mode = false;
-        } else if (rx_data[0] == primary_Cooling_PUMPS_OFF) {
+        } else if (rx_data[0] == primary_Cooling_SET_OFF) {
             hdac_pump.automatic_mode = true;
         }
+    } else if (rx_header.StdId == primary_id_SET_INVERTER_CONNECTION_STATUS) {
+        primary_message_SET_INVERTER_CONNECTION_STATUS inverter_msg;
+        primary_deserialize_SET_INVERTER_CONNECTION_STATUS(&inverter_msg, rx_data);
+        set_inverter_status(&car_inverters, rx_data[0]);
     }
 }
 // CAN Secondary Network rx interrupt callback

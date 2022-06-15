@@ -41,7 +41,7 @@ const error_timeout error_timeouts[ERROR_NUM_ERRORS] = {
     [ERROR_RELAY]                    = SOFT,
     [ERROR_LTC6810]                  = SOFT,
 
-    [ERROR_MCP23017] = SOFT,
+    [ERROR_MCP23017] = 1000,
     [ERROR_CAN]      = 500,
 
     [ERROR_RADIATOR] = SOFT,
