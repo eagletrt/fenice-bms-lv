@@ -1,7 +1,7 @@
 /**
  * @file measurements.c
  * @author Federico Carbone, Tommaso Canova
- * @brief 
+ * @brief Measurements and can send messages handler
  * @version 0.1
  * @date 2022-05-17
  * 
@@ -30,7 +30,8 @@ uint8_t volatile flags;
 
 void measurements_init(TIM_HandleTypeDef *htim) {
     __HAL_TIM_SetCompare(htim, COOLING_AND_LV_VERSION_TIMER_CHANNEL, TIM_MS_TO_TICKS(htim, COOLING_STATUS_INTERVAL_MS));
-    __HAL_TIM_SetCompare(htim, CURRENT_TIMER_CHANNEL, TIM_MS_TO_TICKS(htim, CURRENT_MEASURE_INTERVAL_MS));
+    __HAL_TIM_SetCompare(
+        htim, CURRENT_TIMER_CHANNEL, TIM_MS_TO_TICKS(htim, CURRENT_AND_INVERTER_STATUS_MEASURE_INTERVAL_MS));
     __HAL_TIM_SetCompare(htim, VOLTAGE_AND_TEMPS_TIMER_CHANNEL, TIM_MS_TO_TICKS(htim, VOLT_MEASURE_INTERVAL_MS));
 
     __HAL_TIM_CLEAR_IT(htim, TIM_IT_CC1);
@@ -92,8 +93,6 @@ void measurements_flags_check() {
             can_primary_send(primary_id_LV_TOTAL_VOLTAGE);
         }
         can_primary_send(primary_id_LV_TEMPERATURE);
-        //TODO: reduce inverter connection status to 100ms
-        can_primary_send(primary_id_INVERTER_CONNECTION_STATUS);
 #ifdef MEAS_DEBUG
         cli_bms_debug("VOLTS + TEMPS", 13);
 #endif
@@ -111,13 +110,14 @@ void measurements_flags_check() {
 #endif
         flags &= ~MEAS_COOLING_AND_LV_VERSION_READ_FLAG;
     }
-    if (flags & MEAS_CURRENT_READ_FLAG) {
+    if (flags & MEAS_CURRENT_AND_INVERTERS_STATUS_READ_FLAG) {
         check_overcurrent();
         can_primary_send(primary_id_LV_CURRENT);
+        can_primary_send(primary_id_INVERTER_CONNECTION_STATUS);
 #ifdef MEAS_DEBUG
         cli_bms_debug("CURRENT", 7);
 #endif
-        flags &= ~MEAS_CURRENT_READ_FLAG;
+        flags &= ~MEAS_CURRENT_AND_INVERTERS_STATUS_READ_FLAG;
     }
 }
 
@@ -133,8 +133,10 @@ void measurements_oc_handler(TIM_HandleTypeDef *htim) {
             break;
         case CURRENT_TIMER_ACTIVE_CHANNEL:
             __HAL_TIM_SetCompare(
-                htim, CURRENT_TIMER_CHANNEL, counter + TIM_MS_TO_TICKS(htim, CURRENT_MEASURE_INTERVAL_MS));
-            flags |= MEAS_CURRENT_READ_FLAG;
+                htim,
+                CURRENT_TIMER_CHANNEL,
+                counter + TIM_MS_TO_TICKS(htim, CURRENT_AND_INVERTER_STATUS_MEASURE_INTERVAL_MS));
+            flags |= MEAS_CURRENT_AND_INVERTERS_STATUS_READ_FLAG;
             break;
         case VOLTAGE_AND_TEMPS_TIMER_ACTIVE_CHANNEL:
             __HAL_TIM_SetCompare(
