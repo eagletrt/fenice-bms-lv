@@ -166,6 +166,8 @@ int main(void) {
     cli_bms_lv_init();
     error_init();
 
+    init_inverter_struct(&car_inverters);
+
     ltc6810_disable_cs(&SPI);
 #ifdef DEBUG_LTC_ID
     sprintf(main_buff, "LTC ID %s", ltc6810_return_serial_id());
