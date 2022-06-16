@@ -28,7 +28,7 @@ typedef struct {
 
 extern Inverters_struct car_inverters;
 
-static inline init_inverter_struct(Inverters_struct *inv) {
+static inline void init_inverter_struct(Inverters_struct *inv) {
     inv->status      = primary_Toggle_OFF;
     inv->are_latched = false;
 }
