@@ -131,7 +131,7 @@ HAL_StatusTypeDef can_primary_send(uint16_t id) {
     } else if (id == primary_id_LV_CURRENT) {
         primary_message_LV_CURRENT raw_msg;
         primary_message_LV_CURRENT_conversion conv_msg;
-        conv_msg.current = CT_get_electric_current_mA();
+        conv_msg.current = CT_get_electric_current_mA() / 1000.0;
         primary_conversion_to_raw_struct_LV_CURRENT(&raw_msg, &conv_msg);
         primary_serialize_struct_LV_CURRENT(buffer, &raw_msg);
         tx_header.DLC = primary_LV_CURRENT_SIZE;
