@@ -138,7 +138,6 @@ HAL_StatusTypeDef can_primary_send(uint16_t id) {
     } else if (id == primary_id_LV_TEMPERATURE) {
         primary_message_LV_TEMPERATURE raw_temps;
         primary_message_LV_TEMPERATURE_conversion conv_temps;
-        //TODO: hcnage temps into float
         conv_temps.bp_temperature_1   = THC_get_temperature_C(&hTHC_BATT1);
         conv_temps.bp_temperature_2   = THC_get_temperature_C(&hTHC_BATT2);
         conv_temps.dcdc12_temperature = THC_get_temperature_C(&hTHC_DCDC12V);
