@@ -27,6 +27,7 @@
 #endif
 
 uint8_t volatile flags;
+uint8_t open_wire_check_status = 0;
 
 void measurements_init(TIM_HandleTypeDef *htim) {
     __HAL_TIM_SetCompare(htim, COOLING_AND_LV_VERSION_TIMER_CHANNEL, TIM_MS_TO_TICKS(htim, COOLING_STATUS_INTERVAL_MS));
@@ -88,11 +89,29 @@ void check_dcdc_12_24_temperatures() {
 
 void measurements_flags_check() {
     if (flags & MEAS_VOLTS_AND_TEMPS_READ_FLAG) {
+        // Kinda ugly solution i know :(
+        //TODO: Measure time from here
+        uint32_t time = HAL_GetTick();
+        volt_start_open_wire_check(open_wire_check_status);
+        open_wire_check_status += 1;  // 1
+        volt_start_open_wire_check(open_wire_check_status);
+        open_wire_check_status += 1;                  // 2
+        volt_read_open_wire(open_wire_check_status);  // read pup
+        open_wire_check_status += 1;                  // 3
+        volt_start_open_wire_check(open_wire_check_status);
+        open_wire_check_status += 1;  // 4
+        volt_start_open_wire_check(open_wire_check_status);
+        volt_read_open_wire(open_wire_check_status);  // read pud
+        volt_open_wire_check();
+        open_wire_check_status += (open_wire_check_status + 1) % 5;
+        time = HAL_GetTick();
+        //TODO: to here
+
         if (volt_sample_and_read() != VOLT_ERR) {
-            can_primary_send(primary_id_LV_VOLTAGE);
-            can_primary_send(primary_id_LV_TOTAL_VOLTAGE);
+            can_primary_send(primary_ID_LV_VOLTAGE);
+            can_primary_send(primary_ID_LV_TOTAL_VOLTAGE);
         }
-        can_primary_send(primary_id_LV_TEMPERATURE);
+        can_primary_send(primary_ID_LV_TEMPERATURE);
 #ifdef MEAS_DEBUG
         cli_bms_debug("VOLTS + TEMPS", 13);
 #endif
@@ -102,8 +121,8 @@ void measurements_flags_check() {
     if (flags & MEAS_COOLING_AND_LV_VERSION_READ_FLAG) {
         check_battery_temperatures();
         check_dcdc_12_24_temperatures();
-        can_primary_send(primary_id_COOLING_STATUS);
-        can_primary_send(primary_id_LV_VERSION);
+        can_primary_send(primary_ID_COOLING_STATUS);
+        can_primary_send(primary_ID_LV_VERSION);
         check_on_feedbacks();
 #ifdef MEAS_DEBUG
         cli_bms_debug("COOLING + LV VERSION", 20);
@@ -112,8 +131,8 @@ void measurements_flags_check() {
     }
     if (flags & MEAS_CURRENT_AND_INVERTERS_STATUS_READ_FLAG) {
         check_overcurrent();
-        can_primary_send(primary_id_LV_CURRENT);
-        can_primary_send(primary_id_INVERTER_CONNECTION_STATUS);
+        can_primary_send(primary_ID_LV_CURRENT);
+        can_primary_send(primary_ID_INVERTER_CONNECTION_STATUS);
 #ifdef MEAS_DEBUG
         cli_bms_debug("CURRENT", 7);
 #endif

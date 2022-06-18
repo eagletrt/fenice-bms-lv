@@ -31,6 +31,7 @@
 const error_timeout error_timeouts[ERROR_NUM_ERRORS] = {
     [ERROR_CELL_UNDERVOLTAGE]        = 400,
     [ERROR_CELL_OVERVOLTAGE]         = 400,
+    [ERROR_OPEN_WIRE]                = 400,
     [ERROR_OVER_CURRENT]             = 1000,
     [ERROR_DCDC12_OVER_TEMPERATURE]  = 1000,
     [ERROR_DCDC12_UNDER_TEMPERATURE] = 1000,
@@ -40,19 +41,15 @@ const error_timeout error_timeouts[ERROR_NUM_ERRORS] = {
     [ERROR_CELL_OVER_TEMPERATURE]    = 1000,
     [ERROR_RELAY]                    = SOFT,
     [ERROR_LTC6810]                  = SOFT,
-
-    [ERROR_MCP23017] = 1000,
-    [ERROR_CAN]      = 500,
-
-    [ERROR_RADIATOR] = SOFT,
-    [ERROR_FAN]      = SOFT,
-    [ERROR_PUMP]     = SOFT,
-
-    [ERROR_ADC_INIT]    = SOFT,
-    [ERROR_ADC_TIMEOUT] = SOFT,
-
-    [ERROR_DCDC12] = SOFT,
-    [ERROR_DCDC24] = SOFT};
+    [ERROR_MCP23017]                 = 1000,
+    [ERROR_CAN]                      = 500,
+    [ERROR_RADIATOR]                 = SOFT,
+    [ERROR_FAN]                      = SOFT,
+    [ERROR_PUMP]                     = SOFT,
+    [ERROR_ADC_INIT]                 = SOFT,
+    [ERROR_ADC_TIMEOUT]              = SOFT,
+    [ERROR_DCDC12]                   = SOFT,
+    [ERROR_DCDC24]                   = SOFT};
 
 llist er_list = NULL;
 

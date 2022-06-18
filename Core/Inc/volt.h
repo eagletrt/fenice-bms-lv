@@ -24,10 +24,13 @@ typedef enum { VOLT_OK = 0U, VOLT_UNDER_VOLTAGE, VOLT_OVER_VOLTAGE, VOLT_ERR, VO
 void volt_initialization();
 void volt_start_basic_measure();
 void volt_start_measure(uint8_t MD, uint8_t DCP, uint8_t CH);
-uint8_t volt_read();
+uint8_t volt_read(voltage_t *volts);
 uint8_t volt_sample_and_read();
 uint8_t volt_read_and_print();
 uint8_t volt_read_and_store(char *buf);
+void volt_start_open_wire_check(uint8_t status);
+void volt_read_open_wire(uint8_t status);
+void volt_open_wire_check();
 
 /**
  * @brief Returns the lower-voltage cell

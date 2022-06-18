@@ -75,6 +75,7 @@ char *volt_status_name[VOLT_ENUM_SIZE] = {
 const char *error_names[ERROR_NUM_ERRORS] = {
     [ERROR_RELAY]                    = "open relay",
     [ERROR_LTC6810]                  = "ltc6810",
+    [ERROR_OPEN_WIRE]                = "open wire",
     [ERROR_CELL_UNDERVOLTAGE]        = "cell under voltage",
     [ERROR_CELL_OVERVOLTAGE]         = "cell over voltage",
     [ERROR_MCP23017]                 = "feedback chip",
@@ -245,15 +246,15 @@ void _cli_can_send(uint16_t argc, char **argv, char *out) {
         sprintf(out, "Invalid arguments \r\nUsage: can {volts/cooling/current/temp}\r\n");
     } else {
         if (strcmp(argv[1], "volts") == 0) {
-            can_primary_send(primary_id_LV_VOLTAGE);
+            can_primary_send(primary_ID_LV_VOLTAGE);
         } else if (strcmp(argv[1], "cooling") == 0) {
-            can_primary_send(primary_id_COOLING_STATUS);
+            can_primary_send(primary_ID_COOLING_STATUS);
         } else if (strcmp(argv[1], "total") == 0) {
-            can_primary_send(primary_id_LV_TOTAL_VOLTAGE);
+            can_primary_send(primary_ID_LV_TOTAL_VOLTAGE);
         } else if (strcmp(argv[1], "current") == 0) {
-            can_primary_send(primary_id_LV_CURRENT);
+            can_primary_send(primary_ID_LV_CURRENT);
         } else if (strcmp(argv[1], "temp") == 0) {
-            can_primary_send(primary_id_LV_TEMPERATURE);
+            can_primary_send(primary_ID_LV_TEMPERATURE);
         }
     }
 }

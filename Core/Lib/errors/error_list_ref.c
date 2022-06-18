@@ -34,6 +34,7 @@
 */
 llist_node error_list_ref_relay[1]                        = {NULL};
 llist_node error_list_ref_ltc6810[1]                      = {NULL};
+llist_node error_list_ref_open_wire[1]                    = {NULL};
 llist_node error_list_ref_low_voltages[LV_CELLS_COUNT]    = {NULL};
 llist_node error_list_ref_high_voltages[LV_CELLS_COUNT]   = {NULL};
 llist_node error_list_ref_mcp23017[1]                     = {NULL};
@@ -65,6 +66,7 @@ llist_node *const error_list_ref_array[ERROR_NUM_ERRORS] = {
     [ERROR_CELL_OVER_TEMPERATURE]    = error_list_ref_cells_high_temp,
     [ERROR_RELAY]                    = error_list_ref_relay,
     [ERROR_LTC6810]                  = error_list_ref_ltc6810,
+    [ERROR_OPEN_WIRE]                = error_list_ref_open_wire,
     [ERROR_MCP23017]                 = error_list_ref_mcp23017,
     [ERROR_CAN]                      = error_list_ref_can,
     [ERROR_RADIATOR]                 = error_list_ref_radiators,

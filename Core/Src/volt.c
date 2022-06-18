@@ -14,9 +14,11 @@
 #include "main.h"
 #include "usart.h"
 
-voltage_t voltages[LV_CELLS_COUNT] = {0};
-float total_voltage_on_board       = 0.0;
-bms_balancing_cells cells          = 0b0;
+voltage_t voltages[LV_CELLS_COUNT]     = {0};
+voltage_t voltages_pup[LV_CELLS_COUNT] = {0};
+voltage_t voltages_pud[LV_CELLS_COUNT] = {0};
+float total_voltage_on_board           = 0.0;
+bms_balancing_cells cells              = 0b0;
 char buff[500];
 uint8_t voltage_min_index;
 uint8_t volt_status;
@@ -63,8 +65,8 @@ uint8_t volt_get_min() {
  * 
  * @return uint8_t 
  */
-uint8_t volt_read() {
-    return ltc6810_read_voltages(&SPI, voltages);
+uint8_t volt_read(voltage_t *volts) {
+    return ltc6810_read_voltages(&SPI, volts);
 }
 
 /**
@@ -78,7 +80,7 @@ uint8_t volt_sample_and_read() {
     total_voltage_on_board = 0.0;
     volt_start_basic_measure();
     HAL_Delay(1);
-    if (volt_read() == 1) {
+    if (volt_read(voltages) == 1) {
         error_set(ERROR_LTC6810, 0, HAL_GetTick());
         volt_status = VOLT_ERR;
     } else {
@@ -117,7 +119,7 @@ uint8_t volt_read_and_print() {
     //HAL_Delay(200);
     volt_start_basic_measure();
     HAL_Delay(1);
-    if (volt_read() == 1) {
+    if (volt_read(voltages) == 1) {
         printl("LTC ERROR!", ERR_HEADER);
         volt_status = VOLT_ERR;
     } else {
@@ -171,7 +173,7 @@ uint8_t volt_read_and_store(char *buf) {
     //HAL_Delay(200);
     volt_start_basic_measure();
     HAL_Delay(1);
-    if (volt_read() == 1) {
+    if (volt_read(voltages) == 1) {
         sprintf(buf, "LTC ERROR! \r\n");
         volt_status = VOLT_ERR;
     } else {
@@ -214,4 +216,37 @@ uint8_t volt_read_and_store(char *buf) {
     }
     sprintf(buf + strlen(buf), "Total voltage on board: %.3fV \r\n", total_voltage_on_board);
     return volt_status;
+}
+
+void volt_start_open_wire_check(uint8_t status) {
+    ltc6810_adow(&SPI, status > 2 ? LTC6810_ADOW_PUP_INACTIVE : LTC6810_ADOW_PUP_ACTIVE);
+}
+
+void volt_read_open_wire(uint8_t status) {
+    ltc6810_read_voltages(&SPI, status > 2 ? voltages_pud : voltages_pup);
+}
+
+void volt_open_wire_check() {
+    for (uint8_t i = 1; i < LV_CELLS_COUNT; ++i) {
+        int32_t diff = (int32_t)voltages_pup[i] - voltages_pud[i];
+
+        if (diff < -4000) {
+            error_set(ERROR_OPEN_WIRE, 0, HAL_GetTick());
+            return;
+        }
+    }
+
+    if (voltages_pup[0] == 0) {
+        error_set(ERROR_OPEN_WIRE, 0, HAL_GetTick());
+        return;
+    }
+
+#ifdef SIX_CELLS_BATTERY
+    if (voltages_pud[6] == 0) {
+        error_set(ERROR_OPEN_WIRE, 0, HAL_GetTick());
+        return;
+    }
+#endif
+
+    error_reset(ERROR_OPEN_WIRE, 0);
 }

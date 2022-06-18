@@ -190,6 +190,42 @@ void ltc6810_read_serial_id(SPI_HandleTypeDef *spi) {
 }
 
 /**
+ * @brief Start Open Wire ADC Conversion and Poll Status
+ * 
+ * @param spi 
+ * @param pup LTC6810_ADOW_PUP to determine pullup or pulldown current
+ */
+void ltc6810_adow(SPI_HandleTypeDef *spi, LTC6810_ADOW_PUP pup) {
+    /*
+     ADOW: 0-1-MD[1]-MD[0]-PUP-1-DCP-1-CH[2]-CH[1]-CH[0]
+     In this case 
+        MD (ADC mode)                          = 10 -> 7khz
+        DCP (Discharge permitted)              = 0
+        CH (Cell selection for ADC Conversion) = 000 -> all cells
+    
+     0 1 MD[1] MD[0] PUP 1 DCP 1 CH[2] CH[1] CH[0]
+    The final message will be: 
+        CMD 1       CMD2
+        00000011    0PUP101000
+    */
+    uint8_t cmd[4];
+    uint16_t cmd_pec;
+    cmd[0]  = 0b00000011;
+    cmd[1]  = 0b00101000 | pup;
+    cmd_pec = ltc6810_pec15(cmd, 2);
+    cmd[2]  = (uint8_t)(cmd_pec >> 8);
+    cmd[3]  = (uint8_t)(cmd_pec);
+
+    ltc6810_wakeup_idle(spi);
+
+    ltc6810_enable_cs(spi);
+    HAL_SPI_Transmit(spi, cmd, 4, 100);
+    ltc6810_disable_cs(spi);
+}
+
+
+
+/**
  * @brief Read cell voltages from the chip then convert them in some
  *        readable values and it stores in the volts struct
  * 

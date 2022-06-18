@@ -11,7 +11,7 @@
 #include "can_comm.h"
 
 /* CAN LIB */
-#define primary_IMPLEMENTATION
+#define primary_NETWORK_IMPLEMENTATION
 
 #include "../can-lib/lib/primary/c/ids.h"
 #include "../can-lib/lib/primary/c/network.h"
@@ -109,33 +109,33 @@ HAL_StatusTypeDef can_primary_send(uint16_t id) {
     tx_header.StdId = id;
     tx_header.DLC   = 8;
 
-    if (id == primary_id_LV_VERSION) {
+    if (id == primary_ID_LV_VERSION) {
         primary_serialize_LV_VERSION(buffer, 1, 1);
-        tx_header.DLC = primary_LV_VERSION_SIZE;
-    } else if (id == primary_id_LV_VOLTAGE) {
+        tx_header.DLC = primary_SIZE_LV_VERSION;
+    } else if (id == primary_ID_LV_VOLTAGE) {
         primary_message_LV_VOLTAGE raw_volts;
         raw_volts.voltage_1 = voltages[0];
         raw_volts.voltage_2 = voltages[1];
         raw_volts.voltage_3 = voltages[2];
         raw_volts.voltage_4 = voltages[3];
         primary_serialize_struct_LV_VOLTAGE(buffer, &raw_volts);
-        tx_header.DLC = primary_LV_VOLTAGE_SIZE;
-    } else if (id == primary_id_LV_TOTAL_VOLTAGE) {
+        tx_header.DLC = primary_SIZE_LV_VOLTAGE;
+    } else if (id == primary_ID_LV_TOTAL_VOLTAGE) {
         primary_message_LV_TOTAL_VOLTAGE raw_total_volt;
         primary_message_LV_TOTAL_VOLTAGE_conversion conv_total_volts;
         conv_total_volts.total_voltage = total_voltage_on_board;  //*100
         primary_conversion_to_raw_struct_LV_TOTAL_VOLTAGE(&raw_total_volt, &conv_total_volts);
         primary_serialize_struct_LV_TOTAL_VOLTAGE(buffer, &raw_total_volt);
         // primary_serialize_LV_TOTAL_VOLTAGE(buffer, (uint16_t) (total_voltage_on_board * 100));
-        tx_header.DLC = primary_LV_TOTAL_VOLTAGE_SIZE;
-    } else if (id == primary_id_LV_CURRENT) {
+        tx_header.DLC = primary_SIZE_LV_TOTAL_VOLTAGE;
+    } else if (id == primary_ID_LV_CURRENT) {
         primary_message_LV_CURRENT raw_msg;
         primary_message_LV_CURRENT_conversion conv_msg;
         conv_msg.current = CT_get_electric_current_mA() / 1000.0;
         primary_conversion_to_raw_struct_LV_CURRENT(&raw_msg, &conv_msg);
         primary_serialize_struct_LV_CURRENT(buffer, &raw_msg);
-        tx_header.DLC = primary_LV_CURRENT_SIZE;
-    } else if (id == primary_id_LV_TEMPERATURE) {
+        tx_header.DLC = primary_SIZE_LV_CURRENT;
+    } else if (id == primary_ID_LV_TEMPERATURE) {
         primary_message_LV_TEMPERATURE raw_temps;
         primary_message_LV_TEMPERATURE_conversion conv_temps;
         conv_temps.bp_temperature_1   = THC_get_temperature_C(&hTHC_BATT1);
@@ -145,8 +145,8 @@ HAL_StatusTypeDef can_primary_send(uint16_t id) {
         primary_conversion_to_raw_struct_LV_TEMPERATURE(&raw_temps, &conv_temps);
         primary_serialize_struct_LV_TEMPERATURE(buffer, &raw_temps);
         //primary_serialize_LV_TEMPERATURE(buffer, ADC_get_t_batt1_val(), ADC_get_t_dcdc12_val());
-        tx_header.DLC = primary_LV_TEMPERATURE_SIZE;
-    } else if (id == primary_id_COOLING_STATUS) {
+        tx_header.DLC = primary_SIZE_LV_TEMPERATURE;
+    } else if (id == primary_ID_COOLING_STATUS) {
         primary_message_COOLING_STATUS raw_cooling;
         primary_message_COOLING_STATUS_conversion conv_cooling;
         conv_cooling.radiators_speed = radiator_handle.duty_cycle_l * 100;
@@ -154,8 +154,8 @@ HAL_StatusTypeDef can_primary_send(uint16_t id) {
                                                                      : 0;
         primary_conversion_to_raw_struct_COOLING_STATUS(&raw_cooling, &conv_cooling);
         primary_serialize_struct_COOLING_STATUS(buffer, &raw_cooling);
-        tx_header.DLC = primary_COOLING_STATUS_SIZE;
-    } else if (id == primary_id_INVERTER_CONNECTION_STATUS) {
+        tx_header.DLC = primary_SIZE_COOLING_STATUS;
+    } else if (id == primary_ID_INVERTER_CONNECTION_STATUS) {
         //TODO: check if is it working
         primary_serialize_INVERTER_CONNECTION_STATUS(buffer, car_inverters.status);
     }
@@ -177,7 +177,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
     uint8_t rx_data[8] = {'\0'};
     error_toggle_check(HAL_CAN_GetRxMessage(&CANP, CAN_RX_FIFO0, &rx_header, rx_data), ERROR_CAN, 0);
 
-    if (rx_header.StdId == primary_id_SET_RADIATOR_SPEED) {
+    if (rx_header.StdId == primary_ID_SET_RADIATOR_SPEED) {
         primary_message_SET_RADIATOR_SPEED rads_speed_msg;
         primary_deserialize_SET_RADIATOR_SPEED(&rads_speed_msg, rx_data);
         if (rx_data[0] == primary_Cooling_SET_MAX) {
@@ -185,7 +185,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
         } else if (rx_data[0] == primary_Cooling_SET_OFF) {
             radiator_handle.automatic_mode = true;
         }
-    } else if (rx_header.StdId == primary_id_SET_PUMPS_SPEED) {
+    } else if (rx_header.StdId == primary_ID_SET_PUMPS_SPEED) {
         primary_message_SET_PUMPS_SPEED pumps_speed_msg;
         primary_deserialize_SET_PUMPS_SPEED(&pumps_speed_msg, rx_data);
         if (rx_data[0] == primary_Cooling_SET_MAX) {
@@ -193,7 +193,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
         } else if (rx_data[0] == primary_Cooling_SET_OFF) {
             hdac_pump.automatic_mode = true;
         }
-    } else if (rx_header.StdId == primary_id_SET_INVERTER_CONNECTION_STATUS) {
+    } else if (rx_header.StdId == primary_ID_SET_INVERTER_CONNECTION_STATUS) {
         primary_message_SET_INVERTER_CONNECTION_STATUS inverter_msg;
         primary_deserialize_SET_INVERTER_CONNECTION_STATUS(&inverter_msg, rx_data);
         set_inverter_status(&car_inverters, rx_data[0]);

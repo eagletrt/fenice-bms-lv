@@ -34,6 +34,7 @@ void ltc6810_wakeup_idle(SPI_HandleTypeDef *spi);
 void ltc6810_basic_adcv(SPI_HandleTypeDef *spi);
 void ltc6810_adcv(SPI_HandleTypeDef *spi, uint8_t MD, uint8_t DCP, uint8_t CH);
 void ltc6810_wrcfg(SPI_HandleTypeDef *spi, uint8_t cfgr[8]);
+void ltc6810_adow(SPI_HandleTypeDef *spi, LTC6810_ADOW_PUP pup);
 void ltc6810_read_both_status_register(SPI_HandleTypeDef *spi);
 uint8_t ltc6810_read_voltages(SPI_HandleTypeDef *spi, voltage_t *volts);
 uint16_t ltc6810_convert_voltages(uint8_t v_data[]);

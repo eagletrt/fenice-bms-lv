@@ -152,6 +152,8 @@ static const uint8_t dcc[LV_CELLS_COUNT] = {
 #endif
 };
 
+/* Pull-Up (PUP ACTIVE) / Pull-Down (PUP INACTIVE) Current for Open Wire Conversions*/
+typedef enum { LTC6810_ADOW_PUP_ACTIVE = 0b01000000, LTC6810_ADOW_PUP_INACTIVE = 0b00000000 } LTC6810_ADOW_PUP;
 typedef uint16_t voltage_t;
 
 typedef uint8_t bms_balancing_cells;
