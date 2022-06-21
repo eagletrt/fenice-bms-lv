@@ -34,14 +34,20 @@ void measurements_init(TIM_HandleTypeDef *htim) {
     __HAL_TIM_SetCompare(
         htim, CURRENT_TIMER_CHANNEL, TIM_MS_TO_TICKS(htim, CURRENT_AND_INVERTER_STATUS_MEASURE_INTERVAL_MS));
     __HAL_TIM_SetCompare(htim, VOLTAGE_AND_TEMPS_TIMER_CHANNEL, TIM_MS_TO_TICKS(htim, VOLT_MEASURE_INTERVAL_MS));
+    __HAL_TIM_SetCompare(
+        &OPEN_WIRE_MEASUREMENT_TIMER,
+        OPEN_WIRE_TIMER_CHANNEL,
+        TIM_MS_TO_TICKS(&OPEN_WIRE_MEASUREMENT_TIMER, OPEN_WIRE_MEASURE_INTERVAL_MS));
 
     __HAL_TIM_CLEAR_IT(htim, TIM_IT_CC1);
     __HAL_TIM_CLEAR_IT(htim, TIM_IT_CC2);
     __HAL_TIM_CLEAR_IT(htim, TIM_IT_CC3);
+    __HAL_TIM_CLEAR_IT(&OPEN_WIRE_MEASUREMENT_TIMER, TIM_IT_CC2);
 
     HAL_TIM_OC_Start_IT(htim, COOLING_AND_LV_VERSION_TIMER_CHANNEL);
     HAL_TIM_OC_Start_IT(htim, CURRENT_TIMER_CHANNEL);
     HAL_TIM_OC_Start_IT(htim, VOLTAGE_AND_TEMPS_TIMER_CHANNEL);
+    HAL_TIM_OC_Start_IT(&OPEN_WIRE_MEASUREMENT_TIMER, OPEN_WIRE_TIMER_CHANNEL);
 
     flags = 0;
 }
@@ -88,25 +94,29 @@ void check_dcdc_12_24_temperatures() {
 }
 
 void measurements_flags_check() {
-    if (flags & MEAS_VOLTS_AND_TEMPS_READ_FLAG) {
+    if (flags & MEAS_OPEN_WIRE) {
         // Kinda ugly solution i know :(
-        //TODO: Measure time from here
-        uint32_t time = HAL_GetTick();
-        volt_start_open_wire_check(open_wire_check_status);
-        open_wire_check_status += 1;  // 1
-        volt_start_open_wire_check(open_wire_check_status);
-        open_wire_check_status += 1;                  // 2
-        volt_read_open_wire(open_wire_check_status);  // read pup
-        open_wire_check_status += 1;                  // 3
-        volt_start_open_wire_check(open_wire_check_status);
-        open_wire_check_status += 1;  // 4
-        volt_start_open_wire_check(open_wire_check_status);
-        volt_read_open_wire(open_wire_check_status);  // read pud
-        volt_open_wire_check();
-        open_wire_check_status += (open_wire_check_status + 1) % 5;
-        time = HAL_GetTick();
-        //TODO: to here
-
+        // From here
+        if (!is_bms_on_fault) {
+#ifdef MEAS_DEBUG
+            cli_bms_debug("OPEN WIRE", 9);
+#endif
+            volt_start_open_wire_check(open_wire_check_status);
+            open_wire_check_status += 1;  // 1
+            volt_start_open_wire_check(open_wire_check_status);
+            open_wire_check_status += 1;                  // 2
+            volt_read_open_wire(open_wire_check_status);  // read pup
+            open_wire_check_status += 1;                  // 3
+            volt_start_open_wire_check(open_wire_check_status);
+            open_wire_check_status += 1;  // 4
+            volt_start_open_wire_check(open_wire_check_status);
+            volt_read_open_wire(open_wire_check_status);  // read pud
+            volt_open_wire_check();
+            open_wire_check_status += (open_wire_check_status + 1) % 5;
+        }
+        // to here about 5/7 ms
+    }
+    if (flags & MEAS_VOLTS_AND_TEMPS_READ_FLAG) {
         if (volt_sample_and_read() != VOLT_ERR) {
             can_primary_send(primary_ID_LV_VOLTAGE);
             can_primary_send(primary_ID_LV_TOTAL_VOLTAGE);
@@ -142,27 +152,39 @@ void measurements_flags_check() {
 
 void measurements_oc_handler(TIM_HandleTypeDef *htim) {
     uint32_t counter = __HAL_TIM_GetCounter(htim);
-    switch (htim->Channel) {
-        case COOLING_AND_LV_VERSION_TIMER_ACTIVE_CHANNEL:
-            __HAL_TIM_SetCompare(
-                htim,
-                COOLING_AND_LV_VERSION_TIMER_CHANNEL,
-                counter + TIM_MS_TO_TICKS(htim, COOLING_STATUS_INTERVAL_MS));
-            flags |= MEAS_COOLING_AND_LV_VERSION_READ_FLAG;
-            break;
-        case CURRENT_TIMER_ACTIVE_CHANNEL:
-            __HAL_TIM_SetCompare(
-                htim,
-                CURRENT_TIMER_CHANNEL,
-                counter + TIM_MS_TO_TICKS(htim, CURRENT_AND_INVERTER_STATUS_MEASURE_INTERVAL_MS));
-            flags |= MEAS_CURRENT_AND_INVERTERS_STATUS_READ_FLAG;
-            break;
-        case VOLTAGE_AND_TEMPS_TIMER_ACTIVE_CHANNEL:
-            __HAL_TIM_SetCompare(
-                htim, VOLTAGE_AND_TEMPS_TIMER_CHANNEL, counter + TIM_MS_TO_TICKS(htim, VOLT_MEASURE_INTERVAL_MS));
-            flags |= MEAS_VOLTS_AND_TEMPS_READ_FLAG;
-            break;
-        default:
-            break;
+    if (htim->Instance == OPEN_WIRE_MEASUREMENT_TIMER.Instance) {
+        switch (htim->Channel) {
+            case OPEN_WIRE_TIMER_ACTIVE_CHANNEL:
+                __HAL_TIM_SetCompare(
+                    htim, OPEN_WIRE_TIMER_CHANNEL, counter + TIM_MS_TO_TICKS(htim, OPEN_WIRE_MEASURE_INTERVAL_MS));
+                flags |= MEAS_OPEN_WIRE;
+                break;
+            default:
+                break;
+        }
+    } else {
+        switch (htim->Channel) {
+            case COOLING_AND_LV_VERSION_TIMER_ACTIVE_CHANNEL:
+                __HAL_TIM_SetCompare(
+                    htim,
+                    COOLING_AND_LV_VERSION_TIMER_CHANNEL,
+                    counter + TIM_MS_TO_TICKS(htim, COOLING_STATUS_INTERVAL_MS));
+                flags |= MEAS_COOLING_AND_LV_VERSION_READ_FLAG;
+                break;
+            case CURRENT_TIMER_ACTIVE_CHANNEL:
+                __HAL_TIM_SetCompare(
+                    htim,
+                    CURRENT_TIMER_CHANNEL,
+                    counter + TIM_MS_TO_TICKS(htim, CURRENT_AND_INVERTER_STATUS_MEASURE_INTERVAL_MS));
+                flags |= MEAS_CURRENT_AND_INVERTERS_STATUS_READ_FLAG;
+                break;
+            case VOLTAGE_AND_TEMPS_TIMER_ACTIVE_CHANNEL:
+                __HAL_TIM_SetCompare(
+                    htim, VOLTAGE_AND_TEMPS_TIMER_CHANNEL, counter + TIM_MS_TO_TICKS(htim, VOLT_MEASURE_INTERVAL_MS));
+                flags |= MEAS_VOLTS_AND_TEMPS_READ_FLAG;
+                break;
+            default:
+                break;
+        }
     }
 }

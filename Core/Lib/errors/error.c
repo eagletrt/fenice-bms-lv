@@ -242,9 +242,11 @@ bool error_reset(error_id id, uint8_t offset) {
         (*error_list_ref_array_element(id, offset)) = NULL;
         //error_list_ref_array[id][offset] = NULL;
 
+#ifdef ERR_DBG
         char main_buff[50] = {};
         sprintf(main_buff, "DELL ERROR ID: %i", id);
         cli_bms_debug(main_buff, strlen(main_buff));
+#endif
 
         return true;
     }
