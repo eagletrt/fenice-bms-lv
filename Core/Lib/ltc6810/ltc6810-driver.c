@@ -185,7 +185,11 @@ void ltc6810_read_serial_id(SPI_HandleTypeDef *spi) {
     ltc6810_enable_cs(spi);
     HAL_SPI_Transmit(spi, cmd, 4, 100);
     //HAL_SPI_Receive(spi, rx_buff, 6, 100);
-    HAL_SPI_TransmitReceive(spi, dummy_data, serial_id, 6, 100);
+    if (HAL_SPI_TransmitReceive(spi, dummy_data, serial_id, 6, 100) != HAL_OK) {
+        error_set(ERROR_SPI, 0, HAL_GetTick());
+    } else {
+        error_reset(ERROR_SPI, 0);
+    }
     ltc6810_disable_cs(spi);
 }
 
@@ -219,11 +223,14 @@ void ltc6810_adow(SPI_HandleTypeDef *spi, LTC6810_ADOW_PUP pup) {
     ltc6810_wakeup_idle(spi);
 
     ltc6810_enable_cs(spi);
-    HAL_SPI_Transmit(spi, cmd, 4, 100);
+    if (HAL_SPI_Transmit(spi, cmd, 4, 100) != HAL_OK) {
+        error_set(ERROR_SPI, 0, HAL_GetTick());
+    } else {
+        error_reset(ERROR_SPI, 0);
+    }
+
     ltc6810_disable_cs(spi);
 }
-
-
 
 /**
  * @brief Read cell voltages from the chip then convert them in some
@@ -243,7 +250,7 @@ uint8_t ltc6810_read_voltages(SPI_HandleTypeDef *spi, voltage_t *volts) {
 
     if (ltc6810_pladc(spi, 5) == HAL_TIMEOUT) {
         ltc_error = 1;
-        error_set(ERROR_LTC6810, 0, HAL_GetTick());
+        error_set(ERROR_VOLTAGES_NOT_READY, 0, HAL_GetTick());
     }
 
     for (uint8_t reg = 0; reg < LTC6810_REG_COUNT; reg++) {
@@ -295,6 +302,8 @@ uint8_t ltc6810_read_voltages(SPI_HandleTypeDef *spi, voltage_t *volts) {
     }
     if (ltc_error == 0) {
         error_reset(ERROR_LTC6810, 0);
+    } else {
+        error_set(ERROR_LTC6810, 0, HAL_GetTick());
     }
     return ltc_error;
 }
@@ -336,7 +345,11 @@ void ltc6810_read_both_status_register(SPI_HandleTypeDef *spi) {
         ltc6810_disable_cs(spi);
         /* Each register can hold LTC6810_REG_CELL_COUNT, every value it's 2 byte long.
         2 more bytes are added to attach pec to the rx_data */
-        HAL_SPI_TransmitReceive(spi, dummy_data, rx_data, LTC6810_REG_CELL_COUNT * 2 + 2, 100);
+        if (HAL_SPI_TransmitReceive(spi, dummy_data, rx_data, LTC6810_REG_CELL_COUNT * 2 + 2, 100) != HAL_OK) {
+            error_set(ERROR_SPI, 0, HAL_GetTick());
+        } else {
+            error_reset(ERROR_SPI, 0);
+        }
         ltc6810_disable_cs(spi);
     }
 }

@@ -81,7 +81,6 @@ uint8_t volt_sample_and_read() {
     volt_start_basic_measure();
     HAL_Delay(1);
     if (volt_read(voltages) == 1) {
-        error_set(ERROR_LTC6810, 0, HAL_GetTick());
         volt_status = VOLT_ERR;
     } else {
         for (uint8_t i = 0; i < LV_CELLS_COUNT; i++) {
