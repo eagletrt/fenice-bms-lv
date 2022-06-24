@@ -114,6 +114,7 @@ void measurements_flags_check() {
             volt_open_wire_check();
             open_wire_check_status += (open_wire_check_status + 1) % 5;
         }
+        flags &= ~MEAS_OPEN_WIRE;
         // to here about 5/7 ms
     }
     if (flags & MEAS_VOLTS_AND_TEMPS_READ_FLAG) {
