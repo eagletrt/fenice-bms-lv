@@ -52,7 +52,7 @@ void volt_start_measure(uint8_t MD, uint8_t DCP, uint8_t CH) {
  */
 uint8_t volt_get_min() {
     uint8_t min = 0;
-    for (uint8_t i = 0; i < LV_CELLS_COUNT; i++) {
+    for (uint8_t i = DEAD_CELLS_OFFSET; i < LV_CELLS_COUNT; i++) {
         if (voltages[i] < voltages[min]) {
             min = i;
         }
@@ -83,7 +83,7 @@ uint8_t volt_sample_and_read() {
     if (volt_read(voltages) == 1) {
         volt_status = VOLT_ERR;
     } else {
-        for (uint8_t i = 0; i < LV_CELLS_COUNT; i++) {
+        for (uint8_t i = DEAD_CELLS_OFFSET; i < LV_CELLS_COUNT; i++) {
             // Check whether a cell is undervoltage or overvoltage and set/reset its specific error
             if ((float)voltages[i] / 10000 <= VOLT_MIN_ALLOWED_VOLTAGE) {
                 volt_status = VOLT_UNDER_VOLTAGE;
@@ -125,7 +125,7 @@ uint8_t volt_read_and_print() {
         voltage_min_index = volt_get_min();
     }
     memset(buff, 0, sizeof(buff));
-    for (uint8_t i = 0; i < LV_CELLS_COUNT; i++) {
+    for (uint8_t i = DEAD_CELLS_OFFSET; i < LV_CELLS_COUNT; i++) {
         total_voltage_on_board += (float)voltages[i] / 10000;
         if (i == voltage_min_index && voltage_min_index != -1 &&
             (float)voltages[i] / 10000 <= VOLT_MAX_ALLOWED_VOLTAGE &&
@@ -179,7 +179,7 @@ uint8_t volt_read_and_store(char *buf) {
         voltage_min_index = volt_get_min();
     }
     memset(buff, 0, sizeof(buff));
-    for (uint8_t i = 0; i < LV_CELLS_COUNT; i++) {
+    for (uint8_t i = DEAD_CELLS_OFFSET; i < LV_CELLS_COUNT; i++) {
         if (i == voltage_min_index && voltage_min_index != -1 &&
             (float)voltages[i] / 10000 <= VOLT_MAX_ALLOWED_VOLTAGE &&
             (float)voltages[i] / 10000 >= VOLT_MIN_ALLOWED_VOLTAGE) {
@@ -235,10 +235,12 @@ void volt_open_wire_check() {
         }
     }
 
+#ifdef CELL_0_IS_ALIVE
     if (voltages_pup[0] == 0) {
         error_set(ERROR_OPEN_WIRE, 0, HAL_GetTick());
         return;
     }
+#endif
 
 #ifdef SIX_CELLS_BATTERY
     if (voltages_pud[6] == 0) {

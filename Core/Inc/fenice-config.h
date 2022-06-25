@@ -16,6 +16,8 @@
 #define NDEBUG_SENSOR_CURRENT
 #define NDEBUG_LTC
 
+#include "ltc_config.h"
+
 /**
  * Maximum can payload. for CAN 2.0A is 8 bytes
  */
@@ -25,6 +27,8 @@
  * BMS LV COSTRAINTS
  */
 
+#define DEAD_CELLS_OFFSET \
+    1  // If one or more cells are not working anymore this offset could help to exclude those cells
 /** BASED ON LIPO STANDARD */
 #define VOLT_MAX_ALLOWED_VOLTAGE 4.18f  //4.18f TODO: check why there's an initial voltage drop
 #define VOLT_MIN_ALLOWED_VOLTAGE 3.3f
@@ -32,8 +36,8 @@
 /** Total number of attempts to read initial voltage needed to decide whether to close the relay */
 #define VOLT_MAX_ATTEMPTS 5
 
-#define MIN_POWER_ON_VOLTAGE  VOLT_MIN_ALLOWED_VOLTAGE * 4.0f  //12.0
-#define MAX_POWER_ON_VOLTAGE  VOLT_MAX_ALLOWED_VOLTAGE * 4.0f;
+#define MIN_POWER_ON_VOLTAGE  VOLT_MIN_ALLOWED_VOLTAGE *(float)(LV_CELLS_COUNT - DEAD_CELLS_OFFSET)   // 9.9 V
+#define MAX_POWER_ON_VOLTAGE  VOLT_MAX_ALLOWED_VOLTAGE *(float)(LV_CELLS_COUNT - DEAD_CELLS_OFFSET);  // 12.54 V
 #define TOTAL_CAN_PHERIPERALS 2
 
 #define MAX_CELLS_ALLOWED_TEMP 60.0f
