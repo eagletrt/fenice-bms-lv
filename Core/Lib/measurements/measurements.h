@@ -13,9 +13,9 @@
 
 /* MEASUREMENTS INTERVALS */
 #define OPEN_WIRE_MEASURE_INTERVAL_MS                   50
-#define VOLT_MEASURE_INTERVAL_MS                        200
+#define VOLT_MEASURE_INTERVAL_MS                        100
 #define CURRENT_AND_INVERTER_STATUS_MEASURE_INTERVAL_MS 500
-#define TEMPERATURE_MEASURE_INTERVAL_MS                 200
+#define TEMPERATURE_MEASURE_INTERVAL_MS                 100
 #define COOLING_STATUS_INTERVAL_MS                      1000
 #define LV_VERSION_INTERVAL_MS                          1000
 
