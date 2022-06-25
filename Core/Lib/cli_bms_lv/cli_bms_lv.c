@@ -152,11 +152,12 @@ void _cli_radiator(uint16_t argc, char **argv, char *out) {
                 sprintf(
                     out,
                     "Radiators status:\r\n\t Left Duty Cycle: %.2f\r\n\t Right Duty Cycle: %.2f\
-            \r\n\t Is right on: %d\r\n\t Is left on: %d\r\n",
+            \r\n\t Is right on: %d\r\n\t Is left on: %d\r\n Automatic mode:%s\r\n",
                     radiator_handle.duty_cycle_l,
                     radiator_handle.duty_cycle_r,
                     radiator_handle.right_is_on,
-                    radiator_handle.left_is_on);
+                    radiator_handle.left_is_on,
+                    radiator_handle.automatic_mode ? "true" : "false");
             } else {
                 set_radiator_dt(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, atof(argv[2]));
                 set_radiator_dt(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, atof(argv[2]));
@@ -178,11 +179,12 @@ void _cli_pumps(uint16_t argc, char **argv, char *out) {
         if (strcmp(argv[1], "info") == 0) {
             sprintf(
                 out,
-                "Pumps status\r\n\tPumps L:%.2f [%.2fV] R:%.2f [%.2fV]\r\n",
+                "Pumps status\r\n\tPumps L:%.2f [%.2fV] R:%.2f [%.2fV]\r\n Automatic mode:%s\r\n",
                 (hdac_pump.last_analog_value_L > 0) ? (float)(hdac_pump.last_analog_value_L) / MAX_DAC_OUT : 0.0,
                 dac_pump_analog_to_digital(hdac_pump.last_analog_value_L),
                 (hdac_pump.last_analog_value_R > 0) ? (float)(hdac_pump.last_analog_value_R) / MAX_DAC_OUT : 0.0,
-                dac_pump_analog_to_digital(hdac_pump.last_analog_value_R));
+                dac_pump_analog_to_digital(hdac_pump.last_analog_value_R),
+                hdac_pump.automatic_mode ? "true" : "false");
         } else if (strcmp(argv[1], "p") == 0) {
             if (atof(argv[2]) <= 1.0) {
                 dac_pump_store_and_set_proportional_on_both_channels(&hdac_pump, atof(argv[2]), atof(argv[2]));

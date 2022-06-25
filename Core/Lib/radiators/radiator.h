@@ -22,7 +22,7 @@
  * @return float 
  */
 inline float duty_cycle_to_fan_duty_cycle(float dt) {
-    return (dt <= 1.0) ? 1.0 - dt : 1;
+    return (dt <= 1.0) ? 1.0 - dt : 1.0;
 }
 
 typedef struct {

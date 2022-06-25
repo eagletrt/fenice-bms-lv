@@ -72,7 +72,8 @@ static float __calculate_current_mA(uint32_t adc_raw_value);
 float CT_get_electric_current_mA() {
     uint32_t raw_value  = ADC_get_HO_50S_SP33_1106_sensor_val();
     float current_in_mA = __calculate_current_mA(raw_value);
-    isOvercurrent       = (current_in_mA > CT_OVERCURRENT_THRESHOLD_MA);
+    //float current_in_mA = CT_get_average_electric_current(128)
+    isOvercurrent = (current_in_mA > CT_OVERCURRENT_THRESHOLD_MA);
     __push_into_history(current_in_mA);
     return current_in_mA;
 }

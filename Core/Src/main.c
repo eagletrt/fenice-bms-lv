@@ -96,7 +96,7 @@ int m_sec_timer = 0;
 
 HAL_StatusTypeDef status;
 char main_buff[500];
-float bms_fan_duty_cycle = 0.2;
+float bms_fan_duty_cycle = 0.8;
 /* USER CODE END 0 */
 
 /**
@@ -168,6 +168,13 @@ int main(void)
     error_init();
 
     init_inverter_struct(&car_inverters);
+    // Buzzer congiguration
+    pwm_set_period(&BZZR_HTIM, 1);
+    pwm_set_duty_cicle(&BZZR_HTIM, BZZR_PWM_TIM_CHNL, 0.5);
+
+    // Other fan, set at 25 KHz
+    pwm_set_period(&FAN6_HTIM, 0.04);
+    pwm_set_duty_cicle(&FAN6_HTIM, FAN6_PWM_TIM_CHNL, 1 - bms_fan_duty_cycle);
 
     ltc6810_disable_cs(&SPI);
 #ifdef DEBUG_LTC_ID
@@ -181,14 +188,6 @@ int main(void)
 
     //Init feedbacks chip
     mcp23017_basic_config_init(&hmcp, &hi2c3);
-
-    // Buzzer congiguration
-    pwm_set_period(&BZZR_HTIM, 1);
-    pwm_set_duty_cicle(&BZZR_HTIM, BZZR_PWM_TIM_CHNL, 0.5);
-
-    // Other fan, set at 25 KHz
-    pwm_set_period(&FAN6_HTIM, 0.04);
-    pwm_set_duty_cicle(&FAN6_HTIM, FAN6_PWM_TIM_CHNL, bms_fan_duty_cycle);
 
     radiator_init();
 
@@ -216,7 +215,7 @@ int main(void)
             if (!car_inverters.are_latched) {  // close/open the inverters if they aren't already reach them status
                 latch_inverters(&car_inverters);
             }
-            //cooling_routine(50); -> read struct
+            cooling_routine(20);
         }
     /* USER CODE END WHILE */
 
@@ -379,10 +378,16 @@ void cooling_routine(uint8_t temp) {
     if (radiator_handle.automatic_mode) {
         set_radiator_dt(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, get_radiator_dt(temp));
         set_radiator_dt(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, get_radiator_dt(temp));
+    } else {
+        set_radiator_dt(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, 1.0);
+        set_radiator_dt(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, 1.0);
     }
     if (hdac_pump.automatic_mode) {
-        dac_pump_store_and_set_value_on_both_channels(
-            &hdac_pump, dac_pump_get_voltage(temp), dac_pump_get_voltage(temp));
+        // dac_pump_store_and_set_value_on_both_channels(
+        //     &hdac_pump, dac_pump_get_voltage(temp), dac_pump_get_voltage(temp));
+        dac_pump_store_and_set_value_on_both_channels(&hdac_pump, 0.0, 0.0);
+    } else {
+        dac_pump_store_and_set_value_on_both_channels(&hdac_pump, MAX_OPAMP_OUT, MAX_OPAMP_OUT);
     }
 }
 

@@ -12,6 +12,9 @@
 
 #include "error.h"
 
+#define PUMP_M_FACTOR (float)(MAX_OPAMP_OUT - MIN_OPAMP_OUT) / (MAX_MOTOR_TEMP - MIN_MOTOR_TEMP)
+#define PUMP_Q_FACTOR (float)(MIN_OPAMP_OUT) - (MIN_MOTOR_TEMP * PUMP_M_FACTOR)
+
 DAC_Pump_Handle hdac_pump;
 /**
  * @brief             Initialize the handle with given values
@@ -290,5 +293,5 @@ void dac_pump_sample_test(DAC_Pump_Handle *hdp) {
  * @return float Voltage level
  */
 float dac_pump_get_voltage(float temp) {
-    return (MAX_OPAMP_OUT - MIN_OPAMP_OUT) / (MAX_MOTOR_TEMP - MIN_MOTOR_TEMP) * (temp - MIN_MOTOR_TEMP);
+    return (temp * PUMP_M_FACTOR) + PUMP_Q_FACTOR;
 }

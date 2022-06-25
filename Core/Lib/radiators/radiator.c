@@ -14,6 +14,9 @@
 #include "pwm.h"
 #include "tim.h"
 
+#define RADIATOR_M_FACTOR (float)(MAX_FAN_DUTY_CYCLE - MIN_FAN_DUTY_CYCLE) / (MAX_MOTOR_TEMP - MIN_MOTOR_TEMP)
+#define RADIATOR_Q_FACTOR (float)(MIN_FAN_DUTY_CYCLE) - (RADIATOR_M_FACTOR * MIN_MOTOR_TEMP)
+
 radiator_t radiator_handle;
 
 void set_radiator_struct_channel_on(uint8_t channel) {
@@ -114,5 +117,5 @@ void set_radiator_dt(TIM_HandleTypeDef *rad_tim, uint8_t channel, float duty_cyc
  * @return float Optimal PWM Duty Cycle 
  */
 float get_radiator_dt(float temp) {
-    return (MAX_FAN_DUTY_CYCLE - MIN_FAN_DUTY_CYCLE) / (MAX_MOTOR_TEMP - MIN_MOTOR_TEMP) * (temp - MIN_MOTOR_TEMP);
+    return (temp * RADIATOR_M_FACTOR) + RADIATOR_Q_FACTOR;
 }

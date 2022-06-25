@@ -196,7 +196,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
     } else if (rx_header.StdId == primary_ID_SET_INVERTER_CONNECTION_STATUS) {
         primary_message_SET_INVERTER_CONNECTION_STATUS inverter_msg;
         primary_deserialize_SET_INVERTER_CONNECTION_STATUS(&inverter_msg, rx_data);
-        set_inverter_status(&car_inverters, rx_data[0]);
+        set_inverter_status(&car_inverters, inverter_msg.status);
     }
 }
 // CAN Secondary Network rx interrupt callback
