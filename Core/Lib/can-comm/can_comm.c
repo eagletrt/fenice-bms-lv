@@ -180,17 +180,17 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
     if (rx_header.StdId == primary_ID_SET_RADIATOR_SPEED) {
         primary_message_SET_RADIATOR_SPEED rads_speed_msg;
         primary_deserialize_SET_RADIATOR_SPEED(&rads_speed_msg, rx_data);
-        if (rx_data[0] == primary_Cooling_SET_MAX) {
+        if (rads_speed_msg.radiator_speed == primary_Cooling_SET_MAX) {
             radiator_handle.automatic_mode = false;
-        } else if (rx_data[0] == primary_Cooling_SET_OFF) {
+        } else if (rads_speed_msg.radiator_speed == primary_Cooling_SET_OFF) {
             radiator_handle.automatic_mode = true;
         }
     } else if (rx_header.StdId == primary_ID_SET_PUMPS_SPEED) {
         primary_message_SET_PUMPS_SPEED pumps_speed_msg;
         primary_deserialize_SET_PUMPS_SPEED(&pumps_speed_msg, rx_data);
-        if (rx_data[0] == primary_Cooling_SET_MAX) {
+        if (pumps_speed_msg.pumps_speed == primary_Cooling_SET_MAX) {
             hdac_pump.automatic_mode = false;
-        } else if (rx_data[0] == primary_Cooling_SET_OFF) {
+        } else if (pumps_speed_msg.pumps_speed == primary_Cooling_SET_OFF) {
             hdac_pump.automatic_mode = true;
         }
     } else if (rx_header.StdId == primary_ID_SET_INVERTER_CONNECTION_STATUS) {
