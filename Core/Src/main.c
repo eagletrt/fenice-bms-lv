@@ -384,8 +384,8 @@ void cooling_routine(uint8_t temp) {
         set_radiator_dt(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, get_radiator_dt(temp));
         set_radiator_dt(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, get_radiator_dt(temp));
     } else {
-        set_radiator_dt(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, 1.0);
-        set_radiator_dt(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, 1.0);
+        set_radiator_dt(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, 0.95);
+        set_radiator_dt(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, 0.95);
     }
     if (hdac_pump.automatic_mode) {
         // dac_pump_store_and_set_value_on_both_channels(

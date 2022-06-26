@@ -250,7 +250,7 @@ static inline bool FDBK_24V_INVERTERS_get_state() {
     return mcp23017_get_state(&hmcp, MCP23017_PORTA, FB_INVERTERS) == 0x1 ? true : false;
 }
 
-#define MAX_FAN_DUTY_CYCLE               1.0
+#define MAX_FAN_DUTY_CYCLE               0.95  //1.0
 #define MIN_FAN_DUTY_CYCLE               0.8
 #define MAX_INTERNAL_FAN_DUTY_CYCLE      1.0
 #define MIN_INTERNAL_FAN_DUTY_CYCLE      0.1
