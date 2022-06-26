@@ -12,6 +12,7 @@
 #include "measurements.h"
 
 #include "../can-lib/lib/primary/c/ids.h"
+#include "../can-lib/lib/primary/c/watchdog.h"
 #include "can_comm.h"
 #include "cli_bms_lv.h"
 #include "current_transducer.h"
@@ -98,9 +99,9 @@ void measurements_flags_check() {
         // Kinda ugly solution i know :(
         // From here
         if (!is_bms_on_fault) {
-#ifdef MEAS_DEBUG
-            cli_bms_debug("OPEN WIRE", 9);
-#endif
+            // #ifdef MEAS_DEBUG
+            //             cli_bms_debug("OPEN WIRE", 9);
+            // #endif
             volt_start_open_wire_check(open_wire_check_status);
             open_wire_check_status += 1;  // 1
             volt_start_open_wire_check(open_wire_check_status);

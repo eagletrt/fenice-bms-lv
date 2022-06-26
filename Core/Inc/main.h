@@ -250,10 +250,16 @@ static inline bool FDBK_24V_INVERTERS_get_state() {
     return mcp23017_get_state(&hmcp, MCP23017_PORTA, FB_INVERTERS) == 0x1 ? true : false;
 }
 
-#define MAX_FAN_DUTY_CYCLE 1.0
-#define MIN_FAN_DUTY_CYCLE 0.8
-#define MIN_MOTOR_TEMP     20.0  // Maybe change it to 40?
-#define MAX_MOTOR_TEMP     60.0 - 10.0
+#define MAX_FAN_DUTY_CYCLE               1.0
+#define MIN_FAN_DUTY_CYCLE               0.8
+#define MAX_INTERNAL_FAN_DUTY_CYCLE      1.0
+#define MIN_INTERNAL_FAN_DUTY_CYCLE      0.1
+#define INTERNAL_FAN_M_FACTOR            (MAX_INTERNAL_FAN_DUTY_CYCLE - MIN_INTERNAL_FAN_DUTY_CYCLE) / (60 - 20)
+#define INTERNAL_FAN_Q_FACTOR            (MIN_INTERNAL_FAN_DUTY_CYCLE) - (20 * INTERNAL_FAN_M_FACTOR)
+#define MIN_INVERTER_TEMP_RADIATORS_ONLY 50.0
+#define MAX_INVERTER_TEMP_RADIATORS_ONLY 60.0
+#define MIN_INVERTER_TEMP_PUMPS_ONLY     40.0
+#define MAX_INVERTER_TEMP_PUMPS_ONLY     60.0
 
 #define CANP hcan1
 #define CANS hcan2
