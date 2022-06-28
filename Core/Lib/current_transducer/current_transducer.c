@@ -47,17 +47,9 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-static float electric_current_history[CT_HISTORY_LENGTH];
-static uint32_t current_idx_in_array = 0;
-static bool isOvercurrent            = false;
+static bool isOvercurrent = false;
 
 /* Private function prototypes -----------------------------------------------*/
-/**
- * @brief Push an elctric current value into the history
- * 
- * @param value electric current
- */
-static void __push_into_history(float value);
 
 /**
  * @brief calculate the electric current in mA from the raw value got by ADC
@@ -74,13 +66,7 @@ float CT_get_electric_current_mA() {
     float current_in_mA = __calculate_current_mA(raw_value);
     //float current_in_mA = CT_get_average_electric_current(128)
     isOvercurrent = (current_in_mA > CT_OVERCURRENT_THRESHOLD_MA);
-    __push_into_history(current_in_mA);
     return current_in_mA;
-}
-
-static void __push_into_history(float value) {
-    current_idx_in_array                           = (current_idx_in_array + 1) % CT_HISTORY_LENGTH;
-    electric_current_history[current_idx_in_array] = value;
 }
 
 static float __calculate_current_mA(uint32_t adc_raw_value) {
@@ -90,27 +76,6 @@ static float __calculate_current_mA(uint32_t adc_raw_value) {
 
     float current = ((adc_val_mV - HO_50_SP33_1106_VREF_mV) / HO_50_SP33_1106_THEORETICAL_SENSITIVITY) * 1000;
     return current;
-
-    //ADC_voltages = (uint32_t)((adcVAL * (Vcc * 1024 / RESOLUTION)) / 1024);
-    //if (ADC_voltages >= REFERENCE_VOLTAGE)
-    //    ADC_voltages = ADC_voltages - REFERENCE_VOLTAGE;
-    //else
-    //    ADC_voltages = REFERENCE_VOLTAGE - ADC_voltages;
-    //return ADC_voltages = (uint32_t)(100 * ADC_voltages);
-}
-
-float CT_get_average_electric_current(uint8_t number_of_samples) {
-    // check out of range on number_of_samples
-    number_of_samples = number_of_samples > CT_HISTORY_LENGTH ? CT_HISTORY_LENGTH : number_of_samples;
-    number_of_samples = number_of_samples < 1 ? 1 : number_of_samples;
-
-    float accumulator = 0;
-    uint8_t idx       = (((CT_HISTORY_LENGTH + current_idx_in_array) - number_of_samples) % CT_HISTORY_LENGTH) + 1;
-    for (int i = 0; i < number_of_samples; i++) {
-        accumulator += electric_current_history[idx];
-        idx = (idx + 1) % CT_HISTORY_LENGTH;
-    }
-    return accumulator / number_of_samples;
 }
 
 bool CT_is_overcurrent() {

@@ -54,7 +54,7 @@ void measurements_init(TIM_HandleTypeDef *htim) {
 }
 
 void check_overcurrent() {
-    if (CT_get_electric_current_mA() > MAX_CURRENT_ALLOWED) {
+    if (CT_get_electric_current_mA() > MAX_CURRENT_ALLOWED_mA) {
         error_set(ERROR_OVER_CURRENT, 0, HAL_GetTick());
     } else {
         error_reset(ERROR_OVER_CURRENT, 0);

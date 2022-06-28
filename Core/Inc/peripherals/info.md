@@ -38,7 +38,7 @@
         - Capacity Range(mAh): 	10000-49999
 
 - LEM HO SP33-1106 50-s:
-    - What: current sensor
+    - What: current transducer
     - Where: Porchetto case
     - How Many: 1
     - datasheet:

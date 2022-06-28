@@ -160,7 +160,7 @@ int main(void) {
     // Turn on startup button
     HAL_GPIO_WritePin(L_ERR_GPIO_Port, L_ERR_Pin, GPIO_PIN_SET);
 
-    // Start DMA handled readings for the current sensor, battery and DCDC(12/24v) temperature sensors
+    // Start DMA handled readings for the current transducer, battery and DCDC(12/24v) temperature sensors
     ADC_start_DMA_readings();
 
     // Blink to signal correct MX_XXX_init processes (usuefull for CAN transciever)

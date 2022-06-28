@@ -36,6 +36,13 @@ extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc2;
 
 /* USER CODE BEGIN Private defines */
+
+/**
+ *  @brief Number of samples used to compute the value of HO_50S_SP33 current transducer
+ *        HO_50S_SP33 value is calculated as the average of this samples
+ */
+#define HO_50S_SP33_SAMPLES_FOR_AVERAGE (10U)
+
 extern ADC_ChannelConfTypeDef UserAdcConfig;
 /* USER CODE END Private defines */
 
@@ -81,8 +88,8 @@ float ADC_get_value_mV(ADC_HandleTypeDef *adcHandle, uint32_t value_from_adc);
 void ADC_start_DMA_readings();
 
 /**
- * @brief Current sensor value getter
- * @return current sensor value
+ * @brief current transducer value getter (the value is the average over @ref HO_50S_SP33_SAMPLES_FOR_AVERAGE samples)
+ * @return current transducer value
  */
 uint16_t ADC_get_HO_50S_SP33_1106_sensor_val();
 
@@ -116,4 +123,3 @@ uint16_t ADC_get_t_dcdc24_val();
 #endif
 
 #endif /* __ADC_H__ */
-
