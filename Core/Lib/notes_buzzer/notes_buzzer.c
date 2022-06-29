@@ -1,9 +1,10 @@
 /* GOD BLESS ALEX SARTORI*/
-#include "main.h"
-#include "pwm.h"
-#include "math.h"
-#include "tim.h"
 #include "notes_buzzer.h"
+
+#include "main.h"
+#include "math.h"
+#include "pwm.h"
+#include "tim.h"
 
 #include <string.h>
 
@@ -69,21 +70,21 @@ typedef struct {
 } NoteTypeDef;
 
 NoteTypeDef gandalf[] = {{FS1, 4},   {Pause, 4}, {FS1, 2},   {FS1, 1},   {FS1, 1},   {E1, 1},    {FS1, 1},   {Pause, 2},
-    {FS1, 4},   {Pause, 4}, {FS1, 2},   {FS1, 1},   {FS1, 1},   {E1, 1},    {FS1, 1},   {FS1, 2},
-    {FS1, 2},   {Pause, 2}, {A2, 4},    {FS1, 2},   {Pause, 2}, {E1, 4},
-    {D1, 2},    {Pause, 2}, {B1, 2},    {B1, 2},    {CS1, 2},   {D1, 2},    {B1, 2},    {FS1, 2},
-    {FS1, 2},   {Pause, 4}, {FS1, 2},   {FS1, 1},   {FS1, 1},   {E1, 1},    {FS1, 1},   {Pause, 2}, {FS1, 2},
+                         {FS1, 4},   {Pause, 4}, {FS1, 2},   {FS1, 1},   {FS1, 1},   {E1, 1},    {FS1, 1},   {FS1, 2},
+                         {FS1, 2},   {Pause, 2}, {A2, 4},    {FS1, 2},   {Pause, 2}, {E1, 4},    {D1, 2},    {Pause, 2},
+                         {B1, 2},    {B1, 2},    {CS1, 2},   {D1, 2},    {B1, 2},    {FS1, 2},   {FS1, 2},   {Pause, 4},
+                         {FS1, 2},   {FS1, 1},   {FS1, 1},   {E1, 1},    {FS1, 1},   {Pause, 2}, {FS1, 2},
 
-    {FS1, 2},   {Pause, 4}, {FS1, 2},   {FS1, 1},   {FS1, 1},   {E1, 1},    {FS1, 1},   {FS1, 4},
-    {Pause, 2}, {A2, 4},    {FS1, 2},   {Pause, 2}, {E1, 4},    {D1, 3},
-    {Pause, 2}, {B1, 2},    {B1, 2},    {CS1, 2},   {D1, 2},    {B1, 2},    {FS1, 4},
-    {Pause, 4}, {FS1, 2},   {FS1, 1},   {FS1, 1},   {E1, 1},    {FS1, 1},   {Pause, 2}, {FS1, 4},
-    {Pause, 4}, {FS1, 2},   {FS1, 1},   {FS1, 1},   {E1, 1},    {FS1, 1},   {FS1, 2},   {Pause, 2},
-    {A2, 4},    {FS1, 2},   {Pause, 2}, {E1, 4},    {D1, 2},    {Pause, 2},
+                         {FS1, 2},   {Pause, 4}, {FS1, 2},   {FS1, 1},   {FS1, 1},   {E1, 1},    {FS1, 1},   {FS1, 4},
+                         {Pause, 2}, {A2, 4},    {FS1, 2},   {Pause, 2}, {E1, 4},    {D1, 3},    {Pause, 2}, {B1, 2},
+                         {B1, 2},    {CS1, 2},   {D1, 2},    {B1, 2},    {FS1, 4},   {Pause, 4}, {FS1, 2},   {FS1, 1},
+                         {FS1, 1},   {E1, 1},    {FS1, 1},   {Pause, 2}, {FS1, 4},   {Pause, 4}, {FS1, 2},   {FS1, 1},
+                         {FS1, 1},   {E1, 1},    {FS1, 1},   {FS1, 2},   {Pause, 2}, {A2, 4},    {FS1, 2},   {Pause, 2},
+                         {E1, 4},    {D1, 2},    {Pause, 2},
 
-    {B1, 2},    {B1, 2},    {CS1, 2},   {D1, 2},    {B1, 2},    {Pause, 2}, {Pause, 4},
+                         {B1, 2},    {B1, 2},    {CS1, 2},   {D1, 2},    {B1, 2},    {Pause, 2}, {Pause, 4},
 
-    {End, 0}};
+                         {End, 0}};
 
 uint16_t BPM = 600;
 
@@ -109,6 +110,3 @@ void BUZ_sborati(TIM_HandleTypeDef *htim) {
 
     pwm_stop_channel(htim, BZZR_PWM_TIM_CHNL);
 }
-
-
-

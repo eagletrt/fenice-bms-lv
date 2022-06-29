@@ -33,7 +33,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define N_COMMANDS 12
+#define N_COMMANDS 13
 
 cli_command_func_t _cli_volts;
 cli_command_func_t _cli_radiator;
@@ -46,6 +46,7 @@ cli_command_func_t _cli_wizard;
 cli_command_func_t _cli_help;
 cli_command_func_t _cli_can_send;
 cli_command_func_t _cli_inv;
+cli_command_func_t _cli_cooling;
 cli_command_func_t _cli_errors;
 
 cli_command_func_t *commands[N_COMMANDS] = {
@@ -59,11 +60,24 @@ cli_command_func_t *commands[N_COMMANDS] = {
     &_cli_wizard,
     &_cli_can_send,
     &_cli_inv,
+    &_cli_cooling,
     &_cli_errors,
     &_cli_help};
 
-char *command_names[N_COMMANDS] =
-    {"volts", "radiator", "pumps", "temps", "feedbacks", "dmesg", "reset", "wizard", "can", "inv", "errors", "?"};
+char *command_names[N_COMMANDS] = {
+    "volts",
+    "radiator",
+    "pumps",
+    "temps",
+    "feedbacks",
+    "dmesg",
+    "reset",
+    "wizard",
+    "can",
+    "inv",
+    "cooling",
+    "errors",
+    "?"};
 
 char *volt_status_name[VOLT_ENUM_SIZE] = {
     [VOLT_OK]            = "VOLT OK",
@@ -307,4 +321,23 @@ void _cli_inv(uint16_t argc, char **argv, char *out) {
         "[RFE]: %u\r\n[FRG]: %u\r\n",
         HAL_GPIO_ReadPin(INV_RFE_GPIO_Port, INV_RFE_Pin),
         HAL_GPIO_ReadPin(INV_FRG_GPIO_Port, INV_FRG_Pin));
+}
+
+void _cli_cooling(uint16_t argc, char **argv, char *out) {
+    sprintf(
+        out,
+        "Radiators status:\r\n\t Left Duty Cycle: %.2f\r\n\t Right Duty Cycle: %.2f\
+            \r\n\t Is right on: %d\r\n\t Is left on: %d\r\n\tRadiator automatic mode:%s\r\nInternal fan dt: %0.2f%%\r\n \
+        Pumps status\r\n\tPumps L:%.2f [%.2fV] R:%.2f [%.2fV]\r\n\tPumps automatic mode:%s\r\n",
+        radiator_handle.duty_cycle_l,
+        radiator_handle.duty_cycle_r,
+        radiator_handle.right_is_on,
+        radiator_handle.left_is_on,
+        radiator_handle.automatic_mode ? "true" : "false",
+        bms_fan_duty_cycle * 100,
+        (hdac_pump.last_analog_value_L > 0) ? (float)(hdac_pump.last_analog_value_L) / MAX_DAC_OUT : 0.0,
+        dac_pump_analog_to_digital(hdac_pump.last_analog_value_L),
+        (hdac_pump.last_analog_value_R > 0) ? (float)(hdac_pump.last_analog_value_R) / MAX_DAC_OUT : 0.0,
+        dac_pump_analog_to_digital(hdac_pump.last_analog_value_R),
+        hdac_pump.automatic_mode ? "true" : "false");
 }

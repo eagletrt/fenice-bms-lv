@@ -117,8 +117,10 @@
     conversion Time = (112 + 12) / 12.5 MHz = 9.9 us
 */
 
-#define N_ADC1_CONVERSIONS (HO_50S_SP33_SAMPLES_FOR_AVERAGE)
-#define N_ADC2_CONVERSIONS (4U)
+#define N_ADC1_CONVERSIONS              (HO_50S_SP33_SAMPLES_FOR_AVERAGE)
+#define N_ADC2_CONVERSIONS              (4U)
+#define N_ADC2_SAMPLES_FOR_EACH_CHANNEL (10U)
+#define N_ADC2_VALUES_SIZE              (N_ADC2_CONVERSIONS * N_ADC2_SAMPLES_FOR_EACH_CHANNEL)
 
 #define ADC_FSVR_mV (3300U)  // ADC Full-Scale Voltage Range or span in milliVolts (VrefHi-VrefLow)
 
@@ -126,7 +128,7 @@
 //typedef enum { adc1_values_idx_HO_50S_SP33, adc1_values_idx_NUM_ADC_VALUES = N_ADC1_CONVERSIONS } __adc1_values_idx_TD;
 
 typedef enum {
-    adc2_values_idx_term_couple_batt1,
+    adc2_values_idx_term_couple_batt1 = 0U,
     adc2_values_idx_term_couple_batt2,
     adc2_values_idx_term_couple_dcdc12v,
     adc2_values_idx_term_couple_dcdc24v,
@@ -135,8 +137,7 @@ typedef enum {
 
 /* These arrays will hold ADC values retrived via DMA */
 uint16_t adc1_values[N_ADC1_CONVERSIONS] = {};
-uint16_t adc2_values[N_ADC2_CONVERSIONS] = {};
-
+uint16_t adc2_values[N_ADC2_VALUES_SIZE] = {};
 /* USER CODE END 0 */
 
 ADC_HandleTypeDef hadc1;
@@ -450,7 +451,7 @@ void ADC_start_DMA_readings() {
 
     // This ADC is configured in SOFTWARE TRIGGERED conversion
     // So this routine MUST be called by software each time a new conversion is necessary
-    HAL_ADC_Start_DMA(&hadc2, (uint32_t *)adc2_values, N_ADC2_CONVERSIONS);
+    HAL_ADC_Start_DMA(&hadc2, (uint32_t *)adc2_values, N_ADC2_VALUES_SIZE);
 };
 /**
  * NOTE: prepare to read shitty getters
@@ -468,35 +469,35 @@ uint16_t ADC_get_HO_50S_SP33_1106_sensor_val() {
 };
 
 uint16_t ADC_get_t_batt1_val() {
-    return adc2_values[adc2_values_idx_term_couple_batt1];
-};
+    uint32_t result = 0;
+    for (uint32_t i = 0; i < N_ADC2_SAMPLES_FOR_EACH_CHANNEL; i++) {
+        result += adc2_values[(N_ADC2_CONVERSIONS * i) + adc2_values_idx_term_couple_batt1];
+    }
+    return (uint16_t)(result / N_ADC2_SAMPLES_FOR_EACH_CHANNEL);
+}
 
 uint16_t ADC_get_t_batt2_val() {
-    return adc2_values[adc2_values_idx_term_couple_batt2];
+    uint32_t result = 0;
+    for (uint32_t i = 0; i < N_ADC2_SAMPLES_FOR_EACH_CHANNEL; i++) {
+        result += adc2_values[(N_ADC2_CONVERSIONS * i) + adc2_values_idx_term_couple_batt2];
+    }
+    return (uint16_t)(result / N_ADC2_SAMPLES_FOR_EACH_CHANNEL);
 };
 
 uint16_t ADC_get_t_dcdc12_val() {
-    return adc2_values[adc2_values_idx_term_couple_dcdc12v];
+    uint32_t result = 0;
+    for (uint32_t i = 0; i < N_ADC2_SAMPLES_FOR_EACH_CHANNEL; i++) {
+        result += adc2_values[(N_ADC2_CONVERSIONS * i) + adc2_values_idx_term_couple_dcdc12v];
+    }
+    return (uint16_t)(result / N_ADC2_SAMPLES_FOR_EACH_CHANNEL);
 };
 
 uint16_t ADC_get_t_dcdc24_val() {
-    return adc2_values[adc2_values_idx_term_couple_dcdc24v];
+    uint32_t result = 0;
+    for (uint32_t i = 0; i < N_ADC2_SAMPLES_FOR_EACH_CHANNEL; i++) {
+        result += adc2_values[(N_ADC2_CONVERSIONS * i) + adc2_values_idx_term_couple_dcdc24v];
+    }
+    return (uint16_t)(result / N_ADC2_SAMPLES_FOR_EACH_CHANNEL);
 };
-
-// TODO: delete old code
-//void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
-//    if (hadc == &hadc1) {
-//        if (UserAdcConfig.Channel == ADC_CHANNEL_2) {
-//            uint32_t current;
-//            uint32_t adc_val;
-//            adc_val = HAL_ADC_GetValue(hadc);
-//            current = calc_current(adc_val);
-//            push_into_array(current);
-//            mean_current();
-//        }
-//        HAL_ADC_Start_IT(&hadc1);
-//        new = true;
-//    }
-//}
 
 /* USER CODE END 1 */

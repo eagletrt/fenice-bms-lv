@@ -57,7 +57,9 @@ void check_overcurrent() {
     if (CT_get_electric_current_mA() > MAX_CURRENT_ALLOWED_mA) {
         error_set(ERROR_OVER_CURRENT, 0, HAL_GetTick());
     } else {
-        error_reset(ERROR_OVER_CURRENT, 0);
+        if (!is_bms_on_fault) {
+            error_reset(ERROR_OVER_CURRENT, 0);
+        }
     }
 }
 
@@ -70,8 +72,10 @@ void check_battery_temperatures() {
         THC_get_temperature_C(&hTHC_BATT2) < MIN_CELLS_ALLOWED_TEMP) {
         error_set(ERROR_CELL_UNDER_TEMPERATURE, 0, HAL_GetTick());
     } else {
-        error_reset(ERROR_CELL_OVER_TEMPERATURE, 0);
-        error_reset(ERROR_CELL_UNDER_TEMPERATURE, 0);
+        if (!is_bms_on_fault) {
+            error_reset(ERROR_CELL_OVER_TEMPERATURE, 0);
+            error_reset(ERROR_CELL_UNDER_TEMPERATURE, 0);
+        }
     }
 }
 
@@ -81,16 +85,20 @@ void check_dcdc_12_24_temperatures() {
     } else if (THC_get_temperature_C(&hTHC_DCDC12V) < MIN_DCDC12_ALLOWED_TEMP) {
         error_set(ERROR_DCDC12_UNDER_TEMPERATURE, 0, HAL_GetTick());
     } else {
-        error_reset(ERROR_DCDC12_OVER_TEMPERATURE, 0);
-        error_reset(ERROR_DCDC12_UNDER_TEMPERATURE, 0);
+        if (!is_bms_on_fault) {
+            error_reset(ERROR_DCDC12_OVER_TEMPERATURE, 0);
+            error_reset(ERROR_DCDC12_UNDER_TEMPERATURE, 0);
+        }
     }
     if (THC_get_temperature_C(&hTHC_DCDC24V) > MAX_DCDC24_ALLOWED_TEMP) {
         error_set(ERROR_DCDC24_OVER_TEMPERATURE, 0, HAL_GetTick());
     } else if (THC_get_temperature_C(&hTHC_DCDC24V) < MIN_DCDC24_ALLOWED_TEMP) {
         error_set(ERROR_DCDC24_UNDER_TEMPERATURE, 0, HAL_GetTick());
     } else {
-        error_reset(ERROR_DCDC24_OVER_TEMPERATURE, 0);
-        error_reset(ERROR_DCDC24_UNDER_TEMPERATURE, 0);
+        if (!is_bms_on_fault) {
+            error_reset(ERROR_DCDC24_OVER_TEMPERATURE, 0);
+            error_reset(ERROR_DCDC24_UNDER_TEMPERATURE, 0);
+        }
     }
 }
 

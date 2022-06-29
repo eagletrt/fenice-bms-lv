@@ -123,3 +123,4 @@ uint16_t ADC_get_t_dcdc24_val();
 #endif
 
 #endif /* __ADC_H__ */
+

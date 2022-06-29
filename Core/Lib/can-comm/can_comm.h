@@ -15,12 +15,13 @@
 
 #define CAN_SLAVE_START_FILTER_BANK 14
 
-#define CAN_WAIT(C)                                             \
-    {                                                           \
-        uint32_t tick = HAL_GetTick();                          \
-        while (HAL_CAN_GetTxMailboxesFreeLevel(C) == 0) {       \
-            if(HAL_GetTick() > tick + 10) return HAL_TIMEOUT;   \
-        }                                                       \
+#define CAN_WAIT(C)                                       \
+    {                                                     \
+        uint32_t tick = HAL_GetTick();                    \
+        while (HAL_CAN_GetTxMailboxesFreeLevel(C) == 0) { \
+            if (HAL_GetTick() > tick + 10)                \
+                return HAL_TIMEOUT;                       \
+        }                                                 \
     }
 HAL_StatusTypeDef can_send(CAN_HandleTypeDef *hcan, uint8_t *buffer, CAN_TxHeaderTypeDef *header);
 HAL_StatusTypeDef can_primary_send(uint16_t id);
