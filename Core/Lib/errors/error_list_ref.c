@@ -45,7 +45,6 @@ llist_node error_list_ref_radiators[2]                    = {NULL};
 llist_node error_list_ref_fan[1]                          = {NULL};
 llist_node error_list_ref_pumps[2]                        = {NULL};
 llist_node error_list_ref_adc_init[1]                     = {NULL};
-llist_node error_list_ref_adc_timeout[1]                  = {NULL};
 llist_node error_list_ref_dcdc12_low_temp[1]              = {NULL};
 llist_node error_list_ref_dcdc12_high_temp[1]             = {NULL};
 llist_node error_list_ref_dcdc24_low_temp[1]              = {NULL};
@@ -77,7 +76,6 @@ llist_node *const error_list_ref_array[ERROR_NUM_ERRORS] = {
     [ERROR_FAN]                      = error_list_ref_fan,
     [ERROR_PUMP]                     = error_list_ref_pumps,
     [ERROR_ADC_INIT]                 = error_list_ref_adc_init,
-    [ERROR_ADC_TIMEOUT]              = error_list_ref_adc_timeout,
     [ERROR_DCDC12]                   = error_list_ref_dcdc12,
     [ERROR_DCDC24]                   = error_list_ref_dcdc24,
 };

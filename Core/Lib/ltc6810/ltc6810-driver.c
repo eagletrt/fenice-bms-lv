@@ -248,9 +248,12 @@ uint8_t ltc6810_read_voltages(SPI_HandleTypeDef *spi, voltage_t *volts) {
 
     cmd[0] = 0;
 
-    if (ltc6810_pladc(spi, 10) == HAL_TIMEOUT) {
+    HAL_StatusTypeDef pladc_status = ltc6810_pladc(spi, 10);
+    if ((pladc_status == HAL_TIMEOUT) || pladc_status != HAL_OK) {
         ltc_error = 1;
         error_set(ERROR_VOLTAGES_NOT_READY, 0, HAL_GetTick());
+    } else {
+        error_reset(ERROR_VOLTAGES_NOT_READY, 0);
     }
 
     for (uint8_t reg = 0; reg < LTC6810_REG_COUNT; reg++) {

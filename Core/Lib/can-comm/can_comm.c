@@ -16,7 +16,7 @@
 #include "../can-lib/lib/primary/c/ids.h"
 #include "../can-lib/lib/primary/c/network.h"
 #include "../current_transducer/current_transducer.h"
-#include "adc.h"  // TODO: remove this eventually
+#include "adc.h"
 #include "dac_pump.h"
 #include "error.h"
 #include "fenice-config.h"
@@ -156,7 +156,6 @@ HAL_StatusTypeDef can_primary_send(uint16_t id) {
         primary_serialize_struct_COOLING_STATUS(buffer, &raw_cooling);
         tx_header.DLC = primary_SIZE_COOLING_STATUS;
     } else if (id == primary_ID_INVERTER_CONNECTION_STATUS) {
-        //TODO: check if is it working
         primary_serialize_INVERTER_CONNECTION_STATUS(buffer, car_inverters.status);
     }
 

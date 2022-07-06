@@ -73,51 +73,51 @@ void check_on_feedbacks();
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define SD_CS_Pin GPIO_PIN_13
-#define SD_CS_GPIO_Port GPIOC
-#define SD_DETECT_Pin GPIO_PIN_15
-#define SD_DETECT_GPIO_Port GPIOC
-#define HALL_Pin GPIO_PIN_0
-#define HALL_GPIO_Port GPIOC
-#define HALL_OCD_Pin GPIO_PIN_1
-#define HALL_OCD_GPIO_Port GPIOC
-#define HALL_OCD_EXTI_IRQn EXTI1_IRQn
-#define TMP_DCDC12_Pin GPIO_PIN_2
+#define SD_CS_Pin            GPIO_PIN_13
+#define SD_CS_GPIO_Port      GPIOC
+#define SD_DETECT_Pin        GPIO_PIN_15
+#define SD_DETECT_GPIO_Port  GPIOC
+#define HALL_Pin             GPIO_PIN_0
+#define HALL_GPIO_Port       GPIOC
+#define HALL_OCD_Pin         GPIO_PIN_1
+#define HALL_OCD_GPIO_Port   GPIOC
+#define HALL_OCD_EXTI_IRQn   EXTI1_IRQn
+#define TMP_DCDC12_Pin       GPIO_PIN_2
 #define TMP_DCDC12_GPIO_Port GPIOC
-#define TMP_DCDC24_Pin GPIO_PIN_3
+#define TMP_DCDC24_Pin       GPIO_PIN_3
 #define TMP_DCDC24_GPIO_Port GPIOC
-#define TMP_BATT1_Pin GPIO_PIN_0
-#define TMP_BATT1_GPIO_Port GPIOA
-#define TMP_BATT2_Pin GPIO_PIN_1
-#define TMP_BATT2_GPIO_Port GPIOA
-#define PUMP_L_Pin GPIO_PIN_4
-#define PUMP_L_GPIO_Port GPIOA
-#define PUMP_R_Pin GPIO_PIN_5
-#define PUMP_R_GPIO_Port GPIOA
-#define RAD_L_Pin GPIO_PIN_6
-#define RAD_L_GPIO_Port GPIOA
-#define RAD_R_Pin GPIO_PIN_7
-#define RAD_R_GPIO_Port GPIOA
-#define INV_FRG_Pin GPIO_PIN_4
-#define INV_FRG_GPIO_Port GPIOC
-#define INV_RFE_Pin GPIO_PIN_5
-#define INV_RFE_GPIO_Port GPIOC
-#define FAN_Pin GPIO_PIN_0
-#define FAN_GPIO_Port GPIOB
-#define RELAY_Pin GPIO_PIN_1
-#define RELAY_GPIO_Port GPIOB
-#define LTC_CS_Pin GPIO_PIN_10
-#define LTC_CS_GPIO_Port GPIOB
-#define BUZZER_Pin GPIO_PIN_6
-#define BUZZER_GPIO_Port GPIOC
-#define L_ERR_Pin GPIO_PIN_7
-#define L_ERR_GPIO_Port GPIOC
-#define L_OTHER_Pin GPIO_PIN_8
-#define L_OTHER_GPIO_Port GPIOC
-#define EEPROM_WP_Pin GPIO_PIN_15
-#define EEPROM_WP_GPIO_Port GPIOA
-#define EEPROM_CS_Pin GPIO_PIN_4
-#define EEPROM_CS_GPIO_Port GPIOB
+#define TMP_BATT1_Pin        GPIO_PIN_0
+#define TMP_BATT1_GPIO_Port  GPIOA
+#define TMP_BATT2_Pin        GPIO_PIN_1
+#define TMP_BATT2_GPIO_Port  GPIOA
+#define PUMP_L_Pin           GPIO_PIN_4
+#define PUMP_L_GPIO_Port     GPIOA
+#define PUMP_R_Pin           GPIO_PIN_5
+#define PUMP_R_GPIO_Port     GPIOA
+#define RAD_L_Pin            GPIO_PIN_6
+#define RAD_L_GPIO_Port      GPIOA
+#define RAD_R_Pin            GPIO_PIN_7
+#define RAD_R_GPIO_Port      GPIOA
+#define INV_FRG_Pin          GPIO_PIN_4
+#define INV_FRG_GPIO_Port    GPIOC
+#define INV_RFE_Pin          GPIO_PIN_5
+#define INV_RFE_GPIO_Port    GPIOC
+#define FAN_Pin              GPIO_PIN_0
+#define FAN_GPIO_Port        GPIOB
+#define RELAY_Pin            GPIO_PIN_1
+#define RELAY_GPIO_Port      GPIOB
+#define LTC_CS_Pin           GPIO_PIN_10
+#define LTC_CS_GPIO_Port     GPIOB
+#define BUZZER_Pin           GPIO_PIN_6
+#define BUZZER_GPIO_Port     GPIOC
+#define L_ERR_Pin            GPIO_PIN_7
+#define L_ERR_GPIO_Port      GPIOC
+#define L_OTHER_Pin          GPIO_PIN_8
+#define L_OTHER_GPIO_Port    GPIOC
+#define EEPROM_WP_Pin        GPIO_PIN_15
+#define EEPROM_WP_GPIO_Port  GPIOA
+#define EEPROM_CS_Pin        GPIO_PIN_4
+#define EEPROM_CS_GPIO_Port  GPIOB
 /* USER CODE BEGIN Private defines */
 
 /**
@@ -250,8 +250,8 @@ static inline bool FDBK_24V_INVERTERS_get_state() {
     return mcp23017_get_state(&hmcp, MCP23017_PORTA, FB_INVERTERS) == 0x1 ? true : false;
 }
 
-#define MAX_FAN_DUTY_CYCLE               0.95  //1.0
-#define MIN_FAN_DUTY_CYCLE               0.8
+#define MAX_RADIATOR_DUTY_CYCLE          0.90  // 1.0
+#define MIN_RADIATOR_DUTY_CYCLE          0.8
 #define MAX_INTERNAL_FAN_DUTY_CYCLE      1.0
 #define MIN_INTERNAL_FAN_DUTY_CYCLE      0.1
 #define INTERNAL_FAN_M_FACTOR            (MAX_INTERNAL_FAN_DUTY_CYCLE - MIN_INTERNAL_FAN_DUTY_CYCLE) / (60 - 20)
@@ -272,12 +272,9 @@ static inline bool FDBK_24V_INVERTERS_get_state() {
 /* RAD_R      -> TIM3 CH2 */
 #define RAD_R_HTIM         htim3
 #define RAD_R_PWM_TIM_CHNL TIM_CHANNEL_2
-/* FAN5      -> TIM2 CH4 */
-#define FAN5_HTIM         htim2
-#define FAN5_PWM_TIM_CHNL TIM_CHANNEL_4
-/* FAN6      -> TIM2 CH3 */
-#define FAN6_HTIM         htim3
-#define FAN6_PWM_TIM_CHNL TIM_CHANNEL_3
+/* INTERNAL_FAN      -> TIM2 CH3 */
+#define INTERNAL_FAN_HTIM         htim3
+#define INTERNAL_FAN_PWM_TIM_CHNL TIM_CHANNEL_3
 
 /* BUZZER    -> TIM8 CH1 */
 #define BZZR_HTIM         htim8

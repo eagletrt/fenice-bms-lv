@@ -23,12 +23,14 @@ ID            | Error name                     | TIMEOUT
 14            | ERROR_VOLTAGES_NOT_READY       | 500
 15            | ERROR_MCP23017                 | 1000
 16            | ERROR_RADIATOR                 | SOFT
-17            | ERROR_FAN                      | 1000
+17            | ERROR_FAN                      | SOFT
 18            | ERROR_PUMP                     | SOFT
 19            | ERROR_ADC_INIT                 | 1000
 20            | ERROR_DCDC12                   | SOFT
 21            | ERROR_DCDC24                   | SOFT
 
+!!! note
+    SOFT means that the error won't be fatal in any case.
 Every error its represented as a node of a linked list, and it can hold multiple sub-errors, for example to handle the errors for the LV Accumulator
 ```c
 // Declaration of the llist_node

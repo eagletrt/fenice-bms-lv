@@ -50,12 +50,13 @@ typedef enum {
     ERROR_FAN,
     ERROR_PUMP,
     ERROR_ADC_INIT,
-    ERROR_ADC_TIMEOUT,
     ERROR_DCDC12,
     ERROR_DCDC24,
     ERROR_NUM_ERRORS
 
 } __attribute__((__packed__)) error_id;
+
+extern const char *error_names[ERROR_NUM_ERRORS];
 
 // Do not use UIN32_MAX because this value is used internally for arithmetic calculations
 // having UINT32_MAX causes overflow errors

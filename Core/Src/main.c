@@ -80,9 +80,6 @@ Inverters_struct car_inverters;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-static void _signal_mx_init_succes();
-//static void _test_buzzer();
-//static void write_error_led();
 void bms_error_state();
 void check_on_feedbacks();
 void cooling_routine(uint8_t);
@@ -153,9 +150,12 @@ int main(void) {
     MX_ADC1_Init();
     MX_ADC2_Init();
 
+    // Usefull if it's necessary to stop the timer counter when debugging
 #ifdef DEBUG_TIMER_MCU
     DBGMCU->APB1FZ = DBGMCU_APB1_FZ_DBG_TIM2_STOP;
 #endif
+
+    // START OF WARM UP STAGE
 
     // Turn on startup button
     HAL_GPIO_WritePin(L_ERR_GPIO_Port, L_ERR_Pin, GPIO_PIN_SET);
@@ -164,7 +164,6 @@ int main(void) {
     ADC_start_DMA_readings();
 
     // Blink to signal correct MX_XXX_init processes (usuefull for CAN transciever)
-    _signal_mx_init_succes();
     cli_bms_lv_init();
     error_init();
 
@@ -178,10 +177,11 @@ int main(void) {
     pwm_set_duty_cicle(&BZZR_HTIM, BZZR_PWM_TIM_CHNL, 0.5);
 
     // Other fan, set at 25 KHz
-    pwm_set_period(&FAN6_HTIM, 0.04);
-    pwm_set_duty_cicle(&FAN6_HTIM, FAN6_PWM_TIM_CHNL, 0.9);
-    pwm_start_channel(&FAN6_HTIM, FAN6_PWM_TIM_CHNL);
+    pwm_set_period(&INTERNAL_FAN_HTIM, 0.04);
+    pwm_set_duty_cicle(&INTERNAL_FAN_HTIM, INTERNAL_FAN_PWM_TIM_CHNL, 0.9);
+    pwm_start_channel(&INTERNAL_FAN_HTIM, INTERNAL_FAN_PWM_TIM_CHNL);
 
+    // Keeps SPI CS high
     ltc6810_disable_cs(&SPI);
 #ifdef DEBUG_LTC_ID
     sprintf(main_buff, "LTC ID %s", ltc6810_return_serial_id());
@@ -202,11 +202,15 @@ int main(void) {
     can_secondary_init();
 
     measurements_init(&MEASUREMENTS_TIMER);
+
+    // END OF WARM UP STAGE
+
     /* USER CODE END 2 */
 
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
     while (1) {
+        // Running stage
         if (is_bms_on_fault) {
             bms_error_state();
         } else {
@@ -216,7 +220,7 @@ int main(void) {
             if (!car_inverters.are_latched) {  // close/open the inverters if they aren't already reach them status
                 latch_inverters(&car_inverters);
             }
-            cooling_routine(20);
+            cooling_routine(10);
         }
         /* USER CODE END WHILE */
 
@@ -318,9 +322,14 @@ static inline void check_initial_voltage() {
     }
 }
 
+/**
+ * @brief Initialize internal fan, pumps and radiator with standard value
+ * Also set/reset the relative errors
+ * 
+ */
 static inline void fans_radiators_pumps_init() {
     if (FDBK_12V_FANS_get_state()) {
-        pwm_start_channel(&FAN6_HTIM, FAN6_PWM_TIM_CHNL);
+        pwm_start_channel(&INTERNAL_FAN_HTIM, INTERNAL_FAN_PWM_TIM_CHNL);
         error_reset(ERROR_FAN, 0);
     } else {
         error_set(ERROR_FAN, 0, HAL_GetTick());
@@ -345,18 +354,31 @@ static inline void fans_radiators_pumps_init() {
 #endif
 }
 
+/**
+ * @brief Set/unset errors for the DCDC converters on board
+ * 
+ */
 static inline void check_DCDCs_voltages() {
     !FDBK_DCDC_12V_get_state() ? error_set(ERROR_DCDC12, 0, HAL_GetTick()) : error_reset(ERROR_DCDC12, 0);
     !FDBK_DCDC_24V_get_state() ? error_set(ERROR_DCDC24, 0, HAL_GetTick()) : error_reset(ERROR_DCDC24, 0);
 }
 
+/**
+ * @brief Check feedbacks given by the MCP23017 and set the relative errors
+ * 
+ */
 void check_on_feedbacks() {
     mcp23017_read_both(&hmcp, &hi2c3);
     check_DCDCs_voltages();
     !FDBK_RELAY_get_state() ? error_set(ERROR_RELAY, 0, HAL_GetTick()) : error_reset(ERROR_RELAY, 0);
 }
 
+/**
+ * @brief Error routine executed when the bms is on fault
+ * 
+ */
 void bms_error_state() {
+    // ERROR stage
     HAL_GPIO_WritePin(RELAY_GPIO_Port, RELAY_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(L_ERR_GPIO_Port, L_ERR_Pin, GPIO_PIN_SET);
     error_state_inverters(&car_inverters);
@@ -370,6 +392,12 @@ void bms_error_state() {
     }
 }
 
+/**
+ * @brief Cooling routine of the car and internal BMS
+ * Set values for: internal fan, radiators, pumps
+ * 
+ * @param temp Average temperature of the two inverters
+ */
 void cooling_routine(uint8_t temp) {
     float max_dcdc_temp = (THC_get_temperature_C(&hTHC_DCDC12V) >= THC_get_temperature_C(&hTHC_DCDC24V))
                               ? THC_get_temperature_C(&hTHC_DCDC12V)
@@ -377,39 +405,27 @@ void cooling_routine(uint8_t temp) {
 #ifndef INTERNAL_FAN_DEBUG
     bms_fan_duty_cycle = (INTERNAL_FAN_Q_FACTOR + (max_dcdc_temp * INTERNAL_FAN_M_FACTOR));
 #endif
-    pwm_set_duty_cicle(&FAN6_HTIM, FAN6_PWM_TIM_CHNL, 1 - bms_fan_duty_cycle);
-    pwm_start_channel(&FAN6_HTIM, FAN6_PWM_TIM_CHNL);
+    pwm_set_duty_cicle(&INTERNAL_FAN_HTIM, INTERNAL_FAN_PWM_TIM_CHNL, 1 - bms_fan_duty_cycle);
+    pwm_start_channel(&INTERNAL_FAN_HTIM, INTERNAL_FAN_PWM_TIM_CHNL);
 
+    /* 
+        When automatic mode == true the values are controlled by the BMS
+        When automatic mode == false the values are controlled by the Steering Wheel
+    */
     if (radiator_handle.automatic_mode) {
         set_radiator_dt(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, get_radiator_dt(temp));
         set_radiator_dt(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, get_radiator_dt(temp));
     } else {
-        set_radiator_dt(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, 0.90);
-        set_radiator_dt(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, 0.90);
+        set_radiator_dt(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, MAX_RADIATOR_DUTY_CYCLE);
+        set_radiator_dt(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, MAX_RADIATOR_DUTY_CYCLE);
     }
     if (hdac_pump.automatic_mode) {
-        // dac_pump_store_and_set_value_on_both_channels(
-        //     &hdac_pump, dac_pump_get_voltage(temp), dac_pump_get_voltage(temp));
-        dac_pump_store_and_set_value_on_both_channels(&hdac_pump, 0.0, 0.0);
+        dac_pump_store_and_set_value_on_both_channels(
+            &hdac_pump, dac_pump_get_voltage(temp), dac_pump_get_voltage(temp));
     } else {
         dac_pump_store_and_set_value_on_both_channels(&hdac_pump, MAX_OPAMP_OUT, MAX_OPAMP_OUT);
     }
 }
-
-static void _signal_mx_init_succes() {
-    printl("MX_INIT Success!", NORM_HEADER);
-}
-#if 0
-    static void _test_buzzer() {
-#ifndef NDEBUG
-        M_LOG_STRING("+[BMS-LV BUZZER]\r\n +-> Start test sonata\r\n");
-#endif
-        buzzer_sonata(500, 2);
-#ifndef NDEBUG
-        M_LOG_STRING("+[BMS-LV BUZZER]\r\n +-> End test sonata\r\n");
-#endif
-    };
-#endif
 
 /* USER CODE END 4 */
 
@@ -421,7 +437,9 @@ void Error_Handler(void) {
     /* USER CODE BEGIN Error_Handler_Debug */
     /* User can add his own implementation to report the HAL error return state
         */
-
+    if (HAL_ADC_Init(&CURRENT_TRANSDUCER_HADC) != HAL_OK || HAL_ADC_Init(&T_SENS_BATT1_HADC) != HAL_OK) {
+        error_set(ERROR_ADC_INIT, 0, HAL_GetTick());
+    }
     /* USER CODE END Error_Handler_Debug */
 }
 

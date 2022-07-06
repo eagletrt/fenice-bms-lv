@@ -49,10 +49,32 @@ const error_timeout error_timeouts[ERROR_NUM_ERRORS] = {
     [ERROR_FAN]                      = SOFT,
     [ERROR_PUMP]                     = SOFT,
     [ERROR_ADC_INIT]                 = 1000,
-    [ERROR_ADC_TIMEOUT]              = 1000,
     [ERROR_DCDC12]                   = SOFT,
     [ERROR_DCDC24]                   = SOFT};
 
+const char *error_names[ERROR_NUM_ERRORS] = {
+    [ERROR_RELAY]                    = "open relay",
+    [ERROR_LTC6810]                  = "ltc6810",
+    [ERROR_VOLTAGES_NOT_READY]       = "Voltages not ready to be read (ltc6810_placd error)",
+    [ERROR_OPEN_WIRE]                = "open wire",
+    [ERROR_CELL_UNDERVOLTAGE]        = "cell under voltage",
+    [ERROR_CELL_OVERVOLTAGE]         = "cell over voltage",
+    [ERROR_MCP23017]                 = "feedback chip",
+    [ERROR_CAN]                      = "can comm error",
+    [ERROR_SPI]                      = "spi comm error",
+    [ERROR_RADIATOR]                 = "radiator",
+    [ERROR_FAN]                      = "fan",
+    [ERROR_PUMP]                     = "pump",
+    [ERROR_ADC_INIT]                 = "adc init",
+    [ERROR_DCDC12_UNDER_TEMPERATURE] = "dcdc 12V under temp",
+    [ERROR_DCDC12_OVER_TEMPERATURE]  = "dcdc 12V over temp",
+    [ERROR_DCDC24_UNDER_TEMPERATURE] = "dcdc 24V under temp",
+    [ERROR_DCDC24_OVER_TEMPERATURE]  = "dcdc 24V under temp",
+    [ERROR_CELL_UNDER_TEMPERATURE]   = "cell under temp",
+    [ERROR_CELL_OVER_TEMPERATURE]    = "cell over temp",
+    [ERROR_OVER_CURRENT]             = "over current",
+    [ERROR_DCDC12]                   = "dcdc12 off",
+    [ERROR_DCDC24]                   = "dcdc24 off"};
 llist er_list = NULL;
 
 /**
@@ -196,7 +218,7 @@ bool error_set(error_id id, uint8_t offset, uint32_t timestamp) {
         if (error_equals(llist_get_head(er_list), error)) {
             error_set_timer(error);
             char main_buff[50] = {};
-            sprintf(main_buff, "ADD ERROR ID: %i", error->id);
+            sprintf(main_buff, "ADD ERROR ID: %i, (%s)", error->id, error_names[error->id]);
             cli_bms_debug(main_buff, strlen(main_buff));
         }
     }
