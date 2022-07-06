@@ -1,2 +1,8 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+*ioc -diff -merge
+*.make -merge
+Core/Lib/dac_pump/* filter=clang_format
+Core/Lib/ltc6810/* filter=clang_format
+Core/Lib/mcp23017/* filter=clang_format
+Core/Lib/radiators/* filter=clang_format
+Core/Src/* filter=clang_format
+Core/Inc/* filter=clang_format
