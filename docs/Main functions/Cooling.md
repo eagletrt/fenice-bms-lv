@@ -30,18 +30,18 @@ Costant           |Value
 MAX_RADIATOR_DT   | 0.9
 MIX_RADIATOR_DT   | 0.8
 MAX_INVERTER_TEMP | 60
-MIN_INVERTER_TEMP | 50
+MIN_INVERTER_TEMP | 40
 
 We can obtain:
 
 Inverter temperature °C    |Radiator Duty Cycle
 ---------------------------|------
-0                          | 0.3
-10                         | 0.4
-20                         | 0.5
-30                         | 0.6
-40                         | 0.7
-50                         | 0.8
+0                          | -0.3
+10                         | -0.1
+20                         | 0.1
+30                         | 0.3
+40                         | 0.5
+50                         | 0.7
 60                         | 0.9
 
 !!! note

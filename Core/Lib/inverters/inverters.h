@@ -12,8 +12,7 @@
 #ifndef __INVERTERS_H
 #define __INVERTERS_H
 
-#include "../can-lib/lib/primary/c/ids.h"
-#include "../can-lib/lib/primary/c/network.h"
+#include "can_comm.h"
 #include "main.h"
 
 /**

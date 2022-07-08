@@ -8,13 +8,14 @@
  * @copyright Copyright (c) 2022
  * 
  */
-#include "can_comm.h"
 
-/* CAN LIB */
 #define primary_NETWORK_IMPLEMENTATION
 
-#include "../can-lib/lib/primary/c/ids.h"
+#include "can_comm.h"
+
 #include "../can-lib/lib/primary/c/network.h"
+
+/* CAN LIB */
 #include "../current_transducer/current_transducer.h"
 #include "adc.h"
 #include "dac_pump.h"
@@ -28,6 +29,9 @@
 
 CAN_TxHeaderTypeDef tx_header;
 CAN_RxHeaderTypeDef rx_header;
+
+primary_message_SET_RADIATOR_SPEED rads_speed_msg;
+primary_message_SET_PUMPS_SPEED pumps_speed_msg;
 
 void can_tx_header_init() {
     tx_header.ExtId = 0;
@@ -157,6 +161,20 @@ HAL_StatusTypeDef can_primary_send(uint16_t id) {
         tx_header.DLC = primary_SIZE_COOLING_STATUS;
     } else if (id == primary_ID_INVERTER_CONNECTION_STATUS) {
         primary_serialize_INVERTER_CONNECTION_STATUS(buffer, car_inverters.status);
+    } else if (id == primary_ID_LV_ERRORS) {
+        primary_LvErrors lv_warnings = 0;
+        primary_LvErrors lv_errors   = 0;
+        error_t error_array[100];
+        error_dump(error_array);
+
+        for (uint8_t i = 0; i < error_count(); i++) {
+            if (error_array[i].state == STATE_WARNING) {
+                CANLIB_BITSET(lv_warnings, error_array[i].id);
+            } else if (error_array[i].state == STATE_FATAL) {
+                CANLIB_BITSET(lv_errors, error_array[i].id);
+            }
+        }
+        tx_header.DLC = primary_serialize_LV_ERRORS(buffer, lv_warnings, lv_errors);
     }
 
     return can_send(&CANP, buffer, &tx_header);
@@ -177,19 +195,17 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
     error_toggle_check(HAL_CAN_GetRxMessage(&CANP, CAN_RX_FIFO0, &rx_header, rx_data), ERROR_CAN, 0);
 
     if (rx_header.StdId == primary_ID_SET_RADIATOR_SPEED) {
-        primary_message_SET_RADIATOR_SPEED rads_speed_msg;
         primary_deserialize_SET_RADIATOR_SPEED(&rads_speed_msg, rx_data);
-        if (rads_speed_msg.radiator_speed == primary_Cooling_SET_MAX) {
+        if (rads_speed_msg.radiators_speed >= 0) {
             radiator_handle.automatic_mode = false;
-        } else if (rads_speed_msg.radiator_speed == primary_Cooling_SET_OFF) {
+        } else if (rads_speed_msg.radiators_speed < 0) {
             radiator_handle.automatic_mode = true;
         }
     } else if (rx_header.StdId == primary_ID_SET_PUMPS_SPEED) {
-        primary_message_SET_PUMPS_SPEED pumps_speed_msg;
         primary_deserialize_SET_PUMPS_SPEED(&pumps_speed_msg, rx_data);
-        if (pumps_speed_msg.pumps_speed == primary_Cooling_SET_MAX) {
+        if (pumps_speed_msg.pumps_speed >= 0) {
             hdac_pump.automatic_mode = false;
-        } else if (pumps_speed_msg.pumps_speed == primary_Cooling_SET_OFF) {
+        } else if (pumps_speed_msg.pumps_speed < 0) {
             hdac_pump.automatic_mode = true;
         }
     } else if (rx_header.StdId == primary_ID_SET_INVERTER_CONNECTION_STATUS) {

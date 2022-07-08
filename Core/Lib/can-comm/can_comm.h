@@ -11,6 +11,8 @@
 #ifndef CAN_COMM_H__
 #define CAN_COMM_H__
 
+#include "../can-lib/lib/primary/c/ids.h"
+#include "../can-lib/lib/primary/c/network.h"
 #include "can.h"
 
 #define CAN_SLAVE_START_FILTER_BANK 14
@@ -26,6 +28,8 @@
 HAL_StatusTypeDef can_send(CAN_HandleTypeDef *hcan, uint8_t *buffer, CAN_TxHeaderTypeDef *header);
 HAL_StatusTypeDef can_primary_send(uint16_t id);
 HAL_StatusTypeDef can_secondary_send(uint16_t id);
+extern primary_message_SET_RADIATOR_SPEED rads_speed_msg;
+extern primary_message_SET_PUMPS_SPEED pumps_speed_msg;
 void can_primary_init();
 void can_secondary_init();
 #endif
