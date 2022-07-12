@@ -424,16 +424,16 @@ void cooling_routine(uint8_t temp) {
         set_radiator_dt(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, get_radiator_dt(temp));
         set_radiator_dt(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, get_radiator_dt(temp));
     } else {
+        local_rad_speed = rads_speed_msg.radiators_speed * (MAX_RADIATOR_DUTY_CYCLE - MIN_RADIATOR_DUTY_CYCLE);
         // Clipping to max duty cycle allowed to avoid overcurrent (when in combo with pumps)
-        if (rads_speed_msg.radiators_speed > MAX_RADIATOR_DUTY_CYCLE) {
+        if (local_rad_speed > MAX_RADIATOR_DUTY_CYCLE) {
             local_rad_speed = MAX_RADIATOR_DUTY_CYCLE;
         }
         // Clipping to minimum duty cycle allowed to spin the radiator
-        else if (rads_speed_msg.radiators_speed < MIN_RADIATOR_DUTY_CYCLE && rads_speed_msg.radiators_speed > 0) {
+        else if (local_rad_speed < MIN_RADIATOR_DUTY_CYCLE) {
             local_rad_speed = MIN_RADIATOR_DUTY_CYCLE;
-        } else {
-            local_rad_speed = rads_speed_msg.radiators_speed;
         }
+
         set_radiator_dt(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, local_rad_speed);
         set_radiator_dt(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, local_rad_speed);
     }
