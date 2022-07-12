@@ -30,8 +30,8 @@
 CAN_TxHeaderTypeDef tx_header;
 CAN_RxHeaderTypeDef rx_header;
 
-primary_message_SET_RADIATOR_SPEED rads_speed_msg;
-primary_message_SET_PUMPS_SPEED pumps_speed_msg;
+primary_message_SET_RADIATOR_SPEED_conversion rads_speed_msg;
+primary_message_SET_PUMPS_SPEED_conversion pumps_speed_msg;
 
 void can_tx_header_init() {
     tx_header.ExtId = 0;
@@ -195,14 +195,18 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
     error_toggle_check(HAL_CAN_GetRxMessage(&CANP, CAN_RX_FIFO0, &rx_header, rx_data), ERROR_CAN, 0);
 
     if (rx_header.StdId == primary_ID_SET_RADIATOR_SPEED) {
-        primary_deserialize_SET_RADIATOR_SPEED(&rads_speed_msg, rx_data);
+        primary_message_SET_RADIATOR_SPEED raw;
+        primary_deserialize_SET_RADIATOR_SPEED(&raw, rx_data);
+        primary_raw_to_conversion_struct_SET_RADIATOR_SPEED(&rads_speed_msg, &raw);
         if (rads_speed_msg.radiators_speed >= 0) {
             radiator_handle.automatic_mode = false;
         } else if (rads_speed_msg.radiators_speed < 0) {
             radiator_handle.automatic_mode = true;
         }
     } else if (rx_header.StdId == primary_ID_SET_PUMPS_SPEED) {
-        primary_deserialize_SET_PUMPS_SPEED(&pumps_speed_msg, rx_data);
+        primary_message_SET_PUMPS_SPEED raw;
+        primary_deserialize_SET_PUMPS_SPEED(&raw, rx_data);
+        primary_raw_to_conversion_struct_SET_PUMPS_SPEED(&pumps_speed_msg, &raw);
         if (pumps_speed_msg.pumps_speed >= 0) {
             hdac_pump.automatic_mode = false;
         } else if (pumps_speed_msg.pumps_speed < 0) {

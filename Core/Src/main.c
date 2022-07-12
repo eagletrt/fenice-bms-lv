@@ -429,7 +429,7 @@ void cooling_routine(uint8_t temp) {
             local_rad_speed = MAX_RADIATOR_DUTY_CYCLE;
         }
         // Clipping to minimum duty cycle allowed to spin the radiator
-        else if (rads_speed_msg.radiators_speed < MIN_RADIATOR_DUTY_CYCLE) {
+        else if (rads_speed_msg.radiators_speed < MIN_RADIATOR_DUTY_CYCLE && rads_speed_msg.radiators_speed > 0) {
             local_rad_speed = MIN_RADIATOR_DUTY_CYCLE;
         } else {
             local_rad_speed = rads_speed_msg.radiators_speed;
@@ -442,7 +442,7 @@ void cooling_routine(uint8_t temp) {
             &hdac_pump, dac_pump_get_voltage(temp), dac_pump_get_voltage(temp));
     } else {
         dac_pump_store_and_set_value_on_both_channels(
-            &hdac_pump, pumps_speed_msg.pumps_speed, pumps_speed_msg.pumps_speed);
+            &hdac_pump, pumps_speed_msg.pumps_speed * MAX_OPAMP_OUT, pumps_speed_msg.pumps_speed * MAX_OPAMP_OUT);
     }
 }
 
