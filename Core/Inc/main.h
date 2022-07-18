@@ -279,7 +279,7 @@ static inline bool FDBK_24V_INVERTERS_get_state() {
 /* BUZZER    -> TIM8 CH1 */
 #define BZZR_HTIM         htim8
 #define BZZR_PWM_TIM_CHNL TIM_CHANNEL_1
-#define BUZZER_ALARM_TIME 1000
+#define BUZZER_ALARM_TIME 200
 
 /* PUMPS*/
 #define PUMP_DAC    hdac
