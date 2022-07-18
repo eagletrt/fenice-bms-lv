@@ -96,6 +96,7 @@ int m_sec_timer = 0;
 HAL_StatusTypeDef status;
 char main_buff[500];
 float bms_fan_duty_cycle = 0.8;
+uint32_t errors_timer;
 /* USER CODE END 0 */
 
 /**
@@ -171,6 +172,7 @@ int main(void) {
     //Init feedbacks chip
     mcp23017_basic_config_init(&hmcp, &hi2c3);
     radiator_init();
+    dac_pump_handle_init(&hdac_pump, 0.0, 0.0);
 
     // Buzzer congiguration
     pwm_set_period(&BZZR_HTIM, 1);
@@ -209,14 +211,19 @@ int main(void) {
 
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
+    errors_timer = HAL_GetTick();
     while (1) {
         // Running stage
         if (is_bms_on_fault) {
             bms_error_state();
         } else {
             cli_loop(&cli_bms_lv);
-            measurements_flags_check();        // measure and sends via can
-            check_on_feedbacks();              //check dcdcs and relay fb
+            measurements_flags_check();  // measure and sends via can
+            check_on_feedbacks();        //check dcdcs and relay fb
+            if (error_count() > 0 && errors_timer + 10 > errors_timer) {
+                can_primary_send(primary_ID_LV_ERRORS);
+                errors_timer = HAL_GetTick();
+            }
             if (!car_inverters.are_latched) {  // close/open the inverters if they aren't already reach them status
                 latch_inverters(&car_inverters);
             }
@@ -399,6 +406,7 @@ void bms_error_state() {
  * @param temp Average temperature of the two inverters
  */
 void cooling_routine(uint8_t temp) {
+    float local_rad_speed;
     float max_dcdc_temp = (THC_get_temperature_C(&hTHC_DCDC12V) >= THC_get_temperature_C(&hTHC_DCDC24V))
                               ? THC_get_temperature_C(&hTHC_DCDC12V)
                               : THC_get_temperature_C(&hTHC_DCDC24V);
@@ -416,14 +424,25 @@ void cooling_routine(uint8_t temp) {
         set_radiator_dt(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, get_radiator_dt(temp));
         set_radiator_dt(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, get_radiator_dt(temp));
     } else {
-        set_radiator_dt(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, MAX_RADIATOR_DUTY_CYCLE);
-        set_radiator_dt(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, MAX_RADIATOR_DUTY_CYCLE);
+        local_rad_speed = rads_speed_msg.radiators_speed * (MAX_RADIATOR_DUTY_CYCLE - MIN_RADIATOR_DUTY_CYCLE) + MIN_RADIATOR_DUTY_CYCLE;
+        // Clipping to max duty cycle allowed to avoid overcurrent (when in combo with pumps)
+        if (local_rad_speed > MAX_RADIATOR_DUTY_CYCLE) {
+            local_rad_speed = MAX_RADIATOR_DUTY_CYCLE;
+        }
+        // Clipping to minimum duty cycle allowed to spin the radiator
+        else if (local_rad_speed < MIN_RADIATOR_DUTY_CYCLE) {
+            local_rad_speed = MIN_RADIATOR_DUTY_CYCLE;
+        }
+
+        set_radiator_dt(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, local_rad_speed);
+        set_radiator_dt(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, local_rad_speed);
     }
     if (hdac_pump.automatic_mode) {
         dac_pump_store_and_set_value_on_both_channels(
             &hdac_pump, dac_pump_get_voltage(temp), dac_pump_get_voltage(temp));
     } else {
-        dac_pump_store_and_set_value_on_both_channels(&hdac_pump, MAX_OPAMP_OUT, MAX_OPAMP_OUT);
+        dac_pump_store_and_set_value_on_both_channels(
+            &hdac_pump, pumps_speed_msg.pumps_speed * MAX_OPAMP_OUT, pumps_speed_msg.pumps_speed * MAX_OPAMP_OUT);
     }
 }
 
