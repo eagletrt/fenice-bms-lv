@@ -70,6 +70,7 @@ excludes:
   - "**/micro-libs/logger/**"
   - "**/micro-libs/can-sensor-programmer/**"
   - "**/micro-libs/m95256/**"
+  - "**/micro-libs/eeprom-config/**"
   - "**/test.c"
   - "**/test/**"
   - "**/*.pb.*"

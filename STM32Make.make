@@ -49,6 +49,7 @@ Core/Lib/measurements/measurements.c \
 Core/Lib/micro-libs/blink/blink.c \
 Core/Lib/micro-libs/cli/cli.c \
 Core/Lib/micro-libs/ctrl-nwk-utils/ctrl-nwk-utils.c \
+Core/Lib/micro-libs/invlib/invlib.c \
 Core/Lib/micro-libs/llist/llist.c \
 Core/Lib/micro-libs/pid/pid.c \
 Core/Lib/micro-libs/priority-queue/priority_queue_fast_insert.c \
@@ -117,7 +118,7 @@ PREFIX = arm-none-eabi-
 POSTFIX = "
 # The gcc compiler bin path can be either defined in make command via GCC_PATH variable (> make GCC_PATH=xxx)
 # either it can be added to the PATH environment variable.
-GCC_PATH="/Users/tommasocanova/Library/Application Support/Code/User/globalStorage/bmd.stm32-for-vscode/@xpack-dev-tools/arm-none-eabi-gcc/10.2.1-1.1.2/.content/bin
+GCC_PATH="/usr/bin
 ifdef GCC_PATH
 CXX = $(GCC_PATH)/$(PREFIX)g++$(POSTFIX)
 CC = $(GCC_PATH)/$(PREFIX)gcc$(POSTFIX)
@@ -189,6 +190,7 @@ C_INCLUDES =  \
 -ICore/Lib/micro-libs/blink \
 -ICore/Lib/micro-libs/cli \
 -ICore/Lib/micro-libs/ctrl-nwk-utils \
+-ICore/Lib/micro-libs/invlib \
 -ICore/Lib/micro-libs/llist \
 -ICore/Lib/micro-libs/pid \
 -ICore/Lib/micro-libs/priority-queue \
@@ -288,13 +290,13 @@ $(BUILD_DIR):
 # flash
 #######################################
 flash: $(BUILD_DIR)/$(TARGET).elf
-	"/usr/local/bin/openocd" -f ./openocd.cfg -c "program $(BUILD_DIR)/$(TARGET).elf verify reset exit"
+	"/usr/bin/openocd" -f ./openocd.cfg -c "program $(BUILD_DIR)/$(TARGET).elf verify reset exit"
 
 #######################################
 # erase
 #######################################
 erase: $(BUILD_DIR)/$(TARGET).elf
-	"/usr/local/bin/openocd" -f ./openocd.cfg -c "init; reset halt; stm32f4x mass_erase 0; exit"
+	"/usr/bin/openocd" -f ./openocd.cfg -c "init; reset halt; stm32f4x mass_erase 0; exit"
 
 #######################################
 # clean up
