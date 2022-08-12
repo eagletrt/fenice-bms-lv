@@ -406,7 +406,7 @@ void bms_error_state() {
  * @param temp Average temperature of the two inverters
  */
 void cooling_routine(uint8_t temp) {
-    float local_rad_speed;
+    float local_rad_speed, local_pump_speed;
     float max_dcdc_temp = (THC_get_temperature_C(&hTHC_DCDC12V) >= THC_get_temperature_C(&hTHC_DCDC24V))
                               ? THC_get_temperature_C(&hTHC_DCDC12V)
                               : THC_get_temperature_C(&hTHC_DCDC24V);
@@ -442,8 +442,19 @@ void cooling_routine(uint8_t temp) {
         dac_pump_store_and_set_value_on_both_channels(
             &hdac_pump, dac_pump_get_voltage(temp), dac_pump_get_voltage(temp));
     } else {
+        local_pump_speed = pumps_speed_msg.pumps_speed * (MAX_OPAMP_OUT - MIN_OPAMP_OUT) + MIN_OPAMP_OUT;
+
+        // Clipping to max duty cycle allowed to avoid overcurrent (when in combo with pumps)
+        if (local_pump_speed > MAX_OPAMP_OUT) {
+            local_pump_speed = MAX_OPAMP_OUT;
+        }
+        // Clipping to minimum duty cycle allowed to spin the radiator
+        else if (local_pump_speed < MIN_OPAMP_OUT) {
+            local_pump_speed = MIN_OPAMP_OUT;
+        }
+
         dac_pump_store_and_set_value_on_both_channels(
-            &hdac_pump, pumps_speed_msg.pumps_speed * MAX_OPAMP_OUT, pumps_speed_msg.pumps_speed * MAX_OPAMP_OUT);
+            &hdac_pump, local_pump_speed, local_pump_speed);
     }
 }
 
