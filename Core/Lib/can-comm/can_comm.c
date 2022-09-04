@@ -153,9 +153,8 @@ HAL_StatusTypeDef can_primary_send(uint16_t id) {
     } else if (id == primary_ID_COOLING_STATUS) {
         primary_message_COOLING_STATUS raw_cooling;
         primary_message_COOLING_STATUS_conversion conv_cooling;
-        conv_cooling.radiators_speed = radiator_handle.duty_cycle_l * 100;
-        conv_cooling.pumps_speed = hdac_pump.last_analog_value_L > 0 ? hdac_pump.last_analog_value_L / MAX_DAC_OUT * 100
-                                                                     : 0;
+        conv_cooling.radiators_speed = radiator_handle.duty_cycle_l;
+        conv_cooling.pumps_speed = hdac_pump.last_analog_value_L > 0 ? hdac_pump.last_analog_value_L / MAX_DAC_OUT : 0;
         primary_conversion_to_raw_struct_COOLING_STATUS(&raw_cooling, &conv_cooling);
         primary_serialize_struct_COOLING_STATUS(buffer, &raw_cooling);
         tx_header.DLC = primary_SIZE_COOLING_STATUS;

@@ -20,7 +20,7 @@
 #define MAX_GPIO_OUT      3.3
 #define AMPLIFICATOR_GAIN 1.5
 #define MAX_OPAMP_OUT     MAX_GPIO_OUT *AMPLIFICATOR_GAIN
-#define MIN_OPAMP_OUT     0.0
+#define MIN_OPAMP_OUT     2.0
 
 /**
  * @brief Note that with BMS LV rev 1.1
