@@ -159,7 +159,7 @@ HAL_StatusTypeDef can_primary_send(uint16_t id) {
         primary_serialize_struct_COOLING_STATUS(buffer, &raw_cooling);
         tx_header.DLC = primary_SIZE_COOLING_STATUS;
     } else if (id == primary_ID_INVERTER_CONNECTION_STATUS) {
-        primary_serialize_INVERTER_CONNECTION_STATUS(buffer, car_inverters.status);
+        primary_serialize_INVERTER_CONNECTION_STATUS(buffer, car_inverters.comm_status);
     } else if (id == primary_ID_LV_ERRORS) {
         primary_LvErrors lv_warnings = 0;
         primary_LvErrors lv_errors   = 0;

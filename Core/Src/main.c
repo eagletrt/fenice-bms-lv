@@ -224,9 +224,9 @@ int main(void) {
                 can_primary_send(primary_ID_LV_ERRORS);
                 errors_timer = HAL_GetTick();
             }
-            if (!car_inverters.are_latched) {  // close/open the inverters if they aren't already reach them status
-                latch_inverters(&car_inverters);
-            }
+
+            inverters_loop(&car_inverters);
+            
             cooling_routine(10);
         }
         /* USER CODE END WHILE */
