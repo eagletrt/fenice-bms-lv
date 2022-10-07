@@ -114,7 +114,7 @@ HAL_StatusTypeDef can_primary_send(uint16_t id) {
     tx_header.DLC   = 8;
 
     if (id == primary_ID_LV_VERSION) {
-        primary_serialize_LV_VERSION(buffer, 1, 1);
+        primary_serialize_LV_VERSION(buffer, 1, CANLIB_BUILD_TIME);
         tx_header.DLC = primary_SIZE_LV_VERSION;
     } else if (id == primary_ID_LV_VOLTAGE) {
         primary_message_LV_VOLTAGE raw_volts;
