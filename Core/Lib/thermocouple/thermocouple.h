@@ -23,7 +23,7 @@
 /**
  * @brief Length of the history of current data points
  */
-#define THC_HISTORY_LENGTH 20
+#define THC_HISTORY_LENGTH 40
 
 /**
  * @brief overtemperature threshold in milliCelsius
@@ -43,7 +43,7 @@ typedef struct __THC_Handle THC_Handle_TD;
  * @return float temperature read by the thermocouple in Celsius
  */
 float THC_get_temperature_C(THC_Handle_TD *hTHC);
-
+float THC_get_average_temperature_C(THC_Handle_TD *hTHC);
 /**
  * @brief Get average temperature reading in Celsius of the termocouple
  *        associated to hTHC over the last @param number_of_samples
@@ -52,7 +52,7 @@ float THC_get_temperature_C(THC_Handle_TD *hTHC);
  * @param number_of_samples the number of samples over wich the average is calculated
  * @return float average temperature read by the thermocouple in Celsius
  */
-float THC_get_average_temperature_C(THC_Handle_TD *hTHC, uint8_t number_of_samples);
+float THC_get_average_simia_temperature_C(THC_Handle_TD *hTHC, uint8_t number_of_samples);
 
 /* Exported variables --------------------------------------------------------*/
 

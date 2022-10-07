@@ -226,7 +226,7 @@ int main(void) {
             }
 
             inverters_loop(&car_inverters);
-            
+
             cooling_routine(10);
         }
         /* USER CODE END WHILE */
@@ -407,6 +407,8 @@ void bms_error_state() {
  */
 void cooling_routine(uint8_t temp) {
     float local_rad_speed, local_pump_speed;
+    THC_get_temperature_C(&hTHC_BATT1);
+    THC_get_temperature_C(&hTHC_BATT2);
     float max_dcdc_temp = (THC_get_temperature_C(&hTHC_DCDC12V) >= THC_get_temperature_C(&hTHC_DCDC24V))
                               ? THC_get_temperature_C(&hTHC_DCDC12V)
                               : THC_get_temperature_C(&hTHC_DCDC24V);
@@ -453,8 +455,7 @@ void cooling_routine(uint8_t temp) {
             local_pump_speed = MIN_OPAMP_OUT;
         }
 
-        dac_pump_store_and_set_value_on_both_channels(
-            &hdac_pump, local_pump_speed, local_pump_speed);
+        dac_pump_store_and_set_value_on_both_channels(&hdac_pump, local_pump_speed, local_pump_speed);
     }
 }
 

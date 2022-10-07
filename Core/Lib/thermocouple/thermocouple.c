@@ -111,7 +111,15 @@ float THC_get_temperature_C(THC_Handle_TD *hTHC) {
     return temperature_in_C;
 }
 
-float THC_get_average_temperature_C(THC_Handle_TD *hTHC, uint8_t number_of_samples) {
+float THC_get_average_temperature_C(THC_Handle_TD *hTHC) {
+    float accumulator = 0;
+    for (int i = 0; i < THC_HISTORY_LENGTH; i++) {
+        accumulator += hTHC->_history[i];
+    }
+    return accumulator / THC_HISTORY_LENGTH;
+}
+
+float THC_get_average_simia_temperature_C(THC_Handle_TD *hTHC, uint8_t number_of_samples) {
     // check out of range on numer_of_samples
     number_of_samples = number_of_samples > THC_HISTORY_LENGTH ? THC_HISTORY_LENGTH : number_of_samples;
     number_of_samples = number_of_samples < 1 ? 1 : number_of_samples;

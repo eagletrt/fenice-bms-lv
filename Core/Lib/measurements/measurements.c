@@ -64,12 +64,12 @@ void check_overcurrent() {
 }
 
 void check_battery_temperatures() {
-    if (THC_get_temperature_C(&hTHC_BATT1) > MAX_CELLS_ALLOWED_TEMP ||
-        THC_get_temperature_C(&hTHC_BATT2) > MAX_CELLS_ALLOWED_TEMP) {
+    if (THC_get_average_temperature_C(&hTHC_BATT1) > MAX_CELLS_ALLOWED_TEMP ||
+        THC_get_average_temperature_C(&hTHC_BATT2) > MAX_CELLS_ALLOWED_TEMP) {
         error_set(ERROR_CELL_OVER_TEMPERATURE, 0, HAL_GetTick());
     } else if (
-        THC_get_temperature_C(&hTHC_BATT1) < MIN_CELLS_ALLOWED_TEMP ||
-        THC_get_temperature_C(&hTHC_BATT2) < MIN_CELLS_ALLOWED_TEMP) {
+        THC_get_average_temperature_C(&hTHC_BATT1) < MIN_CELLS_ALLOWED_TEMP ||
+        THC_get_average_temperature_C(&hTHC_BATT2) < MIN_CELLS_ALLOWED_TEMP) {
         error_set(ERROR_CELL_UNDER_TEMPERATURE, 0, HAL_GetTick());
     } else {
         if (!is_bms_on_fault) {
@@ -80,9 +80,9 @@ void check_battery_temperatures() {
 }
 
 void check_dcdc_12_24_temperatures() {
-    if (THC_get_temperature_C(&hTHC_DCDC12V) > MAX_DCDC12_ALLOWED_TEMP) {
+    if (THC_get_average_temperature_C(&hTHC_DCDC12V) > MAX_DCDC12_ALLOWED_TEMP) {
         error_set(ERROR_DCDC12_OVER_TEMPERATURE, 0, HAL_GetTick());
-    } else if (THC_get_temperature_C(&hTHC_DCDC12V) < MIN_DCDC12_ALLOWED_TEMP) {
+    } else if (THC_get_average_temperature_C(&hTHC_DCDC12V) < MIN_DCDC12_ALLOWED_TEMP) {
         error_set(ERROR_DCDC12_UNDER_TEMPERATURE, 0, HAL_GetTick());
     } else {
         if (!is_bms_on_fault) {
@@ -90,9 +90,9 @@ void check_dcdc_12_24_temperatures() {
             error_reset(ERROR_DCDC12_UNDER_TEMPERATURE, 0);
         }
     }
-    if (THC_get_temperature_C(&hTHC_DCDC24V) > MAX_DCDC24_ALLOWED_TEMP) {
+    if (THC_get_average_temperature_C(&hTHC_DCDC24V) > MAX_DCDC24_ALLOWED_TEMP) {
         error_set(ERROR_DCDC24_OVER_TEMPERATURE, 0, HAL_GetTick());
-    } else if (THC_get_temperature_C(&hTHC_DCDC24V) < MIN_DCDC24_ALLOWED_TEMP) {
+    } else if (THC_get_average_temperature_C(&hTHC_DCDC24V) < MIN_DCDC24_ALLOWED_TEMP) {
         error_set(ERROR_DCDC24_UNDER_TEMPERATURE, 0, HAL_GetTick());
     } else {
         if (!is_bms_on_fault) {
@@ -131,6 +131,8 @@ void measurements_flags_check() {
             can_primary_send(primary_ID_LV_VOLTAGE);
             can_primary_send(primary_ID_LV_TOTAL_VOLTAGE);
         }
+        check_battery_temperatures();
+        check_dcdc_12_24_temperatures();
         can_primary_send(primary_ID_LV_TEMPERATURE);
 #ifdef MEAS_DEBUG
         cli_bms_debug("VOLTS + TEMPS", 13);
@@ -139,8 +141,8 @@ void measurements_flags_check() {
         flags &= ~MEAS_VOLTS_AND_TEMPS_READ_FLAG;
     }
     if (flags & MEAS_COOLING_AND_LV_VERSION_READ_FLAG) {
-        check_battery_temperatures();
-        check_dcdc_12_24_temperatures();
+        // check_battery_temperatures();
+        // check_dcdc_12_24_temperatures();
         can_primary_send(primary_ID_COOLING_STATUS);
         can_primary_send(primary_ID_LV_VERSION);
         check_on_feedbacks();

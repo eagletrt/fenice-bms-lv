@@ -142,10 +142,10 @@ HAL_StatusTypeDef can_primary_send(uint16_t id) {
     } else if (id == primary_ID_LV_TEMPERATURE) {
         primary_message_LV_TEMPERATURE raw_temps;
         primary_message_LV_TEMPERATURE_conversion conv_temps;
-        conv_temps.bp_temperature_1   = THC_get_temperature_C(&hTHC_BATT1);
-        conv_temps.bp_temperature_2   = THC_get_temperature_C(&hTHC_BATT2);
-        conv_temps.dcdc12_temperature = THC_get_temperature_C(&hTHC_DCDC12V);
-        conv_temps.dcdc24_temperature = THC_get_temperature_C(&hTHC_DCDC24V);
+        conv_temps.bp_temperature_1   = THC_get_average_temperature_C(&hTHC_BATT1);
+        conv_temps.bp_temperature_2   = THC_get_average_temperature_C(&hTHC_BATT2);
+        conv_temps.dcdc12_temperature = THC_get_average_temperature_C(&hTHC_DCDC12V);
+        conv_temps.dcdc24_temperature = THC_get_average_temperature_C(&hTHC_DCDC24V);
         primary_conversion_to_raw_struct_LV_TEMPERATURE(&raw_temps, &conv_temps);
         primary_serialize_struct_LV_TEMPERATURE(buffer, &raw_temps);
         //primary_serialize_LV_TEMPERATURE(buffer, ADC_get_t_batt1_val(), ADC_get_t_dcdc12_val());
