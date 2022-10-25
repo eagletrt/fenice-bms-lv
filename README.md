@@ -18,7 +18,6 @@ Note: _remember to configure you SSH key of your GitHub account before_!
 If you don't have yet installed the following [plugin](https://marketplace.visualstudio.com/items?itemName=bmd.stm32-for-vscode), do it.
 
 Then ou can build and flash the code
-
 ![build-and-flash-gif](https://github.com/bmd-studio/stm32-for-vscode/raw/HEAD/media/stm32-for-vscode-build.gif)
 
 ## Check out the docs
