@@ -30,7 +30,7 @@
 #define DEAD_CELLS_OFFSET \
     1  // If one or more cells are not working anymore this offset could help to exclude those cells
 /** BASED ON LIPO STANDARD */
-#define VOLT_MAX_ALLOWED_VOLTAGE 4.20f  //4.18f TODO: check why there's an initial voltage drop
+#define VOLT_MAX_ALLOWED_VOLTAGE 5.0f  //Disable overvoltage protection, it isn't needed as the BMS can't disconnect the charger
 #define VOLT_MIN_ALLOWED_VOLTAGE 3.3f
 
 /** Total number of attempts to read initial voltage needed to decide whether to close the relay */
