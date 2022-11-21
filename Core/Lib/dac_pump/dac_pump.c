@@ -11,12 +11,13 @@
 #include "dac_pump.h"
 
 #include "error.h"
-
+#include "pid.h"
 #define PUMP_M_FACTOR \
     (float)(MAX_OPAMP_OUT - MIN_OPAMP_OUT) / (MAX_INVERTER_TEMP_PUMPS_ONLY - MIN_INVERTER_TEMP_PUMPS_ONLY)
 #define PUMP_Q_FACTOR (float)(MIN_OPAMP_OUT) - (MIN_INVERTER_TEMP_PUMPS_ONLY * PUMP_M_FACTOR)
 
 DAC_Pump_Handle hdac_pump;
+PIDControl pid;
 /**
  * @brief             Initialize the handle with given values
  * 
@@ -33,6 +34,8 @@ void dac_pump_handle_init(DAC_Pump_Handle *hdp, float pump_l_volt, float pump_r_
     hdp->automatic_mode      = true;
     // Wheter automatic mode is false tue pumps will be controlled by the steer,
     // otherwise the pumps will be under the bms_lv_control as are designed to be
+    PIDInit(&pid, 1.0, 1.0, 0.0, 1.0, 0, 4.95, PID_MODE_AUTOMATIC, PID_CONTROL_ACTION_REVERSE);
+    pid.setpoint = 40;
 }
 
 /**
@@ -294,5 +297,8 @@ void dac_pump_sample_test(DAC_Pump_Handle *hdp) {
  * @return float Voltage level
  */
 float dac_pump_get_voltage(float temp) {
-    return (temp * PUMP_M_FACTOR) + PUMP_Q_FACTOR;
+    //return (temp * PUMP_M_FACTOR) + PUMP_Q_FACTOR;
+    pid.input = temp;
+    PIDCompute(&pid);
+    return pid.output;
 }
