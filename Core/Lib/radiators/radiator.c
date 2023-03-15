@@ -11,16 +11,20 @@
 
 #include "radiator.h"
 
+#ifdef PID_RAD
+#include "pid.h"
+#endif
 #include "pwm.h"
 #include "tim.h"
-#include "pid.h"
 #define RADIATOR_M_FACTOR                                        \
     (float)(MAX_RADIATOR_DUTY_CYCLE - MIN_RADIATOR_DUTY_CYCLE) / \
         (MAX_INVERTER_TEMP_RADIATORS_ONLY - MIN_INVERTER_TEMP_RADIATORS_ONLY)
 #define RADIATOR_Q_FACTOR (float)(MIN_RADIATOR_DUTY_CYCLE) - (RADIATOR_M_FACTOR * MIN_INVERTER_TEMP_RADIATORS_ONLY)
 
 radiator_t radiator_handle;
+#ifdef PID_RAD
 PIDControl pid;
+#endif
 
 void set_radiator_struct_channel_on(uint8_t channel) {
     if (channel == RAD_L_PWM_TIM_CHNL) {
@@ -62,8 +66,10 @@ void radiator_init() {
     radiator_handle.duty_cycle_l   = 0.0;
     radiator_handle.duty_cycle_r   = 0.0;
     radiator_handle.automatic_mode = true;
+#ifdef PID_RAD
     PIDInit(&pid, 1.0, 1.0, 0.0, 1.0, 0.0, 0.9, PID_MODE_AUTOMATIC, PID_CONTROL_ACTION_REVERSE);
     pid.setpoint = 40;
+#endif
 }
 
 /**
@@ -122,9 +128,11 @@ void set_radiator_dt(TIM_HandleTypeDef *rad_tim, uint8_t channel, float duty_cyc
  * @return float Optimal PWM Duty Cycle 
  */
 float get_radiator_dt(float temp) {
-    //return (temp * RADIATOR_M_FACTOR) + RADIATOR_Q_FACTOR;
-
+//return (temp * RADIATOR_M_FACTOR) + RADIATOR_Q_FACTOR;
+#ifdef PID_RAD
     pid.input = temp;
     PIDCompute(&pid);
     return pid.output;
+#endif
+    return 0.0;
 }
