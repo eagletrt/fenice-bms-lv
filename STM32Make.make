@@ -42,11 +42,13 @@ Core/Lib/current_transducer/current_transducer.c \
 Core/Lib/dac_pump/dac_pump.c \
 Core/Lib/errors/error.c \
 Core/Lib/errors/error_list_ref.c \
+Core/Lib/health_signals/health_signals.c \
 Core/Lib/inverters/inverters.c \
 Core/Lib/ltc6810/ltc6810-driver.c \
 Core/Lib/mcp23017/mcp23017.c \
 Core/Lib/measurements/measurements.c \
 Core/Lib/micro-libs/blink/blink.c \
+Core/Lib/micro-libs/circ-buf/circ-buf.c \
 Core/Lib/micro-libs/cli/cli.c \
 Core/Lib/micro-libs/ctrl-nwk-utils/ctrl-nwk-utils.c \
 Core/Lib/micro-libs/invlib/invlib.c \
@@ -183,11 +185,13 @@ C_INCLUDES =  \
 -ICore/Lib/current_transducer \
 -ICore/Lib/dac_pump \
 -ICore/Lib/errors \
+-ICore/Lib/health_signals \
 -ICore/Lib/inverters \
 -ICore/Lib/ltc6810 \
 -ICore/Lib/mcp23017 \
 -ICore/Lib/measurements \
 -ICore/Lib/micro-libs/blink \
+-ICore/Lib/micro-libs/circ-buf \
 -ICore/Lib/micro-libs/cli \
 -ICore/Lib/micro-libs/ctrl-nwk-utils \
 -ICore/Lib/micro-libs/invlib \

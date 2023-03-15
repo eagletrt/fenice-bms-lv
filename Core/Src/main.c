@@ -20,6 +20,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
+#include "adc.h"
 #include "can.h"
 #include "dac.h"
 #include "gpio.h"
@@ -135,10 +136,12 @@ int main(void) {
     MX_TIM3_Init();
     MX_USART1_UART_Init();
     MX_TIM8_Init();
-    MX_SPI3_Init();
     MX_TIM5_Init();
     MX_TIM7_Init();
     MX_TIM4_Init();
+    MX_ADC3_Init();
+    MX_TIM9_Init();
+    MX_UART5_Init();
     /* USER CODE BEGIN 2 */
     /* USER CODE BEGIN 2 */
 
@@ -148,7 +151,7 @@ int main(void) {
     //  https://community.st.com/s/question/0D50X0000ALudz8SQB/how-to-enable-adc-continuous-mode-with-dma
 
     MX_DMA_Init();
-    MX_ADC1_Init();
+    // MX_ADC1_Init();
     MX_ADC2_Init();
 
     // Usefull if it's necessary to stop the timer counter when debugging
@@ -159,7 +162,8 @@ int main(void) {
     // START OF WARM UP STAGE
 
     // Turn on startup button
-    HAL_GPIO_WritePin(L_ERR_GPIO_Port, L_ERR_Pin, GPIO_PIN_SET);
+    // TODO: change button pin
+    //HAL_GPIO_WritePin(L_ERR_GPIO_Port, L_ERR_Pin, GPIO_PIN_SET);
 
     // Start DMA handled readings for the current transducer, battery and DCDC(12/24v) temperature sensors
     ADC_start_DMA_readings();
@@ -310,7 +314,8 @@ static inline void check_initial_voltage() {
         printl(main_buff, NO_HEADER);
         if (volt_read_and_print() == VOLT_OK) {
             printl("Relay on", NORM_HEADER);
-            HAL_GPIO_WritePin(L_OTHER_GPIO_Port, L_OTHER_Pin, GPIO_PIN_SET);
+            // TODO: CHANGE PIN L_OTHER
+            //HAL_GPIO_WritePin(L_OTHER_GPIO_Port, L_OTHER_Pin, GPIO_PIN_SET);
             pwm_start_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
             LV_MASTER_RELAY_set_state(GPIO_PIN_SET);
             HAL_Delay(BUZZER_ALARM_TIME);
@@ -386,15 +391,16 @@ void check_on_feedbacks() {
  */
 void bms_error_state() {
     // ERROR stage
-    HAL_GPIO_WritePin(RELAY_GPIO_Port, RELAY_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(L_ERR_GPIO_Port, L_ERR_Pin, GPIO_PIN_SET);
+    // TODO: CHANGE PIN L_OTHER
+    //HAL_GPIO_WritePin(RELAY_GPIO_Port, RELAY_Pin, GPIO_PIN_RESET);
+    //HAL_GPIO_WritePin(L_ERR_GPIO_Port, L_ERR_Pin, GPIO_PIN_SET);
     error_state_inverters(&car_inverters);
     printl("ERROR STATE", ERR_HEADER);
-    HAL_GPIO_WritePin(L_OTHER_GPIO_Port, L_OTHER_Pin, GPIO_PIN_RESET);
+    //HAL_GPIO_WritePin(L_OTHER_GPIO_Port, L_OTHER_Pin, GPIO_PIN_RESET);
     while (1) {
         cli_loop(&cli_bms_lv);
         measurements_flags_check();  // measure and sends via can
-        HAL_GPIO_TogglePin(L_ERR_GPIO_Port, L_ERR_Pin);
+        //HAL_GPIO_TogglePin(L_ERR_GPIO_Port, L_ERR_Pin);
         HAL_Delay(100);
     }
 }
