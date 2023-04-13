@@ -323,6 +323,8 @@ static inline bool FDBK_24V_INVERTERS_get_state() {
 
 /* ADC STUFF */
 
+#define TIMER_ADC_MEAS htim10
+
 /* TODO: REMOVE OLD FROM HERE */
 /* CURRENT TRANSDUCER */
 

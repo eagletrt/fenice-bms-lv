@@ -142,6 +142,7 @@ int main(void) {
     MX_ADC3_Init();
     MX_TIM9_Init();
     MX_UART5_Init();
+    MX_TIM10_Init();
     /* USER CODE BEGIN 2 */
     /* USER CODE BEGIN 2 */
 
@@ -222,8 +223,17 @@ int main(void) {
             bms_error_state();
         } else {
             cli_loop(&cli_bms_lv);
-            measurements_flags_check();  // measure and sends via can
-            check_on_feedbacks();        //check dcdcs and relay fb
+            // TODO: Implement
+            /* if(flag_mux){
+                send_address_to_mux();
+                send_adc_dma_request();
+            }
+            if(can_tim_elapsed){
+                send_can_msg();
+            }
+            */
+            //TODO: REMOVE measurements_flags_check();  // measure and sends via can
+            check_on_feedbacks();  //check dcdcs and relay fb
             if (error_count() > 0 && errors_timer + 10 > errors_timer) {
                 can_primary_send(primary_ID_LV_ERRORS);
                 errors_timer = HAL_GetTick();
