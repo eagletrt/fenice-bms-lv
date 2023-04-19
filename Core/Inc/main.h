@@ -147,7 +147,7 @@ void check_on_feedbacks();
  */
 static inline GPIO_PinState LV_MASTER_RELAY_get_state() {
     //return true;
-    return mcp23017_get_state(&hmcp, MCP23017_PORTB, FB_RELAY) == 0x1 ? true : false;
+    return mcp23017_get_state(&hmcp, MCP23017_PORTB, FB_FAN) == 0x1 ? true : false;
 }
 
 /**
@@ -174,7 +174,7 @@ static inline void LV_MASTER_RELAY_set_state(GPIO_PinState state) {
  */
 static inline bool FDBK_DCDC_12V_get_state() {
     //return true;  //
-    return mcp23017_get_state(&hmcp, MCP23017_PORTB, FB_12) == 0x1 ? true : false;
+    return mcp23017_get_state(&hmcp, MCP23017_PORTB, FB_FAN) == 0x1 ? true : false;
 }
 /**
  * @brief Get the feedback from the Relay 
@@ -184,7 +184,7 @@ static inline bool FDBK_DCDC_12V_get_state() {
  */
 static inline bool FDBK_RELAY_get_state() {
     //return true;  //
-    return mcp23017_get_state(&hmcp, MCP23017_PORTA, FB_RELAY) == 0x1 ? true : false;
+    return mcp23017_get_state(&hmcp, MCP23017_PORTA, FB_FAN) == 0x1 ? true : false;
 }
 
 /**
@@ -195,7 +195,7 @@ static inline bool FDBK_RELAY_get_state() {
  */
 static inline bool FDBK_DCDC_24V_get_state() {
     //return true;  //
-    return mcp23017_get_state(&hmcp, MCP23017_PORTA, FB_24) == 0x1 ? true : false;
+    return mcp23017_get_state(&hmcp, MCP23017_PORTA, FB_FAN) == 0x1 ? true : false;
 }
 
 /**
@@ -255,7 +255,7 @@ static inline bool FDBK_12V_PCBS_get_state() {
  * @return false LVMS open
  */
 static inline bool FDBK_LVMS_get_state() {
-    return mcp23017_get_state(&hmcp, MCP23017_PORTB, FB_MAIN) == 0x1 ? true : false;
+    return mcp23017_get_state(&hmcp, MCP23017_PORTB, FB_FAN) == 0x1 ? true : false;
 }
 
 /**
@@ -266,6 +266,17 @@ static inline bool FDBK_LVMS_get_state() {
  */
 static inline bool FDBK_24V_INVERTERS_get_state() {
     return mcp23017_get_state(&hmcp, MCP23017_PORTA, FB_INVERTERS) == 0x1 ? true : false;
+}
+
+/**
+ * @brief Check feedback from the gpio extender
+ * 
+ * @param feedback gpio feedback
+ * @return value of the feedback
+ */
+static inline uint8_t get_feedback_state(uint8_t feedback) {
+    uint8_t port = (feedback < 8) ? MCP23017_PORTA : MCP23017_PORTB;
+    return mcp23017_get_state(&hmcp, port, feedback);
 }
 
 #define MAX_RADIATOR_DUTY_CYCLE          0.90  // 1.0
