@@ -36,7 +36,11 @@ cxxDefinitionsFile:
 asDefinitionsFile:
 
 # Compiler flags
-cFlags: []
+cFlags: 
+  []
+  #- -Wpacked
+  #- -Wattributes
+  #- -Wpadded
 cxxFlags: []
 linkerFlags: 
   - -specs=nano.specs

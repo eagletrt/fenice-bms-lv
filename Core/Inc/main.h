@@ -334,8 +334,11 @@ static inline uint8_t get_feedback_state(uint8_t feedback) {
 
 /* ADC STUFF */
 
-#define TIMER_ADC_MEAS htim10
-
+#define TIMER_ADC_MEAS               htim10
+#define TIMER_ADC_BATTERY_FB         htim5
+#define TIMER_ADC_BATTERY_FB_CHANNEL TIM_CHANNEL_1
+#define ADC_HALL_AND_FB              hadc2
+#define ADC_BATTERY_FB               hadc3
 /* TODO: REMOVE OLD FROM HERE */
 /* CURRENT TRANSDUCER */
 

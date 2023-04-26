@@ -14,6 +14,34 @@
 
 #include "stm32f4xx_hal.h"
 
+// Registers
+#define REGISTER_IODIRA   0x00
+#define REGISTER_IODIRB   0x01
+#define REGISTER_IPOLA    0x02
+#define REGISTER_IPOLB    0x03
+#define REGISTER_GPINTENA 0x04
+#define REGISTER_GPINTENB 0x05
+#define REGISTER_DEFVALA  0x06
+#define REGISTER_DEFVALB  0x07
+#define REGISTER_INTCONA  0x08
+#define REGISTER_INTCONB  0x09
+//	IOCON			0x0A
+//	IOCON			0x0B
+#define REGISTER_GPPUA   0x0C
+#define REGISTER_GPPUB   0x0D
+#define REGISTER_INTFA   0x0E
+#define REGISTER_INTFB   0x0F
+#define REGISTER_INTCAPA 0x10
+#define REGISTER_INTCAPB 0x11
+#define REGISTER_GPIOA   0x12
+#define REGISTER_GPIOB   0x13
+#define REGISTER_OLATA   0x14
+#define REGISTER_OLATB   0x15
+
+#define I2C_TIMEOUT    10
+#define GPIOA_TOTAL_FB 7
+#define GPIOB_TOTAL_FB 8
+
 // Ports
 #define MCP23017_PORTA 0x00
 #define MCP23017_PORTB 0x01
@@ -61,7 +89,24 @@
 #define MCP23017_GPPU_IO7_ENABLED  0x80
 
 //GPIOB pins start from number 8
-enum GPIO_PINS { FB_INVERTERS = 0U, FB_PCBS, FB_PUMPS, FB_SHUTDOWN, FB_RADIATORS, FB_FAN, FB_AS_ACTUATION, NC, LED_R, LED_G, LED_B, FRG_EN, RFE_EN, STP_ENABLE, DISCHARGE, STP_SLEEP};
+enum GPIO_PINS {
+    FB_INVERTERS = 0U,
+    FB_PCBS,
+    FB_PUMPS,
+    FB_SHUTDOWN,
+    FB_RADIATORS,
+    FB_FAN,
+    FB_AS_ACTUATION,
+    NC,
+    LED_R,
+    LED_G,
+    LED_B,
+    FRG_EN,
+    RFE_EN,
+    STP_ENABLE,
+    DISCHARGE,
+    STP_SLEEP
+};
 
 typedef struct {
     I2C_HandleTypeDef *hi2c;

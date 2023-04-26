@@ -678,13 +678,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         // is configured in SOFTWARE TRGIGGERED READINGS)
         ADC_start_DMA_readings();
     } else if (htim->Instance == TIMER_ADC_MEAS.Instance) {
-        /* TODO: Implement
-      if(!flag_read_adc){
-        flag_read_adc = true;
-        adc_struct_index = last_struct_index;
-        adc_struct_internal_index = last_struct_internal_index;
-      }
-      */
+        HAL_ADC_Start_DMA(&ADC_HALL_AND_FB, (uint32_t *)&adc2_channels, ADC2_CHANNELS_LEN);
     }
 }
 
