@@ -138,112 +138,208 @@ typedef enum {
 uint16_t adc1_values[N_ADC1_CONVERSIONS] = {};
 uint16_t adc2_values[N_ADC2_VALUES_SIZE] = {};
 
-typedef enum {
-    MUX_I0  = 0b0000,
-    MUX_I1  = 0b1000,
-    MUX_I2  = 0b0100,
-    MUX_I3  = 0b1100,
-    MUX_I4  = 0b0010,
-    MUX_I5  = 0b1010,
-    MUX_I6  = 0b0110,
-    MUX_I7  = 0b1110,
-    MUX_I8  = 0b0001,
-    MUX_I9  = 0b1001,
-    MUX_I10 = 0b0101,
-    MUX_I11 = 0b1101,
-    MUX_I12 = 0b0011,
-    MUX_I13 = 0b1011,
-    MUX_I14 = 0b0111,
-    MUX_I15 = 0b1111,
-} MUX_ADDRESSES;
+uint8_t mux_hall_inputs_addresses[] = {
+    HALL_OCD,
+    S_HALL0,
+    HALL_OCD1,
+    S_HALL1,
+    HALL_OCD2,
+    S_HALL2,
+    LVAC_TEMP0,
+    LVAC_TEMP1,
+};
 
-typedef enum {
-    HALL_OCD   = MUX_I0,
-    S_HALL0    = MUX_I1,
-    HALL_OCD1  = MUX_I2,
-    S_HALL1    = MUX_I3,
-    HALL_OCD2  = MUX_I4,
-    S_HALL2    = MUX_I5,
-    LVAC_TEMP0 = MUX_I6,
-    LVAC_TEMP1 = MUX_I7,
-} MUX_HALL_INPUTS;
+uint8_t mux_fb_inputs_addresses[] = {
+    SD_END,
+    BSPD_FB,
+    IMD_FB,
+    LVMS_FB,
+    RES_FB,
+    TSMS_FB,
+    LV_ENCL_1_FB,
+    LV_ENCL_2_FB,
+    HV_ENCL_1_FB,
+    HV_ENCL_2_FB,
+    BACK_PLATE_FB,
+    HVD_FB,
+    AMS_FB,
+    ASMS_FB,
+    INTERLOCK_IMD_FB,
+    SD_START,
+};
+// typedef struct {
+//     uint8_t MUX_FB_OUT;
+//     uint8_t MUX_HALL;
+// } ADC2_Channels;
 
-typedef enum {
-    SD_END           = MUX_I0,
-    BSPD_FB          = MUX_I1,
-    IMD_FB           = MUX_I2,
-    LVMS_FB          = MUX_I3,
-    RES_FB           = MUX_I4,
-    TSMS_FB          = MUX_I5,
-    LV_ENCL_1_FB     = MUX_I6,
-    LV_ENCL_2_FB     = MUX_I7,
-    HV_ENCL_1_FB     = MUX_I8,
-    HV_ENCL_2_FB     = MUX_I9,
-    BACK_PLATE_FB    = MUX_I10,
-    HVD_FB           = MUX_I11,
-    AMS_FB           = MUX_I12,
-    ASMS_FB          = MUX_I13,
-    INTERLOCK_IMD_FB = MUX_I14,
-    SD_START         = MUX_I15,
-} MUX_FB_INPUT;
+// typedef struct {
+//     MUX_HALL_VALUES mux_raw_hall[N_ADC_SAMPLES_MUX_HALL];
+//     MUX_FB_VALUES mux_raw_fb[N_ADC_SAMPLES_MUX_FB];
+//     uint16_t adcs_raw_as_computer_fb[N_ADC_SAMPLES_RELAY_OUT];
+//     uint16_t adcs_raw_relay_out[N_ADC_SAMPLES_RELAY_OUT];
+//     uint16_t adcs_raw_lvms_out[N_ADC_SAMPLES_LVMS_OUT];
+//     uint16_t adcs_raw_batt_out[N_ADC_SAMPLES_BATT_OUT];
+//     // Averaged values
+//     MUX_HALL_VALUES mux_hall_avg;
+//     MUX_FB_VALUES mux_fb_avg;
+//     uint16_t adcs_as_computer_fb_avg;
+//     uint16_t adcs_relay_out_avg;
+//     uint16_t adcs_lvms_out_avg;
+// } ADC2_Channels;
 
-typedef struct {
-    uint8_t MUX_FB_OUT;
-    uint8_t MUX_FB_OUT;
-    uint8_t MUX_HALL;
-    uint8_t MUX_HALL;
-} ADC2_Channels;
+ADC_status_flags_t adc_status_flags;
 
-typedef struct {
-    uint16_t HALL_OCD0;
-    uint16_t S_HALL0;
-    uint16_t HALL_OCD1;
-    uint16_t S_HALL1;
-    uint16_t HALL_OCD2;
-    uint16_t S_HALL2;
-    uint16_t LVAC_TEMP0;
-    uint16_t LVAC_TEMP1;
-} MUX_HALL_RAW_VALUES;
+ADC2_Channels_t adc2_channels;
+// The problem of this solution is that i have to continuosly
+// send the correct address to the mux
 
-typedef struct {
-    uint16_t SD_END;
-    uint16_t BSPD_FB;
-    uint16_t IMD_FB;
-    uint16_t LVMS_FB;
-    uint16_t RES_FB;
-    uint16_t TSMS_FB;
-    uint16_t LV_ENCL_1_FB;
-    uint16_t LV_ENCL_2_FB;
-    uint16_t HV_ENCL_1_FB;
-    uint16_t HV_ENCL_2_FB;
-    uint16_t BACK_PLATE_FB;
-    uint16_t HVD_FB;
-    uint16_t AMS_FB;
-    uint16_t ASMS_FB;
-    uint16_t INTERLOCK_IMD_FB;
-    uint16_t SD_START;
-} MUX_FB_RAW_VALUES;
+ADC2_Sampled_Signals_t adc2_sampled_signals;
+uint16_t adcs_raw_batt_out[N_ADC_SAMPLES_BATT_OUT];
 
-ADC2_Channels adc_channels;
-MUX_HALL_RAW_VALUES adcs_raw_hall[10];  // Multiplexed values
-MUX_FB_RAW_VALUES adcs_raw_fb[10];      // Multiplexed values
-uint16_t adcs_raw_as_computer_fb[10];   // Direct ADC
-uint16_t adcs_raw_relay_out[10];        // Direct ADC
-uint16_t adcs_raw_lvms_out[10];         // Direct ADC
-uint16_t adcs_raw_batt_out[10];         // Direct ADC
+void ADC_init_mux() {
+    ADC_set_mux_address(0x0);
+}
+uint8_t ADC_get_mux_address_by_port_name(uint8_t portname) {
+    /*
+    NOTE: MUX_FB_INPUT_ADDRESSES has been used to define the mux addresses
+    anyway because the muxes share the same address pins the MUX_HALL_INPUTS_ADDRESSES
+    are also (implicitly) included in this switch case
+    */
+
+    switch (portname) {
+        case SD_END:
+            return MUX_I0;
+        case BSPD_FB:
+            return MUX_I1;
+        case IMD_FB:
+            return MUX_I2;
+        case LVMS_FB:
+            return MUX_I3;
+        case RES_FB:
+            return MUX_I4;
+        case TSMS_FB:
+            return MUX_I5;
+        case LV_ENCL_1_FB:
+            return MUX_I6;
+        case LV_ENCL_2_FB:
+            return MUX_I7;
+        case HV_ENCL_1_FB:
+            return MUX_I8;
+        case HV_ENCL_2_FB:
+            return MUX_I9;
+        case BACK_PLATE_FB:
+            return MUX_I10;
+        case HVD_FB:
+            return MUX_I11;
+        case AMS_FB:
+            return MUX_I12;
+        case ASMS_FB:
+            return MUX_I13;
+        case INTERLOCK_IMD_FB:
+            return MUX_I14;
+        case SD_START:
+            return MUX_I15;
+        default:
+            return -1;
+    }
+}
+
+void ADC_set_mux_address(uint8_t address) {
+    HAL_GPIO_WritePin(MUX_A0_GPIO_Port, MUX_A0_Pin, (address & 0x01) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(MUX_A1_GPIO_Port, MUX_A1_Pin, (address & 0x02) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(MUX_A2_GPIO_Port, MUX_A2_Pin, (address & 0x04) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(MUX_A3_GPIO_Port, MUX_A3_Pin, (address & 0x08) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+}
 
 /*
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *AdcHandle){
-   static bool first_sample = true;
-    static uint16_t avg;
-    if (first_sample) {
-        avg          = ch.MUX_FB_OUT;
-        first_sample = false;
+index_mux_hall = 0;
+index_mux_fb = 0;
+index_conversion = 0;
+
+// callback timer(){
+
+    start dma adc2_channels
     }
-    avg = 0.99 * avg + 0.01 * ch.MUX_FB_OUT;
-    adcs[1].HALL_OCD0 = ch.MUX_HALL;
+
+void ADC_routine(){
+    if(conv_complete){
+        
+
+        
+        ...
+
+        adc_tim_elapsed = false;
+        conv_complete = false;
+    }
 }
+
 */
+//chiamata nel main
+void ADC_Routine() {
+    if (adc_status_flags.is_adc2_conv_complete) {
+        // First channel
+        uint16_t *mux_hall_val =
+            (uint16_t *)&adc2_sampled_signals.adcs_raw_hall[adc_status_flags.mux_hall_index_external];
+        *(mux_hall_val + adc_status_flags.mux_hall_index_internal) = adc2_channels.mux_hall;
+
+        // Second channel
+        uint16_t *mux_fb_val = (uint16_t *)&adc2_sampled_signals.adcs_raw_fb[adc_status_flags.mux_fb_index_external];
+        *(mux_fb_val + adc_status_flags.mux_fb_index_internal) = adc2_channels.mux_fb;
+
+        // Third channel
+        uint16_t *as_computer_fb_val =
+            &adc2_sampled_signals.adcs_raw_as_computer_fb[adc_status_flags.as_computer_fb_index_external];
+        *(as_computer_fb_val) = adc2_channels.adcs_as_computer_fb;
+
+        // Fourth channel
+        uint16_t *relay_out_val = &adc2_sampled_signals.adcs_raw_relay_out[adc_status_flags.relay_out_index_external];
+        *(relay_out_val)        = adc2_channels.adcs_relay_out;
+
+        // Fifth channel
+        uint16_t *lvms_out_val = &adc2_sampled_signals.adcs_raw_lvms_out[adc_status_flags.lvms_out_index_external];
+        *(lvms_out_val)        = adc2_channels.adcs_lvms_out;
+
+        // Update external index
+        adc_status_flags.mux_hall_index_external = (adc_status_flags.mux_hall_index_external + 1) %
+                                                   N_ADC_SAMPLES_MUX_HALL;
+        adc_status_flags.mux_fb_index_external = (adc_status_flags.mux_fb_index_external + 1) % N_ADC_SAMPLES_MUX_FB;
+        adc_status_flags.as_computer_fb_index_external = (adc_status_flags.as_computer_fb_index_external + 1) %
+                                                         N_ADC_SAMPLES_AS_COMPUTER_FB;
+        adc_status_flags.relay_out_index_external = (adc_status_flags.relay_out_index_external + 1) %
+                                                    N_ADC_SAMPLES_RELAY_OUT;
+        adc_status_flags.lvms_out_index_external = (adc_status_flags.lvms_out_index_external + 1) %
+                                                   N_ADC_SAMPLES_LVMS_OUT;
+
+        adc_status_flags.is_adc2_conv_complete = false;
+        // Valutare se aggiornare index dentro a timer
+    }
+    // ADC3 Signal is sampled directly using DMA
+}
+
+void ADC_init_status_flags() {
+    adc_status_flags.is_adc2_conv_complete   = false;
+    adc_status_flags.is_adc3_conv_complete   = false;
+    adc_status_flags.mux_hall_index_internal = 0;
+    adc_status_flags.mux_fb_index_internal   = 0;
+    adc_status_flags.mux_hall_index_external = 0;
+    adc_status_flags.mux_fb_index_external   = 0;
+}
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *AdcHandle) {
+    if (AdcHandle->Instance == ADC_HALL_AND_FB.Instance) {
+        adc_status_flags.is_adc2_conv_complete = true;
+        // Update internal index
+        adc_status_flags.mux_hall_index_internal = (adc_status_flags.mux_hall_index_internal + 1) % MUX_HALL_LEN;
+        adc_status_flags.mux_fb_index_internal   = (adc_status_flags.mux_fb_index_internal + 1) % MUX_FB_LEN;
+        /**
+         * NOTE: Using mux_fb_index_internal only because the address of the mux is shared between the muxes
+         * and because fb_mux has 16 channels and hall_mux only 8, the second mux has to "wait" until 
+         * all the channels of the first mux have been read
+         */
+
+        ADC_set_mux_address(ADC_get_mux_address_by_port_name(adc_status_flags.mux_fb_index_internal));
+    }
+}
 
 /* USER CODE END 0 */
 
@@ -297,8 +393,9 @@ void MX_ADC2_Init(void) {
     }
     /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
   */
-    sConfig.Channel = ADC_CHANNEL_13;
-    sConfig.Rank    = 3;
+    sConfig.Channel      = ADC_CHANNEL_13;
+    sConfig.Rank         = 3;
+    sConfig.SamplingTime = ADC_SAMPLETIME_144CYCLES;
     if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK) {
         Error_Handler();
     }
@@ -339,12 +436,12 @@ void MX_ADC3_Init(void) {
     hadc3.Init.ScanConvMode          = ENABLE;
     hadc3.Init.ContinuousConvMode    = ENABLE;
     hadc3.Init.DiscontinuousConvMode = DISABLE;
-    hadc3.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_NONE;
-    hadc3.Init.ExternalTrigConv      = ADC_SOFTWARE_START;
+    hadc3.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_RISING;
+    hadc3.Init.ExternalTrigConv      = ADC_EXTERNALTRIGCONV_T5_CC1;
     hadc3.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
     hadc3.Init.NbrOfConversion       = 1;
     hadc3.Init.DMAContinuousRequests = ENABLE;
-    hadc3.Init.EOCSelection          = ADC_EOC_SINGLE_CONV;
+    hadc3.Init.EOCSelection          = ADC_EOC_SEQ_CONV;
     if (HAL_ADC_Init(&hadc3) != HAL_OK) {
         Error_Handler();
     }
@@ -575,6 +672,14 @@ void ADC_start_DMA_readings() {
  * (we would need to manually write the MX_ADC_Init ourselves loosing CUBE MX functionality :( )
  * Therefore if ADC ranks change this values need to change accorgingly to their position and meaning
  **/
+
+uint16_t ADC_get_batt_fb_raw() {
+    uint32_t result = 0;
+    for (uint32_t i = 0; i < N_ADC_SAMPLES_BATT_OUT; i++) {
+        result += adcs_raw_batt_out[i];
+    }
+    return (uint16_t)(result / N_ADC_SAMPLES_BATT_OUT);
+}
 
 uint16_t ADC_get_HO_50S_SP33_1106_sensor_val() {
     uint32_t result = 0;

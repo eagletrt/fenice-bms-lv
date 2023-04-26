@@ -18,34 +18,6 @@
 
 #include <string.h>
 
-// Registers
-#define REGISTER_IODIRA   0x00
-#define REGISTER_IODIRB   0x01
-#define REGISTER_IPOLA    0x02
-#define REGISTER_IPOLB    0x03
-#define REGISTER_GPINTENA 0x04
-#define REGISTER_GPINTENB 0x05
-#define REGISTER_DEFVALA  0x06
-#define REGISTER_DEFVALB  0x07
-#define REGISTER_INTCONA  0x08
-#define REGISTER_INTCONB  0x09
-//	IOCON			0x0A
-//	IOCON			0x0B
-#define REGISTER_GPPUA   0x0C
-#define REGISTER_GPPUB   0x0D
-#define REGISTER_INTFA   0x0E
-#define REGISTER_INTFB   0x0F
-#define REGISTER_INTCAPA 0x10
-#define REGISTER_INTCAPB 0x11
-#define REGISTER_GPIOA   0x12
-#define REGISTER_GPIOB   0x13
-#define REGISTER_OLATA   0x14
-#define REGISTER_OLATB   0x15
-
-#define I2C_TIMEOUT    10
-#define GPIOA_TOTAL_FB 7
-#define GPIOB_TOTAL_FB 8
-
 MCP23017_HandleTypeDef hmcp;
 
 void mcp23017_init(MCP23017_HandleTypeDef *hdev, I2C_HandleTypeDef *hi2c, uint16_t addr) {
@@ -87,7 +59,7 @@ HAL_StatusTypeDef mcp23017_read_gpio(MCP23017_HandleTypeDef *hdev, uint8_t port)
 
 HAL_StatusTypeDef mcp23017_write_gpio(MCP23017_HandleTypeDef *hdev, uint8_t port) {
     uint8_t data = {hdev->gpio[port]};
-    return mcp23017_write(hdev, REGISTER_GPIOA | port, data);
+    return mcp23017_write(hdev, REGISTER_GPIOA | port, &data);
 }
 
 void mcp23017_print_gpioA(MCP23017_HandleTypeDef *hdev, char *out) {
@@ -248,7 +220,7 @@ void mcp23017_read_both(MCP23017_HandleTypeDef *hdev, I2C_HandleTypeDef *hi2c) {
 }
 
 uint8_t mcp23017_get_state(MCP23017_HandleTypeDef *hdev, uint8_t gpio_port, uint8_t gpio_pin) {
-    gpio_pin %= 8; 
+    gpio_pin %= 8;
     return (hdev->gpio[gpio_port] & (1 << gpio_pin)) >> gpio_pin;
 }
 
@@ -260,17 +232,16 @@ uint8_t mcp23017_get_state(MCP23017_HandleTypeDef *hdev, uint8_t gpio_port, uint
  * @return 0 if something has gone wrong
  */
 uint8_t mcptest(MCP23017_HandleTypeDef *hdev) {
-
-    for(uint16_t reg = 0; reg < REGISTER_INTFA; reg++) {
-        if(reg != 10 && reg != 11) {
+    for (uint16_t reg = 0; reg < REGISTER_INTFA; reg++) {
+        if (reg != 10 && reg != 11) {
             uint8_t data = 0;
             uint8_t reg_data;
             mcp23017_read(hdev, reg, &reg_data);
-            for(uint8_t bit = 0; bit < 8; bit ++) {
+            for (uint8_t bit = 0; bit < 8; bit++) {
                 data = (1 << bit);
                 mcp23017_write(hdev, reg, &data);
                 mcp23017_read(hdev, reg, &data);
-                if(data != (1 << bit)) {
+                if (data != (1 << bit)) {
                     data = 0xFF;
                     return 1;
                 }
@@ -281,15 +252,15 @@ uint8_t mcptest(MCP23017_HandleTypeDef *hdev) {
 
     mcp23017_iodir(hdev, 0, 0);
     mcp23017_iodir(hdev, 1, 0);
-    for(uint16_t reg = REGISTER_GPIOA; reg < REGISTER_OLATB + 1; reg++) {
+    for (uint16_t reg = REGISTER_GPIOA; reg < REGISTER_OLATB + 1; reg++) {
         uint8_t data = 0;
         uint8_t reg_data;
         mcp23017_read(hdev, reg, &reg_data);
-        for(uint8_t bit = 0; bit < 8; bit ++) {
+        for (uint8_t bit = 0; bit < 8; bit++) {
             data = (1 << bit);
             mcp23017_write(hdev, reg, &data);
             mcp23017_read(hdev, reg, &data);
-            if(data != (1 << bit)) {
+            if (data != (1 << bit)) {
                 data = 0xFF;
                 return 0;
             }
