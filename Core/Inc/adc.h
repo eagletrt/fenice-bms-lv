@@ -175,6 +175,12 @@ void MX_ADC3_Init(void);
 /* USER CODE BEGIN Prototypes */
 
 /**
+ * @brief Start the dedicated timer for ADC measurements
+ * 
+ */
+void ADC_start_MUX_readings();
+
+/**
  * @brief Init mux address pins to 0x0
  * 
  */

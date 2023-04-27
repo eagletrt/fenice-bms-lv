@@ -167,25 +167,6 @@ uint8_t mux_fb_inputs_addresses[] = {
     INTERLOCK_IMD_FB,
     SD_START,
 };
-// typedef struct {
-//     uint8_t MUX_FB_OUT;
-//     uint8_t MUX_HALL;
-// } ADC2_Channels;
-
-// typedef struct {
-//     MUX_HALL_VALUES mux_raw_hall[N_ADC_SAMPLES_MUX_HALL];
-//     MUX_FB_VALUES mux_raw_fb[N_ADC_SAMPLES_MUX_FB];
-//     uint16_t adcs_raw_as_computer_fb[N_ADC_SAMPLES_RELAY_OUT];
-//     uint16_t adcs_raw_relay_out[N_ADC_SAMPLES_RELAY_OUT];
-//     uint16_t adcs_raw_lvms_out[N_ADC_SAMPLES_LVMS_OUT];
-//     uint16_t adcs_raw_batt_out[N_ADC_SAMPLES_BATT_OUT];
-//     // Averaged values
-//     MUX_HALL_VALUES mux_hall_avg;
-//     MUX_FB_VALUES mux_fb_avg;
-//     uint16_t adcs_as_computer_fb_avg;
-//     uint16_t adcs_relay_out_avg;
-//     uint16_t adcs_lvms_out_avg;
-// } ADC2_Channels;
 
 ADC_status_flags_t adc_status_flags;
 
@@ -196,6 +177,9 @@ ADC2_Channels_t adc2_channels;
 ADC2_Sampled_Signals_t adc2_sampled_signals;
 uint16_t adcs_raw_batt_out[N_ADC_SAMPLES_BATT_OUT];
 
+void ADC_start_MUX_readings() {
+    HAL_TIM_Base_Start_IT(&TIMER_ADC_MEAS);
+}
 void ADC_init_mux() {
     ADC_set_mux_address(0x0);
 }
