@@ -120,17 +120,18 @@ typedef struct __attribute__((packed)) {
 typedef struct {
     bool is_adc2_conv_complete;
     bool is_adc3_conv_complete;
-    uint8_t mux_hall_index_external;        // grande quanto N_SAMPLES
-    uint8_t mux_hall_index_internal;        // grande quanto MUX
-    uint8_t mux_fb_index_external;          // grande quanto N_SAMPLES
-    uint8_t mux_fb_index_internal;          // grande quanto MUX
-    uint8_t as_computer_fb_index_external;  // grande quanto N_SAMPLES
-    uint8_t relay_out_index_external;       // grande quanto N_SAMPLES
-    uint8_t lvms_out_index_external;        // grande quanto N_SAMPLES
-    uint8_t batt_out_index_external;        // grande quanto N_SAMPLES
+    uint8_t mux_hall_index_external;        // long as N_SAMPLES
+    uint8_t mux_hall_index_internal;        //  long as MUX
+    uint8_t mux_fb_index_external;          //  long as N_SAMPLES
+    uint8_t mux_fb_index_internal;          //  long as MUX
+    uint8_t as_computer_fb_index_external;  //  long as N_SAMPLES
+    uint8_t relay_out_index_external;       //  long as N_SAMPLES
+    uint8_t lvms_out_index_external;        //  long as N_SAMPLES
+    uint8_t batt_out_index_external;        //  long as N_SAMPLES
+    uint8_t mux_address_index;              //  long as MAX_MUX_LEN
 } ADC_status_flags_t;
 
-typedef struct __attribute__((packed)) {
+typedef struct {
     uint16_t mux_hall;
     uint16_t mux_fb;
     uint16_t adcs_as_computer_fb;
@@ -138,6 +139,7 @@ typedef struct __attribute__((packed)) {
     uint16_t adcs_lvms_out;
 } ADC2_Channels_t;
 
+#define MAX_MUX_LEN                  16
 #define N_ADC_SAMPLES_MUX_HALL       10
 #define N_ADC_SAMPLES_MUX_FB         10
 #define N_ADC_SAMPLES_AS_COMPUTER_FB 10
@@ -197,7 +199,7 @@ void ADC_set_mux_address(uint8_t address);
  * @brief Get the mux address by port name object
  * @example get_mux_address_by_port_name(HALL_OCD)
  * @param portname Use MUX_HALL_INPUTS_ADDRESSES or MUX_FB_INPUTS_ADDRESSES
- * @return uint8_t A valid address between 0 and 15, or -1 if error
+ * @return uint8_t A valid address between 0 and 15, or 255 if error
  */
 uint8_t ADC_get_mux_address_by_port_name(uint8_t portname);
 
