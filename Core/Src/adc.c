@@ -138,42 +138,9 @@ typedef enum {
 uint16_t adc1_values[N_ADC1_CONVERSIONS] = {};
 uint16_t adc2_values[N_ADC2_VALUES_SIZE] = {};
 
-uint8_t mux_hall_inputs_addresses[] = {
-    HALL_OCD,
-    S_HALL0,
-    HALL_OCD1,
-    S_HALL1,
-    HALL_OCD2,
-    S_HALL2,
-    LVAC_TEMP0,
-    LVAC_TEMP1,
-};
-
-uint8_t mux_fb_inputs_addresses[] = {
-    SD_END,
-    BSPD_FB,
-    IMD_FB,
-    LVMS_FB,
-    RES_FB,
-    TSMS_FB,
-    LV_ENCL_1_FB,
-    LV_ENCL_2_FB,
-    HV_ENCL_1_FB,
-    HV_ENCL_2_FB,
-    BACK_PLATE_FB,
-    HVD_FB,
-    AMS_FB,
-    ASMS_FB,
-    INTERLOCK_IMD_FB,
-    SD_START,
-};
-
 ADC_status_flags_t adc_status_flags;
 
 ADC2_Channels_t adc2_channels;
-// The problem of this solution is that i have to continuosly
-// send the correct address to the mux
-
 ADC2_Sampled_Signals_t adc2_sampled_signals;
 uint16_t adcs_raw_batt_out[N_ADC_SAMPLES_BATT_OUT];
 
@@ -224,7 +191,7 @@ uint8_t ADC_get_mux_address_by_port_name(uint8_t portname) {
         case SD_START:
             return MUX_I15;
         default:
-            return -1;
+            return 255;
     }
 }
 
@@ -235,37 +202,16 @@ void ADC_set_mux_address(uint8_t address) {
     HAL_GPIO_WritePin(MUX_A3_GPIO_Port, MUX_A3_Pin, (address & 0x08) ? GPIO_PIN_SET : GPIO_PIN_RESET);
 }
 
-/*
-index_mux_hall = 0;
-index_mux_fb = 0;
-index_conversion = 0;
-
-// callback timer(){
-
-    start dma adc2_channels
-    }
-
-void ADC_routine(){
-    if(conv_complete){
-        
-
-        
-        ...
-
-        adc_tim_elapsed = false;
-        conv_complete = false;
-    }
-}
-
-*/
-//chiamata nel main
 void ADC_Routine() {
     if (adc_status_flags.is_adc2_conv_complete) {
         // First channel
-        uint16_t *mux_hall_val =
-            (uint16_t *)&adc2_sampled_signals.adcs_raw_hall[adc_status_flags.mux_hall_index_external];
-        *(mux_hall_val + adc_status_flags.mux_hall_index_internal) = adc2_channels.mux_hall;
-
+        if (adc_status_flags.mux_address_index < MUX_HALL_LEN) {
+            uint16_t *mux_hall_val =
+                (uint16_t *)&adc2_sampled_signals.adcs_raw_hall[adc_status_flags.mux_hall_index_external];
+            *(mux_hall_val + adc_status_flags.mux_hall_index_internal) = adc2_channels.mux_hall;
+            adc_status_flags.mux_hall_index_external = (adc_status_flags.mux_hall_index_external + 1) %
+                                                       N_ADC_SAMPLES_MUX_HALL;
+        }
         // Second channel
         uint16_t *mux_fb_val = (uint16_t *)&adc2_sampled_signals.adcs_raw_fb[adc_status_flags.mux_fb_index_external];
         *(mux_fb_val + adc_status_flags.mux_fb_index_internal) = adc2_channels.mux_fb;
@@ -284,8 +230,6 @@ void ADC_Routine() {
         *(lvms_out_val)        = adc2_channels.adcs_lvms_out;
 
         // Update external index
-        adc_status_flags.mux_hall_index_external = (adc_status_flags.mux_hall_index_external + 1) %
-                                                   N_ADC_SAMPLES_MUX_HALL;
         adc_status_flags.mux_fb_index_external = (adc_status_flags.mux_fb_index_external + 1) % N_ADC_SAMPLES_MUX_FB;
         adc_status_flags.as_computer_fb_index_external = (adc_status_flags.as_computer_fb_index_external + 1) %
                                                          N_ADC_SAMPLES_AS_COMPUTER_FB;
@@ -312,18 +256,104 @@ void ADC_init_status_flags() {
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *AdcHandle) {
     if (AdcHandle->Instance == ADC_HALL_AND_FB.Instance) {
         adc_status_flags.is_adc2_conv_complete = true;
-        // Update internal index
-        adc_status_flags.mux_hall_index_internal = (adc_status_flags.mux_hall_index_internal + 1) % MUX_HALL_LEN;
-        adc_status_flags.mux_fb_index_internal   = (adc_status_flags.mux_fb_index_internal + 1) % MUX_FB_LEN;
-        /**
-         * NOTE: Using mux_fb_index_internal only because the address of the mux is shared between the muxes
-         * and because fb_mux has 16 channels and hall_mux only 8, the second mux has to "wait" until 
-         * all the channels of the first mux have been read
-         */
-
-        ADC_set_mux_address(ADC_get_mux_address_by_port_name(adc_status_flags.mux_fb_index_internal));
+    } else if (AdcHandle->Instance == ADC_BATTERY_FB.Instance) {
+        adc_status_flags.is_adc3_conv_complete = true;
     }
 }
+
+uint8_t ADC_get_resolution_bits(ADC_HandleTypeDef *adcHandle) {
+    // To get this value look at the reference manual RM0390
+    // page 385 section 13.13.2 register ADC_CR1 RES[1:0] bits
+    uint8_t ret = 12;
+    switch (ADC_GET_RESOLUTION(adcHandle)) {
+        case 0U:
+            ret = 12U;
+            break;
+        case 1U:
+            ret = 10U;
+            break;
+        case 2U:
+            ret = 8U;
+            break;
+        case 4U:
+            ret = 6U;
+            break;
+    }
+    return ret;
+}
+
+uint32_t ADC_get_tot_voltage_levels(ADC_HandleTypeDef *adcHandle) {
+    uint8_t value = ADC_get_resolution_bits(adcHandle);
+    return ((uint32_t)(1U << value) - 1);  // 2^value - 1
+}
+
+float ADC_get_value_mV(ADC_HandleTypeDef *adcHandle, uint32_t value_from_adc) {
+    return value_from_adc * ((float)ADC_FSVR_mV / ADC_get_tot_voltage_levels(adcHandle));
+}
+
+void ADC_start_DMA_readings() {
+    static bool oneTime = true;
+    if (oneTime) {
+        oneTime = false;
+        // Start a PWM timer in order to trigger ADC_BATTERY_FB
+        HAL_TIM_PWM_Start(&TIMER_ADC_BATTERY_FB, TIMER_ADC_BATTERY_FB_CHANNEL);
+        HAL_ADC_Start_DMA(&ADC_BATTERY_FB, (uint32_t *)adcs_raw_batt_out, N_ADC_SAMPLES_BATT_OUT);
+        }
+};
+/**
+ * NOTE: prepare to read shitty getters
+ * Since __CUBEMIX e' stronzo (cit.)__ we can't map in an automaitc way adc ranks to a constant in the code
+ * (we would need to manually write the MX_ADC_Init ourselves loosing CUBE MX functionality :( )
+ * Therefore if ADC ranks change this values need to change accorgingly to their position and meaning
+ **/
+
+uint16_t ADC_get_batt_fb_raw() {
+    uint32_t result = 0;
+    for (uint32_t i = 0; i < N_ADC_SAMPLES_BATT_OUT; i++) {
+        result += adcs_raw_batt_out[i];
+    }
+    return (uint16_t)(result / N_ADC_SAMPLES_BATT_OUT);
+}
+
+uint16_t ADC_get_HO_50S_SP33_1106_sensor_val() {
+    uint32_t result = 0;
+    for (uint32_t i = 0; i < HO_50S_SP33_SAMPLES_FOR_AVERAGE; i++) {
+        result += adc1_values[i];
+    }
+    return (uint16_t)(result / HO_50S_SP33_SAMPLES_FOR_AVERAGE);
+};
+
+uint16_t ADC_get_t_batt1_val() {
+    uint32_t result = 0;
+    for (uint32_t i = 0; i < N_ADC2_SAMPLES_FOR_EACH_CHANNEL; i++) {
+        result += adc2_values[(N_ADC2_CONVERSIONS * i) + adc2_values_idx_term_couple_batt1];
+    }
+    return (uint16_t)(result / N_ADC2_SAMPLES_FOR_EACH_CHANNEL);
+}
+
+uint16_t ADC_get_t_batt2_val() {
+    uint32_t result = 0;
+    for (uint32_t i = 0; i < N_ADC2_SAMPLES_FOR_EACH_CHANNEL; i++) {
+        result += adc2_values[(N_ADC2_CONVERSIONS * i) + adc2_values_idx_term_couple_batt2];
+    }
+    return (uint16_t)(result / N_ADC2_SAMPLES_FOR_EACH_CHANNEL);
+};
+
+uint16_t ADC_get_t_dcdc12_val() {
+    uint32_t result = 0;
+    for (uint32_t i = 0; i < N_ADC2_SAMPLES_FOR_EACH_CHANNEL; i++) {
+        result += adc2_values[(N_ADC2_CONVERSIONS * i) + adc2_values_idx_term_couple_dcdc12v];
+    }
+    return (uint16_t)(result / N_ADC2_SAMPLES_FOR_EACH_CHANNEL);
+};
+
+uint16_t ADC_get_t_dcdc24_val() {
+    uint32_t result = 0;
+    for (uint32_t i = 0; i < N_ADC2_SAMPLES_FOR_EACH_CHANNEL; i++) {
+        result += adc2_values[(N_ADC2_CONVERSIONS * i) + adc2_values_idx_term_couple_dcdc24v];
+    }
+    return (uint16_t)(result / N_ADC2_SAMPLES_FOR_EACH_CHANNEL);
+};
 
 /* USER CODE END 0 */
 
@@ -602,107 +632,5 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef *adcHandle) {
 }
 
 /* USER CODE BEGIN 1 */
-
-uint8_t ADC_get_resolution_bits(ADC_HandleTypeDef *adcHandle) {
-    // To get this value look at the reference manual RM0390
-    // page 385 section 13.13.2 register ADC_CR1 RES[1:0] bits
-    uint8_t ret = 12;
-    switch (ADC_GET_RESOLUTION(adcHandle)) {
-        case 0U:
-            ret = 12U;
-            break;
-        case 1U:
-            ret = 10U;
-            break;
-        case 2U:
-            ret = 8U;
-            break;
-        case 4U:
-            ret = 6U;
-            break;
-    }
-    return ret;
-}
-
-uint32_t ADC_get_tot_voltage_levels(ADC_HandleTypeDef *adcHandle) {
-    uint8_t value = ADC_get_resolution_bits(adcHandle);
-    return ((uint32_t)(1U << value) - 1);  // 2^value - 1
-}
-
-float ADC_get_value_mV(ADC_HandleTypeDef *adcHandle, uint32_t value_from_adc) {
-    return value_from_adc * ((float)ADC_FSVR_mV / ADC_get_tot_voltage_levels(adcHandle));
-}
-
-void ADC_start_DMA_readings() {
-    static bool oneTime = true;
-    if (oneTime) {
-        oneTime = false;
-        // Timer for the electrical current readings (trigger on Capture Compare so enable in PWM mode)
-        HAL_TIM_PWM_Start(&ADC_ELECTRICAL_CURRENT_READINGS_TIMER_HTIM, ADC_ELECTRICAL_CURRENT_READINGS_TIMER_CHANNEL);
-        // Timer for the temperature readings
-        HAL_TIM_Base_Start_IT(&ADC_TEMPERATURE_READINGS_TIMER_HTIM);
-
-        // This ADC must be enabled only once because it gets triggered via HW by a timer
-        HAL_ADC_Start_DMA(&CURRENT_TRANSDUCER_HADC, (uint32_t *)adc1_values, N_ADC1_CONVERSIONS);
-    }
-
-    // This ADC is configured in SOFTWARE TRIGGERED conversion
-    // So this routine MUST be called by software each time a new conversion is necessary
-    HAL_ADC_Start_DMA(&hadc2, (uint32_t *)adc2_values, N_ADC2_VALUES_SIZE);
-};
-/**
- * NOTE: prepare to read shitty getters
- * Since __CUBEMIX e' stronzo (cit.)__ we can't map in an automaitc way adc ranks to a constant in the code
- * (we would need to manually write the MX_ADC_Init ourselves loosing CUBE MX functionality :( )
- * Therefore if ADC ranks change this values need to change accorgingly to their position and meaning
- **/
-
-uint16_t ADC_get_batt_fb_raw() {
-    uint32_t result = 0;
-    for (uint32_t i = 0; i < N_ADC_SAMPLES_BATT_OUT; i++) {
-        result += adcs_raw_batt_out[i];
-    }
-    return (uint16_t)(result / N_ADC_SAMPLES_BATT_OUT);
-}
-
-uint16_t ADC_get_HO_50S_SP33_1106_sensor_val() {
-    uint32_t result = 0;
-    for (uint32_t i = 0; i < HO_50S_SP33_SAMPLES_FOR_AVERAGE; i++) {
-        result += adc1_values[i];
-    }
-    return (uint16_t)(result / HO_50S_SP33_SAMPLES_FOR_AVERAGE);
-};
-
-uint16_t ADC_get_t_batt1_val() {
-    uint32_t result = 0;
-    for (uint32_t i = 0; i < N_ADC2_SAMPLES_FOR_EACH_CHANNEL; i++) {
-        result += adc2_values[(N_ADC2_CONVERSIONS * i) + adc2_values_idx_term_couple_batt1];
-    }
-    return (uint16_t)(result / N_ADC2_SAMPLES_FOR_EACH_CHANNEL);
-}
-
-uint16_t ADC_get_t_batt2_val() {
-    uint32_t result = 0;
-    for (uint32_t i = 0; i < N_ADC2_SAMPLES_FOR_EACH_CHANNEL; i++) {
-        result += adc2_values[(N_ADC2_CONVERSIONS * i) + adc2_values_idx_term_couple_batt2];
-    }
-    return (uint16_t)(result / N_ADC2_SAMPLES_FOR_EACH_CHANNEL);
-};
-
-uint16_t ADC_get_t_dcdc12_val() {
-    uint32_t result = 0;
-    for (uint32_t i = 0; i < N_ADC2_SAMPLES_FOR_EACH_CHANNEL; i++) {
-        result += adc2_values[(N_ADC2_CONVERSIONS * i) + adc2_values_idx_term_couple_dcdc12v];
-    }
-    return (uint16_t)(result / N_ADC2_SAMPLES_FOR_EACH_CHANNEL);
-};
-
-uint16_t ADC_get_t_dcdc24_val() {
-    uint32_t result = 0;
-    for (uint32_t i = 0; i < N_ADC2_SAMPLES_FOR_EACH_CHANNEL; i++) {
-        result += adc2_values[(N_ADC2_CONVERSIONS * i) + adc2_values_idx_term_couple_dcdc24v];
-    }
-    return (uint16_t)(result / N_ADC2_SAMPLES_FOR_EACH_CHANNEL);
-};
 
 /* USER CODE END 1 */

@@ -154,6 +154,7 @@ int main(void) {
     MX_DMA_Init();
     // MX_ADC1_Init();
     MX_ADC2_Init();
+    MX_ADC3_Init();
 
     // Usefull if it's necessary to stop the timer counter when debugging
 #ifdef DEBUG_TIMER_MCU
@@ -166,7 +167,7 @@ int main(void) {
     // TODO: change button pin
     //HAL_GPIO_WritePin(L_ERR_GPIO_Port, L_ERR_Pin, GPIO_PIN_SET);
 
-    // Start DMA handled readings for the current transducer, battery and DCDC(12/24v) temperature sensors
+    ADC_init_status_flags();
     ADC_start_DMA_readings();
     ADC_start_MUX_readings();
     // Blink to signal correct MX_XXX_init processes (usuefull for CAN transciever)
@@ -189,7 +190,7 @@ int main(void) {
     pwm_start_channel(&INTERNAL_FAN_HTIM, INTERNAL_FAN_PWM_TIM_CHNL);
 
     // Keeps SPI CS high
-    ltc6810_disable_cs(&SPI);
+    // ltc6810_disable_cs(&SPI);
 #ifdef DEBUG_LTC_ID
     sprintf(main_buff, "LTC ID %s", ltc6810_return_serial_id());
     printl(main_buff, NO_HEADER);
@@ -197,7 +198,7 @@ int main(void) {
     printl("Relay out disabled, waiting 1 seconds before reading voltages\r\n", NO_HEADER);
     HAL_Delay(1000);
 
-    check_initial_voltage();
+    // check_initial_voltage();
 
     mcp23017_read_both(&hmcp, &hi2c3);
     check_DCDCs_voltages();
@@ -219,21 +220,22 @@ int main(void) {
     errors_timer = HAL_GetTick();
     while (1) {
         // Running stage
-        if (is_bms_on_fault) {
-            bms_error_state();
-        } else {
-            cli_loop(&cli_bms_lv);
-            //TODO: REMOVE measurements_flags_check();  // measure and sends via can
-            check_on_feedbacks();  //check dcdcs and relay fb
-            if (error_count() > 0 && errors_timer + 10 > errors_timer) {
-                can_primary_send(primary_ID_LV_ERRORS);
-                errors_timer = HAL_GetTick();
-            }
+        // if (is_bms_on_fault) {
+        //     bms_error_state();
+        // } else {
+        //     cli_loop(&cli_bms_lv);
+        //     //TODO: REMOVE measurements_flags_check();  // measure and sends via can
+        //     check_on_feedbacks();  //check dcdcs and relay fb
+        //     if (error_count() > 0 && errors_timer + 10 > errors_timer) {
+        //         can_primary_send(primary_ID_LV_ERRORS);
+        //         errors_timer = HAL_GetTick();
+        //     }
 
-            inverters_loop(&car_inverters);
+        //     inverters_loop(&car_inverters);
 
-            cooling_routine(10);
-        }
+        //     cooling_routine(10);
+        // }
+        ADC_Routine();
         /* USER CODE END WHILE */
 
         /* USER CODE BEGIN 3 */
