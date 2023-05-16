@@ -39,10 +39,12 @@ bool CT_is_overcurrent();
 
 /**
  * @brief  Get electric current value currently flowing in the Current Transducer
+ * @param adc_raw_value ADC output
+ * @param sensor_vref Voltage of sensor at 0 Amps
  * @return Current in mA flowing inside the transducer
  *         if 0xFFFF then error
  */
-float CT_get_electric_current_mA();
+float CT_get_electric_current_mA(uint32_t adc_raw_value, uint16_t sensor_vref);
 
 /**
  * @brief Over-Current Detection callback (put this in the correct ISR)

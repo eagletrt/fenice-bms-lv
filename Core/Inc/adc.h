@@ -32,8 +32,8 @@ extern "C" {
 
 /* USER CODE END Includes */
 
+extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc2;
-extern ADC_HandleTypeDef hadc3;
 
 /* USER CODE BEGIN Private defines */
 typedef enum {
@@ -56,7 +56,7 @@ typedef enum {
 } MUX_ADDRESSES;
 
 typedef enum {
-    HALL_OCD = 0,
+    HALL_OCD0 = 0,
     S_HALL0,
     HALL_OCD1,
     S_HALL1,
@@ -119,7 +119,8 @@ typedef struct __attribute__((packed)) {
 
 typedef struct {
     bool is_adc2_conv_complete;
-    bool is_adc3_conv_complete;
+    bool hall_calibration;                  //flag for hall sensor calibration, true if it needs to be done
+    bool is_value_stored;                   //check if value is stored in the buffer
     uint8_t mux_hall_index_external;        // long as N_SAMPLES
     uint8_t mux_hall_index_internal;        //  long as MUX
     uint8_t mux_fb_index_external;          //  long as N_SAMPLES
@@ -137,15 +138,59 @@ typedef struct {
     uint16_t adcs_as_computer_fb;
     uint16_t adcs_relay_out;
     uint16_t adcs_lvms_out;
+    uint16_t adcs_batt_out;
 } ADC2_Channels_t;
 
+typedef struct {
+    float HALL_OCD0;
+    float S_HALL0;
+    float HALL_OCD1;
+    float S_HALL1;
+    float HALL_OCD2;
+    float S_HALL2;
+    float LVAC_TEMP0;
+    float LVAC_TEMP1;
+} MUX_HALL_CONVERTED;
+
+typedef struct {
+    float SD_END;
+    float BSPD_FB;
+    float IMD_FB;
+    float LVMS_FB;
+    float RES_FB;
+    float TSMS_FB;
+    float LV_ENCL_1_FB;
+    float LV_ENCL_2_FB;
+    float HV_ENCL_1_FB;
+    float HV_ENCL_2_FB;
+    float BACK_PLATE_FB;
+    float HVD_FB;
+    float AMS_FB;
+    float ASMS_FB;
+    float INTERLOCK_IMD_FB;
+    float SD_START;
+} MUX_FB_CONVERTED;
+
+typedef struct {
+    MUX_FB_CONVERTED mux_fb;
+    MUX_HALL_CONVERTED mux_hall;
+    float as_computer_fb;
+    float relay_out;
+    float lvms_out;
+    float batt_out;
+} ADC_converted;
+
 #define MAX_MUX_LEN                  16
-#define N_ADC_SAMPLES_MUX_HALL       10
-#define N_ADC_SAMPLES_MUX_FB         10
-#define N_ADC_SAMPLES_AS_COMPUTER_FB 10
-#define N_ADC_SAMPLES_RELAY_OUT      10
-#define N_ADC_SAMPLES_LVMS_OUT       10
-#define N_ADC_SAMPLES_BATT_OUT       10
+#define N_ADC_SAMPLES                200
+#define N_ADC_SAMPLES_MUX_HALL       N_ADC_SAMPLES
+#define N_ADC_SAMPLES_MUX_FB         N_ADC_SAMPLES
+#define N_ADC_SAMPLES_AS_COMPUTER_FB N_ADC_SAMPLES
+#define N_ADC_SAMPLES_RELAY_OUT      N_ADC_SAMPLES
+#define N_ADC_SAMPLES_LVMS_OUT       N_ADC_SAMPLES
+#define N_ADC_SAMPLES_BATT_OUT       N_ADC_SAMPLES
+
+#define N_ADC_CALIBRATION_SAMPLES  500
+#define N_ADC_CALIBRATION_CHANNELS 2
 
 typedef struct {
     MUX_HALL_VALUES adcs_raw_hall[N_ADC_SAMPLES_MUX_HALL];      // Multiplexed values
@@ -153,34 +198,38 @@ typedef struct {
     uint16_t adcs_raw_as_computer_fb[N_ADC_SAMPLES_RELAY_OUT];  // Direct ADC
     uint16_t adcs_raw_relay_out[N_ADC_SAMPLES_RELAY_OUT];       // Direct ADC
     uint16_t adcs_raw_lvms_out[N_ADC_SAMPLES_LVMS_OUT];         // Direct ADC
+    uint16_t adcs_raw_batt_out[N_ADC_SAMPLES_BATT_OUT];         //Direct ADC
 } ADC2_Sampled_Signals_t;
-
-extern uint16_t adcs_raw_batt_out[N_ADC_SAMPLES_BATT_OUT];  // Direct ADC (used with DMA)
 
 #define ADC2_CHANNELS_LEN (sizeof(ADC2_Channels_t) / sizeof(uint16_t))
 extern ADC2_Channels_t adc2_channels;
 extern ADC2_Sampled_Signals_t adc2_sampled_signals;
 extern ADC_status_flags_t adc_status_flags;
-
-/**
- *  @brief Number of samples used to compute the value of HO_50S_SP33 current transducer
- *        HO_50S_SP33 value is calculated as the average of this samples
- */
-#define HO_50S_SP33_SAMPLES_FOR_AVERAGE (10U)
+extern ADC_converted adcs_converted_values;
 
 extern ADC_ChannelConfTypeDef UserAdcConfig;
 /* USER CODE END Private defines */
 
+void MX_ADC1_Init(void);
 void MX_ADC2_Init(void);
-void MX_ADC3_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 
 /**
- * @brief Start the dedicated timer for ADC measurements
+ * @brief Start the dedicated timer for ADC2 measurements
  * 
  */
-void ADC_start_MUX_readings();
+void ADC_start_ADC2_readings();
+
+/**
+* @brief Calibrate the vref used to convert raw adc values to mV
+*/
+void ADC_Vref_Calibration();
+
+/**
+* @brief Get sensor voltage at current 0 to have a vref for current measurement
+*/
+void ADC_hall_sensor_calibration();
 
 /**
  * @brief Init mux address pins to 0x0
@@ -189,11 +238,9 @@ void ADC_start_MUX_readings();
 void ADC_init_mux();
 
 /**
- * @brief Set the mux address object
- * @example ADC_set_mux_address(0x0A)
- * @param address A valid address between 0 and 15
- */
-void ADC_set_mux_address(uint8_t address);
+ * @brief Init adcs status flags
+*/
+void ADC_init_status_flags();
 
 /**
  * @brief Get the mux address by port name object
@@ -202,6 +249,13 @@ void ADC_set_mux_address(uint8_t address);
  * @return uint8_t A valid address between 0 and 15, or 255 if error
  */
 uint8_t ADC_get_mux_address_by_port_name(uint8_t portname);
+
+/**
+ * @brief Set the mux address object
+ * @example ADC_set_mux_address(0x0A)
+ * @param address A valid address between 0 and 15
+ */
+void ADC_set_mux_address(uint8_t address);
 
 /**
  * @brief ADC routine which is called in order to 
@@ -233,68 +287,44 @@ uint32_t ADC_get_tot_voltage_levels(ADC_HandleTypeDef *adcHandle);
 float ADC_get_value_mV(ADC_HandleTypeDef *adcHandle, uint32_t value_from_adc);
 
 /**
- * @brief Start a reading of all ADC values in DMA mode.
- *        This functions is a wrapper HAL_ADC_Start_DMA(...)it, starts the ADC
- *        of all sensors in DMA mode 
- * @note  The necessity of this function was due to confine the array of ADC
- *        values into the ADC module. Proper getters will be used to acces the
- *        values retirived from the adc
- *         Since we did not configure the ADC in circular mode we need to restart
- *        the conversions each time Thus this function must be recalled in the
- *        code if we want new values (by SFW timer or inside the interrupt of a
- *        HW timer)
+ * @brief  Get the value in mV expressed by the output of value from the ADC based on the vref(VDDA)
+ * @param  adcHandle @ref ADC_HandleTypeDef
+ * @param  value_from_adc output value from the adc
+ * @return Value in mV expressed by the adc
  */
-void ADC_start_DMA_readings();
+float ADC_get_calibrated_mV(ADC_HandleTypeDef *adcHandle, uint32_t value_from_adc);
 
 /**
- * @brief Battery voltage feedback value getter (mean value over )
- * @return Battery voltage feedback value
- */
-uint16_t ADC_get_batt_fb_raw();
+ * @brief Converts relay out raw adc value in mV value
+*/
+void relay_out_conversion();
 
 /**
- * @brief Set both muxes (feedback_mux and hall_mux) address in order to read 
- * their values with the ADC
- * 
- * @param address address of the mux to be set  
- */
-void ADC_set_mux_address(uint8_t address);
+ * @brief Converts lvms out raw adc value in mV value
+*/
+void lvms_out_conversion();
 
 /**
- * @brief current transducer value getter (the value is the average over @ref HO_50S_SP33_SAMPLES_FOR_AVERAGE samples)
- * @return current transducer value
- */
-uint16_t ADC_get_HO_50S_SP33_1106_sensor_val();
+ * @brief Converts as computer fb out raw adc value in mV value
+*/
+void as_computer_fb_conversion();
 
 /**
- * @brief Battery Temperature sensor #1 value getter
- * @return Battery Temperature sensor #1 value
- */
-uint16_t ADC_get_t_batt1_val();
+ * @brief Converts mux hall raw adc values in mV values
+ * @note All the output of mux hall that are called S_HALL are converted in mA values
+*/
+void mux_hall_conversion();
 
 /**
- * @brief Battery Temperature sensor #2 value getter
- * @return Battery Temperature sensor #2 value
- */
-uint16_t ADC_get_t_batt2_val();
+ * @brief Converts mux fb raw adc values in mV values
+*/
+void mux_fb_conversion();
 
 /**
- * @brief DCDC 12v Temperature sensor value getter
- * @return DCDC 12v Temperature sensor value
- */
-uint16_t ADC_get_t_dcdc12_val();
+ * @brief Converts batt out raw adc value in mV value
+*/
+void batt_out_conversion();
 
-/**
- * @brief DCDC 24v Temperature sensor value getter
- * @return DCDC 24v Temperature sensor value
- */
-uint16_t ADC_get_t_dcdc24_val();
-
-/**
- * @brief Battery voltage feedback value getter (mean value over )
- * @return Battery voltage feedback value
- */
-uint16_t ADC_get_batt_fb_raw();
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

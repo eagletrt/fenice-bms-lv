@@ -73,70 +73,68 @@ void check_on_feedbacks();
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define INV_FRG_Pin GPIO_PIN_13
-#define INV_FRG_GPIO_Port GPIOC
-#define INV_RFE_Pin GPIO_PIN_14
-#define INV_RFE_GPIO_Port GPIOC
-#define RELAY_Pin GPIO_PIN_15
-#define RELAY_GPIO_Port GPIOC
-#define CENTER_FB_Pin GPIO_PIN_0
-#define CENTER_FB_GPIO_Port GPIOC
-#define AS_COMPUTER_FB_Pin GPIO_PIN_3
-#define AS_COMPUTER_FB_GPIO_Port GPIOC
-#define MUX_FB_OUT_Pin GPIO_PIN_0
-#define MUX_FB_OUT_GPIO_Port GPIOA
-#define MUX_HALL_Pin GPIO_PIN_1
-#define MUX_HALL_GPIO_Port GPIOA
-#define STP_STEP_Pin GPIO_PIN_2
-#define STP_STEP_GPIO_Port GPIOA
-#define BATT_OUT_ANALOG_FB_Pin GPIO_PIN_3
-#define BATT_OUT_ANALOG_FB_GPIO_Port GPIOA
-#define PUMP_L_Pin GPIO_PIN_4
-#define PUMP_L_GPIO_Port GPIOA
-#define PUMP_R_Pin GPIO_PIN_5
-#define PUMP_R_GPIO_Port GPIOA
-#define RAD_L_Pin GPIO_PIN_6
-#define RAD_L_GPIO_Port GPIOA
-#define RAD_R_Pin GPIO_PIN_7
-#define RAD_R_GPIO_Port GPIOA
-#define REAY_OUT_ANALOG_FB_Pin GPIO_PIN_4
-#define REAY_OUT_ANALOG_FB_GPIO_Port GPIOC
-#define LVMS_OUT_ANALOG_FB_Pin GPIO_PIN_5
-#define LVMS_OUT_ANALOG_FB_GPIO_Port GPIOC
-#define FAN_Pin GPIO_PIN_0
-#define FAN_GPIO_Port GPIOB
-#define STP_DIRECTION_Pin GPIO_PIN_1
-#define STP_DIRECTION_GPIO_Port GPIOB
-#define NC_MCU0_Pin GPIO_PIN_2
-#define NC_MCU0_GPIO_Port GPIOB
-#define LTC_CS_Pin GPIO_PIN_10
-#define LTC_CS_GPIO_Port GPIOB
-#define TIME_SET_Pin GPIO_PIN_12
-#define TIME_SET_GPIO_Port GPIOB
-#define BUZZER_Pin GPIO_PIN_6
-#define BUZZER_GPIO_Port GPIOC
-#define STP_ENABLE_Pin GPIO_PIN_7
-#define STP_ENABLE_GPIO_Port GPIOC
-#define STP_SLEEP_Pin GPIO_PIN_8
-#define STP_SLEEP_GPIO_Port GPIOC
-#define MUX_A1_Pin GPIO_PIN_11
-#define MUX_A1_GPIO_Port GPIOA
-#define MUX_A2_Pin GPIO_PIN_12
-#define MUX_A2_GPIO_Port GPIOA
-#define NC_MCU3_Pin GPIO_PIN_15
-#define NC_MCU3_GPIO_Port GPIOA
-#define NC_MCU2_Pin GPIO_PIN_10
-#define NC_MCU2_GPIO_Port GPIOC
-#define NC_MCU1_Pin GPIO_PIN_11
-#define NC_MCU1_GPIO_Port GPIOC
-#define STP_PDN_Pin GPIO_PIN_12
-#define STP_PDN_GPIO_Port GPIOC
-#define GPIO_EXTENSION_INTERRUPT_A_Pin GPIO_PIN_2
+#define PC13_NC_Pin                          GPIO_PIN_13
+#define PC13_NC_GPIO_Port                    GPIOC
+#define PC14_NC_Pin                          GPIO_PIN_14
+#define PC14_NC_GPIO_Port                    GPIOC
+#define RELAY_Pin                            GPIO_PIN_15
+#define RELAY_GPIO_Port                      GPIOC
+#define CENTER_FB_Pin                        GPIO_PIN_0
+#define CENTER_FB_GPIO_Port                  GPIOC
+#define PC1_NC_Pin                           GPIO_PIN_1
+#define PC1_NC_GPIO_Port                     GPIOC
+#define PC2_NC_Pin                           GPIO_PIN_2
+#define PC2_NC_GPIO_Port                     GPIOC
+#define AS_COMPUTER_FB_Pin                   GPIO_PIN_3
+#define AS_COMPUTER_FB_GPIO_Port             GPIOC
+#define MUX_FB_OUT_Pin                       GPIO_PIN_0
+#define MUX_FB_OUT_GPIO_Port                 GPIOA
+#define MUX_HALL_Pin                         GPIO_PIN_1
+#define MUX_HALL_GPIO_Port                   GPIOA
+#define VREF_ADC_Pin                         GPIO_PIN_2
+#define VREF_ADC_GPIO_Port                   GPIOA
+#define BATT_OUT_ANALOG_FB_Pin               GPIO_PIN_3
+#define BATT_OUT_ANALOG_FB_GPIO_Port         GPIOA
+#define PUMP_L_Pin                           GPIO_PIN_4
+#define PUMP_L_GPIO_Port                     GPIOA
+#define PUMP_R_Pin                           GPIO_PIN_5
+#define PUMP_R_GPIO_Port                     GPIOA
+#define RAD_L_Pin                            GPIO_PIN_6
+#define RAD_L_GPIO_Port                      GPIOA
+#define RAD_R_Pin                            GPIO_PIN_7
+#define RAD_R_GPIO_Port                      GPIOA
+#define REAY_OUT_ANALOG_FB_Pin               GPIO_PIN_4
+#define REAY_OUT_ANALOG_FB_GPIO_Port         GPIOC
+#define LVMS_OUT_ANALOG_FB_Pin               GPIO_PIN_5
+#define LVMS_OUT_ANALOG_FB_GPIO_Port         GPIOC
+#define FAN_Pin                              GPIO_PIN_0
+#define FAN_GPIO_Port                        GPIOB
+#define STP_DIRECTION_Pin                    GPIO_PIN_1
+#define STP_DIRECTION_GPIO_Port              GPIOB
+#define NC_MCU0_Pin                          GPIO_PIN_2
+#define NC_MCU0_GPIO_Port                    GPIOB
+#define LTC_CS_Pin                           GPIO_PIN_10
+#define LTC_CS_GPIO_Port                     GPIOB
+#define TIME_SET_Pin                         GPIO_PIN_12
+#define TIME_SET_GPIO_Port                   GPIOB
+#define BUZZER_Pin                           GPIO_PIN_6
+#define BUZZER_GPIO_Port                     GPIOC
+#define MUX_A0_Pin                           GPIO_PIN_7
+#define MUX_A0_GPIO_Port                     GPIOC
+#define MUX_A1_Pin                           GPIO_PIN_8
+#define MUX_A1_GPIO_Port                     GPIOC
+#define MUX_A2_Pin                           GPIO_PIN_11
+#define MUX_A2_GPIO_Port                     GPIOA
+#define MUX_A3_Pin                           GPIO_PIN_12
+#define MUX_A3_GPIO_Port                     GPIOA
+#define STP_PDN_Pin                          GPIO_PIN_12
+#define STP_PDN_GPIO_Port                    GPIOC
+#define GPIO_EXTENSION_INTERRUPT_A_Pin       GPIO_PIN_2
 #define GPIO_EXTENSION_INTERRUPT_A_GPIO_Port GPIOD
-#define MUX_A0_Pin GPIO_PIN_4
-#define MUX_A0_GPIO_Port GPIOB
-#define MUX_A3_Pin GPIO_PIN_7
-#define MUX_A3_GPIO_Port GPIOB
+#define NC_NC_Pin                            GPIO_PIN_4
+#define NC_NC_GPIO_Port                      GPIOB
+#define STP_STEP_Pin                         GPIO_PIN_7
+#define STP_STEP_GPIO_Port                   GPIOB
 /* USER CODE BEGIN Private defines */
 
 /**
@@ -316,16 +314,16 @@ static inline uint8_t get_feedback_state(uint8_t feedback) {
 #define PUMP_R_CHNL DAC_CHANNEL_1
 
 /* MEASUREMENTS */
-#define MEASUREMENTS_TIMER                          htim2
-#define COOLING_AND_LV_VERSION_TIMER_CHANNEL        TIM_CHANNEL_1
-#define CURRENT_TIMER_CHANNEL                       TIM_CHANNEL_2
-#define VOLTAGE_AND_TEMPS_TIMER_CHANNEL             TIM_CHANNEL_3
-#define COOLING_AND_LV_VERSION_TIMER_ACTIVE_CHANNEL HAL_TIM_ACTIVE_CHANNEL_1
-#define CURRENT_TIMER_ACTIVE_CHANNEL                HAL_TIM_ACTIVE_CHANNEL_2
-#define VOLTAGE_AND_TEMPS_TIMER_ACTIVE_CHANNEL      HAL_TIM_ACTIVE_CHANNEL_3
-#define OPEN_WIRE_MEASUREMENT_TIMER                 htim4
-#define OPEN_WIRE_TIMER_CHANNEL                     TIM_CHANNEL_2
-#define OPEN_WIRE_TIMER_ACTIVE_CHANNEL              HAL_TIM_ACTIVE_CHANNEL_2
+#define MEASUREMENTS_TIMER                               htim2
+#define MEAS_ALL_ANALOG_SIGNALS_TIMER_CHANNEL            TIM_CHANNEL_1
+#define MEAS_VOLTS_AND_TEMPS_TIMER_CHANNEL               TIM_CHANNEL_2
+#define MEAS_LV_VERSION_AND_COOLING_TIMER_CHANNEL        TIM_CHANNEL_3
+#define MEAS_ALL_ANALOG_SIGNALS_TIMER_ACTIVE_CHANNEL     HAL_TIM_ACTIVE_CHANNEL_1
+#define MEAS_VOLTS_AND_TEMPS_TIMER_ACTIVE_CHANNEL        HAL_TIM_ACTIVE_CHANNEL_2
+#define MEAS_LV_VERSION_AND_COOLING_TIMER_ACTIVE_CHANNEL HAL_TIM_ACTIVE_CHANNEL_3
+#define OPEN_WIRE_MEASUREMENT_TIMER                      htim4
+#define OPEN_WIRE_TIMER_CHANNEL                          TIM_CHANNEL_2
+#define OPEN_WIRE_TIMER_ACTIVE_CHANNEL                   HAL_TIM_ACTIVE_CHANNEL_2
 
 /* ERRORS TIMER*/
 #define HTIM_ERR               htim2
@@ -334,45 +332,11 @@ static inline uint8_t get_feedback_state(uint8_t feedback) {
 
 /* ADC STUFF */
 
-#define TIMER_ADC_MEAS               htim10
-#define TIMER_ADC_BATTERY_FB         htim5
-#define TIMER_ADC_BATTERY_FB_CHANNEL TIM_CHANNEL_1
-#define ADC_HALL_AND_FB              hadc2
-#define ADC_BATTERY_FB               hadc3
-/* TODO: REMOVE OLD FROM HERE */
-/* CURRENT TRANSDUCER */
-
-#define ADC_ELECTRICAL_CURRENT_READINGS_TIMER_HTIM    htim5
-#define ADC_ELECTRICAL_CURRENT_READINGS_TIMER_CHANNEL TIM_CHANNEL_1
-
-//TODO: REMOVE THIS
-/* - HALL (Current transducer) -> ADC 1 CHANNEL10*/
-#define CURRENT_TRANSDUCER_HADC     hadc2
-#define CURRENT_TRANSDUCER_ADC_CHNL ADC_CHANNEL_10
-
-#define CURRENT_TRANSDUCER_OCD_GPIO_PIN  FAN_Pin        //HALL_OCD_Pin
-#define CURRENT_TRANSDUCER_OCD_GPIO_PORT FAN_GPIO_Port  //HALL_OCD_GPIO_Port
-
-/* THERMOCOUPLES */
-#define ADC_TEMPERATURE_READINGS_TIMER_HTIM htim7
-
-/* - TMP_BATT1 (Battery Temperature sensor #1) -> ADC 1 CHANNEL0*/
-#define T_SENS_BATT1_HADC     hadc2
-#define T_SENS_BATT1_ADC_CHNL ADC_CHANNEL_0
-
-/* - TMP_BATT2 (Battery Temperature sensor #2) -> ADC 1 CHANNEL1*/
-#define T_SENS_BATT2_HADC     hadc2
-#define T_SENS_BATT2_ADC_CHNL ADC_CHANNEL_1
-
-/* - TMP_DCDC12 (12 volts DCDC converter Temperature sensor) -> ADC 1 CHANNEL12*/
-#define T_SENS_DCDC12V_HADC     hadc2
-#define T_SENS_DCDC12V_ADC_CHNL ADC_CHANNEL_12
-
-/* - TMP_DCDC24 (24 volts DCDC converter Temperature sensor) -> ADC 1 CHANNEL13*/
-#define T_SENS_DCDC24V_HADC     hadc2
-#define T_SENS_DCDC24V_ADC_CHNL ADC_CHANNEL_13
-
-/* TODO: REMOVE OLD UNTIL HERE */
+#define TIMER_ADC_MEAS                htim10
+#define TIMER_ADC_CALIBRATION         htim5
+#define TIMER_ADC_CALIBRATION_CHANNEL TIM_CHANNEL_1
+#define ADC_HALL_AND_FB               hadc2
+#define CALIBRATION_ADC               hadc1
 
 // Commented: enable debugging, Uncommented: disable debugging
 //#define NDEBUG

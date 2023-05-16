@@ -13,8 +13,8 @@
 
 #include "../can-lib/lib/primary/c/ids.h"
 #include "../can-lib/lib/primary/c/watchdog.h"
+#include "adc.h"
 #include "can_comm.h"
-#include "cli_bms_lv.h"
 #include "current_transducer.h"
 #include "error.h"
 #include "fenice-config.h"
@@ -31,75 +31,44 @@ uint8_t volatile flags;
 uint8_t open_wire_check_status = 0;
 
 void measurements_init(TIM_HandleTypeDef *htim) {
-    // __HAL_TIM_SetCompare(htim, COOLING_AND_LV_VERSION_TIMER_CHANNEL, TIM_MS_TO_TICKS(htim, COOLING_STATUS_INTERVAL_MS));
-    // __HAL_TIM_SetCompare(
-    //     htim, CURRENT_TIMER_CHANNEL, TIM_MS_TO_TICKS(htim, CURRENT_AND_INVERTER_STATUS_MEASURE_INTERVAL_MS));
-    // __HAL_TIM_SetCompare(htim, VOLTAGE_AND_TEMPS_TIMER_CHANNEL, TIM_MS_TO_TICKS(htim, VOLT_MEASURE_INTERVAL_MS));
     __HAL_TIM_SetCompare(
         &OPEN_WIRE_MEASUREMENT_TIMER,
         OPEN_WIRE_TIMER_CHANNEL,
         TIM_MS_TO_TICKS(&OPEN_WIRE_MEASUREMENT_TIMER, MEAS_OPEN_WIRE_INTERVAL_MS));
 
-    // __HAL_TIM_CLEAR_IT(htim, TIM_IT_CC1);
-    // __HAL_TIM_CLEAR_IT(htim, TIM_IT_CC2);
-    // __HAL_TIM_CLEAR_IT(htim, TIM_IT_CC3);
-    __HAL_TIM_CLEAR_IT(&OPEN_WIRE_MEASUREMENT_TIMER, TIM_IT_CC2);
+    __HAL_TIM_SetCompare(
+        htim, MEAS_ALL_ANALOG_SIGNALS_TIMER_CHANNEL, TIM_MS_TO_TICKS(htim, MEAS_ALL_ANALOG_SIGNALS_INTERVAL_MS));
 
-    // HAL_TIM_OC_Start_IT(htim, COOLING_AND_LV_VERSION_TIMER_CHANNEL);
-    // HAL_TIM_OC_Start_IT(htim, CURRENT_TIMER_CHANNEL);
-    // HAL_TIM_OC_Start_IT(htim, VOLTAGE_AND_TEMPS_TIMER_CHANNEL);
+    __HAL_TIM_SetCompare(
+        htim, MEAS_LV_VERSION_AND_COOLING_TIMER_CHANNEL, TIM_MS_TO_TICKS(htim, MEAS_VOLTS_AND_TEMPS_INTERVAL_MS));
+
+    __HAL_TIM_SetCompare(
+        htim,
+        MEAS_LV_VERSION_AND_COOLING_TIMER_CHANNEL,
+        TIM_MS_TO_TICKS(htim, MEAS_LV_VERSION_AND_COOLING_INTERVAL_MS));
+
+    __HAL_TIM_CLEAR_IT(&OPEN_WIRE_MEASUREMENT_TIMER, TIM_IT_CC2);
+    __HAL_TIM_CLEAR_IT(htim, TIM_IT_CC1);
+    __HAL_TIM_CLEAR_IT(htim, TIM_IT_CC2);
+    __HAL_TIM_CLEAR_IT(htim, TIM_IT_CC3);
+
+    HAL_TIM_OC_Start_IT(htim, MEAS_ALL_ANALOG_SIGNALS_TIMER_CHANNEL);
+    HAL_TIM_OC_Start_IT(htim, MEAS_VOLTS_AND_TEMPS_TIMER_CHANNEL);
+    HAL_TIM_OC_Start_IT(htim, MEAS_LV_VERSION_AND_COOLING_TIMER_CHANNEL);
     HAL_TIM_OC_Start_IT(&OPEN_WIRE_MEASUREMENT_TIMER, OPEN_WIRE_TIMER_CHANNEL);
 
     flags = 0;
 }
 
+//TODO implement overcurrent check for the 3 hall sensors
 void check_overcurrent() {
-    if (CT_get_electric_current_mA() > MAX_CURRENT_ALLOWED_mA) {
+    /*if (CT_get_electric_current_mA() > MAX_CURRENT_ALLOWED_mA) {
         error_set(ERROR_OVER_CURRENT, 0, HAL_GetTick());
     } else {
         if (!is_bms_on_fault) {
             error_reset(ERROR_OVER_CURRENT, 0);
         }
-    }
-}
-
-void check_battery_temperatures() {
-    if (THC_get_average_temperature_C(&hTHC_BATT1) > MAX_CELLS_ALLOWED_TEMP ||
-        THC_get_average_temperature_C(&hTHC_BATT2) > MAX_CELLS_ALLOWED_TEMP) {
-        error_set(ERROR_CELL_OVER_TEMPERATURE, 0, HAL_GetTick());
-    } else if (
-        THC_get_average_temperature_C(&hTHC_BATT1) < MIN_CELLS_ALLOWED_TEMP ||
-        THC_get_average_temperature_C(&hTHC_BATT2) < MIN_CELLS_ALLOWED_TEMP) {
-        error_set(ERROR_CELL_UNDER_TEMPERATURE, 0, HAL_GetTick());
-    } else {
-        if (!is_bms_on_fault) {
-            error_reset(ERROR_CELL_OVER_TEMPERATURE, 0);
-            error_reset(ERROR_CELL_UNDER_TEMPERATURE, 0);
-        }
-    }
-}
-
-void check_dcdc_12_24_temperatures() {
-    if (THC_get_average_temperature_C(&hTHC_DCDC12V) > MAX_DCDC12_ALLOWED_TEMP) {
-        error_set(ERROR_DCDC12_OVER_TEMPERATURE, 0, HAL_GetTick());
-    } else if (THC_get_average_temperature_C(&hTHC_DCDC12V) < MIN_DCDC12_ALLOWED_TEMP) {
-        error_set(ERROR_DCDC12_UNDER_TEMPERATURE, 0, HAL_GetTick());
-    } else {
-        if (!is_bms_on_fault) {
-            error_reset(ERROR_DCDC12_OVER_TEMPERATURE, 0);
-            error_reset(ERROR_DCDC12_UNDER_TEMPERATURE, 0);
-        }
-    }
-    if (THC_get_average_temperature_C(&hTHC_DCDC24V) > MAX_DCDC24_ALLOWED_TEMP) {
-        error_set(ERROR_DCDC24_OVER_TEMPERATURE, 0, HAL_GetTick());
-    } else if (THC_get_average_temperature_C(&hTHC_DCDC24V) < MIN_DCDC24_ALLOWED_TEMP) {
-        error_set(ERROR_DCDC24_UNDER_TEMPERATURE, 0, HAL_GetTick());
-    } else {
-        if (!is_bms_on_fault) {
-            error_reset(ERROR_DCDC24_OVER_TEMPERATURE, 0);
-            error_reset(ERROR_DCDC24_UNDER_TEMPERATURE, 0);
-        }
-    }
+    }*/
 }
 
 void measurements_flags_check() {
@@ -112,13 +81,13 @@ void measurements_flags_check() {
 // #endif
 #ifdef LTC_ON_BOARD
             volt_start_open_wire_check(open_wire_check_status);
-            open_wire_check_status += 1;  // 1
+            open_wire_check_status += 1;                  // 1
             volt_start_open_wire_check(open_wire_check_status);
             open_wire_check_status += 1;                  // 2
             volt_read_open_wire(open_wire_check_status);  // read pup
             open_wire_check_status += 1;                  // 3
             volt_start_open_wire_check(open_wire_check_status);
-            open_wire_check_status += 1;  // 4
+            open_wire_check_status += 1;                  // 4
             volt_start_open_wire_check(open_wire_check_status);
             volt_read_open_wire(open_wire_check_status);  // read pud
             volt_open_wire_check();
@@ -130,47 +99,27 @@ void measurements_flags_check() {
         flags &= ~MEAS_OPEN_WIRE_FLAG;
         // to here about 5/7 ms
     }
-    if (flags & MEAS_AS_RELAY_LVMS_BATT_OUT_FLAG) {
+    if (flags & MEAS_ALL_ANALOG_SIGNALS_FLAG) {
         //uint16_t raw = ADC_get_batt_fb_raw();
         // convert
-        // cansend
-    }
-    /*
-    if (flags & MEAS_VOLTS_AND_TEMPS_READ_FLAG) {
-        if (volt_sample_and_read() != VOLT_ERR) {
-            can_primary_send(primary_ID_LV_VOLTAGE);
-            can_primary_send(primary_ID_LV_TOTAL_VOLTAGE);
-        }
-        check_battery_temperatures();
-        check_dcdc_12_24_temperatures();
-        can_primary_send(primary_ID_LV_TEMPERATURE);
-#ifdef MEAS_DEBUG
-        cli_bms_debug("VOLTS + TEMPS", 13);
-#endif
 
-        flags &= ~MEAS_VOLTS_AND_TEMPS_READ_FLAG;
+        relay_out_conversion();
+        lvms_out_conversion();
+        as_computer_fb_conversion();
+        mux_fb_conversion();
+        mux_hall_conversion();
+        batt_out_conversion();
+        // cansend
+        flags &= ~MEAS_ALL_ANALOG_SIGNALS_FLAG;
     }
-    if (flags & MEAS_COOLING_AND_LV_VERSION_READ_FLAG) {
-        // check_battery_temperatures();
-        // check_dcdc_12_24_temperatures();
-        can_primary_send(primary_ID_COOLING_STATUS);
-        can_primary_send(primary_ID_LV_VERSION);
-        check_on_feedbacks();
-#ifdef MEAS_DEBUG
-        cli_bms_debug("COOLING + LV VERSION", 20);
-#endif
-        flags &= ~MEAS_COOLING_AND_LV_VERSION_READ_FLAG;
+
+    if (flags & MEAS_VOLTS_AND_TEMPS_FLAG) {
+        flags &= ~MEAS_VOLTS_AND_TEMPS_FLAG;
     }
-    if (flags & MEAS_CURRENT_AND_INVERTERS_STATUS_READ_FLAG) {
-        check_overcurrent();
-        can_primary_send(primary_ID_LV_CURRENT);
-        can_primary_send(primary_ID_INVERTER_CONNECTION_STATUS);
-#ifdef MEAS_DEBUG
-        cli_bms_debug("CURRENT", 7);
-#endif
-        flags &= ~MEAS_CURRENT_AND_INVERTERS_STATUS_READ_FLAG;
+
+    if (flags & MEAS_LV_VERSION_AND_COOLING_FLAG) {
+        flags &= ~MEAS_LV_VERSION_AND_COOLING_FLAG;
     }
-*/
 }
 
 void measurements_oc_handler(TIM_HandleTypeDef *htim) {
@@ -185,30 +134,34 @@ void measurements_oc_handler(TIM_HandleTypeDef *htim) {
             default:
                 break;
         }
+    } else if (htim->Instance == MEASUREMENTS_TIMER.Instance) {
+        switch (htim->Channel) {
+            case MEAS_ALL_ANALOG_SIGNALS_TIMER_ACTIVE_CHANNEL:
+                __HAL_TIM_SetCompare(
+                    htim,
+                    MEAS_ALL_ANALOG_SIGNALS_TIMER_CHANNEL,
+                    counter + TIM_MS_TO_TICKS(htim, MEAS_ALL_ANALOG_SIGNALS_INTERVAL_MS));
+                flags |= MEAS_ALL_ANALOG_SIGNALS_FLAG;
+                break;
+
+            case MEAS_VOLTS_AND_TEMPS_TIMER_ACTIVE_CHANNEL:
+                __HAL_TIM_SetCompare(
+                    htim,
+                    MEAS_VOLTS_AND_TEMPS_TIMER_CHANNEL,
+                    counter + TIM_MS_TO_TICKS(htim, MEAS_VOLTS_AND_TEMPS_INTERVAL_MS));
+                flags |= MEAS_VOLTS_AND_TEMPS_FLAG;
+                break;
+
+            case MEAS_LV_VERSION_AND_COOLING_TIMER_ACTIVE_CHANNEL:
+                __HAL_TIM_SetCompare(
+                    htim,
+                    MEAS_LV_VERSION_AND_COOLING_TIMER_CHANNEL,
+                    counter + TIM_MS_TO_TICKS(htim, MEAS_LV_VERSION_AND_COOLING_INTERVAL_MS));
+                flags |= MEAS_LV_VERSION_AND_COOLING_FLAG;
+                break;
+
+            default:
+                break;
+        }
     }
-    // } else {
-    //     switch (htim->Channel) {
-    //         case COOLING_AND_LV_VERSION_TIMER_ACTIVE_CHANNEL:
-    //             __HAL_TIM_SetCompare(
-    //                 htim,
-    //                 COOLING_AND_LV_VERSION_TIMER_CHANNEL,
-    //                 counter + TIM_MS_TO_TICKS(htim, COOLING_STATUS_INTERVAL_MS));
-    //             flags |= MEAS_COOLING_AND_LV_VERSION_READ_FLAG;
-    //             break;
-    //         case CURRENT_TIMER_ACTIVE_CHANNEL:
-    //             __HAL_TIM_SetCompare(
-    //                 htim,
-    //                 CURRENT_TIMER_CHANNEL,
-    //                 counter + TIM_MS_TO_TICKS(htim, CURRENT_AND_INVERTER_STATUS_MEASURE_INTERVAL_MS));
-    //             flags |= MEAS_CURRENT_AND_INVERTERS_STATUS_READ_FLAG;
-    //             break;
-    //         case VOLTAGE_AND_TEMPS_TIMER_ACTIVE_CHANNEL:
-    //             __HAL_TIM_SetCompare(
-    //                 htim, VOLTAGE_AND_TEMPS_TIMER_CHANNEL, counter + TIM_MS_TO_TICKS(htim, VOLT_MEASURE_INTERVAL_MS));
-    //             flags |= MEAS_VOLTS_AND_TEMPS_READ_FLAG;
-    //             break;
-    //         default:
-    //             break;
-    //     }
-    // }
 }
