@@ -127,7 +127,6 @@ int main(void) {
 
     /* Initialize all configured peripherals */
     MX_GPIO_Init();
-    MX_CAN1_Init();
     MX_CAN2_Init();
     MX_DAC_Init();
     MX_I2C3_Init();
@@ -135,12 +134,11 @@ int main(void) {
     MX_TIM2_Init();
     MX_TIM3_Init();
     MX_USART1_UART_Init();
+    MX_CAN1_Init();
     MX_TIM8_Init();
     MX_TIM5_Init();
     MX_TIM7_Init();
     MX_TIM4_Init();
-    MX_ADC3_Init();
-    MX_TIM9_Init();
     MX_UART5_Init();
     MX_TIM10_Init();
     /* USER CODE BEGIN 2 */
@@ -152,13 +150,12 @@ int main(void) {
     //  https://community.st.com/s/question/0D50X0000ALudz8SQB/how-to-enable-adc-continuous-mode-with-dma
 
     MX_DMA_Init();
-    // MX_ADC1_Init();
+    MX_ADC1_Init();
     MX_ADC2_Init();
-    MX_ADC3_Init();
 
     // Usefull if it's necessary to stop the timer counter when debugging
 #ifdef DEBUG_TIMER_MCU
-    DBGMCU->APB1FZ = DBGMCU_APB1_FZ_DBG_TIM2_STOP;
+    DBGMCU->APB2FZ = DBGMCU_APB2_FZ_DBG_TIM10_STOP;
 #endif
 
     // START OF WARM UP STAGE
@@ -168,8 +165,10 @@ int main(void) {
     //HAL_GPIO_WritePin(L_ERR_GPIO_Port, L_ERR_Pin, GPIO_PIN_SET);
 
     ADC_init_status_flags();
-    ADC_start_DMA_readings();
-    ADC_start_MUX_readings();
+    ADC_init_mux();
+    ADC_Vref_Calibration();
+    ADC_hall_sensor_calibration();
+    ADC_start_ADC2_readings();
     // Blink to signal correct MX_XXX_init processes (usuefull for CAN transciever)
     cli_bms_lv_init();
     error_init();
@@ -195,15 +194,14 @@ int main(void) {
     sprintf(main_buff, "LTC ID %s", ltc6810_return_serial_id());
     printl(main_buff, NO_HEADER);
 #endif
-    printl("Relay out disabled, waiting 1 seconds before reading voltages\r\n", NO_HEADER);
-    HAL_Delay(1000);
+    /*printl("Relay out disabled, waiting 1 seconds before reading voltages\r\n", NO_HEADER);
+    HAL_Delay(1000);*/
 
     // check_initial_voltage();
 
-    mcp23017_read_both(&hmcp, &hi2c3);
-    check_DCDCs_voltages();
+    //check_DCDCs_voltages();
 
-    fans_radiators_pumps_init();
+    //fans_radiators_pumps_init();
 
     //init for both can
     can_primary_init();
@@ -211,13 +209,18 @@ int main(void) {
 
     measurements_init(&MEASUREMENTS_TIMER);
 
+    pwm_start_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
+
+    HAL_Delay(BUZZER_ALARM_TIME);
+    pwm_stop_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
     // END OF WARM UP STAGE
 
     /* USER CODE END 2 */
 
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
-    errors_timer = HAL_GetTick();
+    //errors_timer = HAL_GetTick();
+    //static bool first = true;
     while (1) {
         // Running stage
         // if (is_bms_on_fault) {
@@ -236,6 +239,17 @@ int main(void) {
         //     cooling_routine(10);
         // }
         ADC_Routine();
+        measurements_flags_check();
+        cli_loop(&cli_bms_lv);
+        //cooling_routine(10);
+        /*if (!first) {
+            first = true;
+            HAL_GPIO_WritePin(TIME_SET_GPIO_Port, TIME_SET_Pin, GPIO_PIN_SET);
+        }
+        float val = 2.0;
+        for (int i = 0; i < 20; i++) {
+            dac_pump_store_and_set_value_on_both_channels(&hdac_pump, val, val);
+        }*/
         /* USER CODE END WHILE */
 
         /* USER CODE BEGIN 3 */
@@ -415,23 +429,26 @@ void bms_error_state() {
  * @param temp Average temperature of the two inverters
  */
 void cooling_routine(uint8_t temp) {
-    float local_rad_speed, local_pump_speed;
+    /*float local_rad_speed, local_pump_speed;
     THC_get_temperature_C(&hTHC_BATT1);
     THC_get_temperature_C(&hTHC_BATT2);
     float max_dcdc_temp = (THC_get_temperature_C(&hTHC_DCDC12V) >= THC_get_temperature_C(&hTHC_DCDC24V))
                               ? THC_get_temperature_C(&hTHC_DCDC12V)
-                              : THC_get_temperature_C(&hTHC_DCDC24V);
+                              : THC_get_temperature_C(&hTHC_DCDC24V);*/
 #ifndef INTERNAL_FAN_DEBUG
-    bms_fan_duty_cycle = (INTERNAL_FAN_Q_FACTOR + (max_dcdc_temp * INTERNAL_FAN_M_FACTOR));
+    //bms_fan_duty_cycle = (INTERNAL_FAN_Q_FACTOR + (max_dcdc_temp * INTERNAL_FAN_M_FACTOR));
 #endif
-    pwm_set_duty_cicle(&INTERNAL_FAN_HTIM, INTERNAL_FAN_PWM_TIM_CHNL, 1 - bms_fan_duty_cycle);
+    //pwm_set_duty_cicle(&INTERNAL_FAN_HTIM, INTERNAL_FAN_PWM_TIM_CHNL, 1 - bms_fan_duty_cycle);
+    pwm_set_duty_cicle(&INTERNAL_FAN_HTIM, INTERNAL_FAN_PWM_TIM_CHNL, 0.5);
     pwm_start_channel(&INTERNAL_FAN_HTIM, INTERNAL_FAN_PWM_TIM_CHNL);
-
+    set_radiator_dt(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, 0.5);
+    set_radiator_dt(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, 0.5);
+    dac_pump_store_and_set_value_on_both_channels(&hdac_pump, 2.5, 2.5);
     /* 
         When automatic mode == true the values are controlled by the BMS
         When automatic mode == false the values are controlled by the Steering Wheel
     */
-    if (radiator_handle.automatic_mode) {
+    /*if (radiator_handle.automatic_mode) {
         set_radiator_dt(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, get_radiator_dt(temp));
         set_radiator_dt(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, get_radiator_dt(temp));
     } else {
@@ -465,7 +482,7 @@ void cooling_routine(uint8_t temp) {
         }
 
         dac_pump_store_and_set_value_on_both_channels(&hdac_pump, local_pump_speed, local_pump_speed);
-    }
+    }*/
 }
 
 /* USER CODE END 4 */
@@ -478,9 +495,9 @@ void Error_Handler(void) {
     /* USER CODE BEGIN Error_Handler_Debug */
     /* User can add his own implementation to report the HAL error return state
         */
-    if (HAL_ADC_Init(&CURRENT_TRANSDUCER_HADC) != HAL_OK || HAL_ADC_Init(&T_SENS_BATT1_HADC) != HAL_OK) {
+    /*if (HAL_ADC_Init(&CURRENT_TRANSDUCER_HADC) != HAL_OK || HAL_ADC_Init(&T_SENS_BATT1_HADC) != HAL_OK) {
         error_set(ERROR_ADC_INIT, 0, HAL_GetTick());
-    }
+    }*/
     /* USER CODE END Error_Handler_Debug */
 }
 

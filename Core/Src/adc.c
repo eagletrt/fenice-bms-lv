@@ -21,8 +21,18 @@
 #include "adc.h"
 
 /* USER CODE BEGIN 0 */
+#include "current_transducer.h"
 #include "stdbool.h"
 #include "tim.h"
+
+#ifdef DEBUG
+#include "cli_bms_lv.h"
+#include "stdio.h"
+#include "string.h"
+
+char buffer[200] = "";
+#endif
+
 /*
 * NOTES:
 * How the ADC should be configured:
@@ -117,39 +127,95 @@
     conversion Time = (112 + 12) / 12.5 MHz = 9.9 us
 */
 
-#define N_ADC1_CONVERSIONS              (HO_50S_SP33_SAMPLES_FOR_AVERAGE)
-#define N_ADC2_CONVERSIONS              (4U)
-#define N_ADC2_SAMPLES_FOR_EACH_CHANNEL (10U)
-#define N_ADC2_VALUES_SIZE              (N_ADC2_CONVERSIONS * N_ADC2_SAMPLES_FOR_EACH_CHANNEL)
-
 #define ADC_FSVR_mV (3300U)  // ADC Full-Scale Voltage Range or span in milliVolts (VrefHi-VrefLow)
-
-/* WARNING: change the order of this enums if the rank order in the ADC changes */
-//typedef enum { adc1_values_idx_HO_50S_SP33, adc1_values_idx_NUM_ADC_VALUES = N_ADC1_CONVERSIONS } __adc1_values_idx_TD;
-typedef enum {
-    adc2_values_idx_term_couple_batt1 = 0U,
-    adc2_values_idx_term_couple_batt2,
-    adc2_values_idx_term_couple_dcdc12v,
-    adc2_values_idx_term_couple_dcdc24v,
-    adc2_values_idx_NUM_ADC_VALUES = N_ADC2_CONVERSIONS
-} __adc2_values_idx_TD;
-
-/* These arrays will hold ADC values retrived via DMA */
-uint16_t adc1_values[N_ADC1_CONVERSIONS] = {};
-uint16_t adc2_values[N_ADC2_VALUES_SIZE] = {};
-
 ADC_status_flags_t adc_status_flags;
 
 ADC2_Channels_t adc2_channels;
 ADC2_Sampled_Signals_t adc2_sampled_signals;
-uint16_t adcs_raw_batt_out[N_ADC_SAMPLES_BATT_OUT];
+ADC_converted adcs_converted_values;
 
-void ADC_start_MUX_readings() {
+bool vref_calibration = true;
+uint16_t vref;            // Voltage used by the ADC as a reference
+uint16_t s_hall_vref[3];  // Voltage of hall sensor at current 0
+
+void ADC_start_ADC2_readings() {
     HAL_TIM_Base_Start_IT(&TIMER_ADC_MEAS);
 }
+
+/**
+ * This is done to know the voltage used by the ADC as a reference
+ * to see how this formula has been found check the paper at link: http://www.efton.sk/STM32/STM32_VREF.pdf
+ * or go in Doc/STM32_VREF.pdf
+*/
+void ADC_Vref_Calibration() {
+    uint16_t buffer[N_ADC_CALIBRATION_CHANNELS * N_ADC_CALIBRATION_SAMPLES] = {};
+    uint32_t vdda                                                           = 0;
+    uint32_t vref_int                                                       = 0;
+    uint16_t *factory_calibration                                           = (uint16_t *)0x1FFF7A2A;
+    HAL_TIM_PWM_Start(&TIMER_ADC_CALIBRATION, TIMER_ADC_CALIBRATION_CHANNEL);
+    HAL_ADC_Start_DMA(&CALIBRATION_ADC, (uint32_t *)&buffer, N_ADC_CALIBRATION_CHANNELS * N_ADC_CALIBRATION_SAMPLES);
+
+    //Wait until 500 samples has been reached
+    while (vref_calibration) {
+    }
+
+    HAL_TIM_PWM_Stop(&TIMER_ADC_CALIBRATION, TIMER_ADC_CALIBRATION_CHANNEL);
+    for (uint16_t i = 0; i < N_ADC_CALIBRATION_SAMPLES; i++) {
+        vref_int += buffer[N_ADC_CALIBRATION_CHANNELS * i];
+        vdda += buffer[N_ADC_CALIBRATION_CHANNELS * i + 1];
+    }
+
+    vdda /= 500;
+    vref_int /= 500;
+
+    vref = ADC_get_value_mV(&hadc1, vdda) * ((float)*factory_calibration / vref_int);
+}
+
+void ADC_hall_sensor_calibration() {
+    adc_status_flags.mux_address_index       = S_HALL0;
+    adc_status_flags.mux_hall_index_internal = S_HALL0;
+    uint32_t result                          = 0;
+    HAL_TIM_Base_Start_IT(&TIMER_ADC_MEAS);
+
+    while (adc_status_flags.hall_calibration)  //wait to have enough data to perform the calibration
+    {
+    }
+
+    HAL_TIM_Base_Stop_IT(&TIMER_ADC_MEAS);
+
+    for (uint8_t i = 0; i < 3; i++) {
+        for (uint8_t j = 0; j < N_ADC_SAMPLES; j++) {
+            uint16_t *hall_sensor = (uint16_t *)(&adc2_sampled_signals.adcs_raw_hall[j]) + S_HALL0;
+            result += *(hall_sensor + i * 2);
+        }
+        s_hall_vref[i] = ADC_get_calibrated_mV(&ADC_HALL_AND_FB, result / N_ADC_SAMPLES);
+        result         = 0;
+    }
+
+    /*this is done to start from the first address of the multiplexer since samples 
+    would be equal to its maximum value so it will trigger the next address
+    */
+    adc_status_flags.mux_address_index       = MAX_MUX_LEN - 1;
+    adc_status_flags.mux_hall_index_internal = MUX_HALL_LEN - 1;
+    adc_status_flags.mux_fb_index_internal   = MUX_FB_LEN - 1;
+    adc_status_flags.is_adc2_conv_complete   = false;
+}
+
 void ADC_init_mux() {
     ADC_set_mux_address(0x0);
 }
+
+void ADC_init_status_flags() {
+    adc_status_flags.is_adc2_conv_complete   = false;
+    adc_status_flags.hall_calibration        = true;  //flag for calibrating the hall sensors
+    adc_status_flags.is_value_stored         = true;  // in order to start the first conversion
+    adc_status_flags.mux_address_index       = 0;
+    adc_status_flags.mux_hall_index_internal = 0;
+    adc_status_flags.mux_fb_index_internal   = 0;
+    adc_status_flags.mux_hall_index_external = 0;
+    adc_status_flags.mux_fb_index_external   = 0;
+}
+
 uint8_t ADC_get_mux_address_by_port_name(uint8_t portname) {
     /*
     NOTE: MUX_FB_INPUT_ADDRESSES has been used to define the mux addresses
@@ -196,10 +262,11 @@ uint8_t ADC_get_mux_address_by_port_name(uint8_t portname) {
 }
 
 void ADC_set_mux_address(uint8_t address) {
-    HAL_GPIO_WritePin(MUX_A0_GPIO_Port, MUX_A0_Pin, (address & 0x01) ? GPIO_PIN_SET : GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(MUX_A1_GPIO_Port, MUX_A1_Pin, (address & 0x02) ? GPIO_PIN_SET : GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(MUX_A2_GPIO_Port, MUX_A2_Pin, (address & 0x04) ? GPIO_PIN_SET : GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(MUX_A3_GPIO_Port, MUX_A3_Pin, (address & 0x08) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    // A0 A1 A2 A3
+    HAL_GPIO_WritePin(MUX_A3_GPIO_Port, MUX_A3_Pin, (address & 0x01) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(MUX_A2_GPIO_Port, MUX_A2_Pin, (address & 0x02) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(MUX_A1_GPIO_Port, MUX_A1_Pin, (address & 0x04) ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(MUX_A0_GPIO_Port, MUX_A0_Pin, (address & 0x08) ? GPIO_PIN_SET : GPIO_PIN_RESET);
 }
 
 void ADC_Routine() {
@@ -212,52 +279,62 @@ void ADC_Routine() {
             adc_status_flags.mux_hall_index_external = (adc_status_flags.mux_hall_index_external + 1) %
                                                        N_ADC_SAMPLES_MUX_HALL;
         }
+
         // Second channel
         uint16_t *mux_fb_val = (uint16_t *)&adc2_sampled_signals.adcs_raw_fb[adc_status_flags.mux_fb_index_external];
         *(mux_fb_val + adc_status_flags.mux_fb_index_internal) = adc2_channels.mux_fb;
+        adc_status_flags.mux_fb_index_external = (adc_status_flags.mux_fb_index_external + 1) % N_ADC_SAMPLES_MUX_FB;
 
         // Third channel
         uint16_t *as_computer_fb_val =
             &adc2_sampled_signals.adcs_raw_as_computer_fb[adc_status_flags.as_computer_fb_index_external];
-        *(as_computer_fb_val) = adc2_channels.adcs_as_computer_fb;
+        *(as_computer_fb_val)                          = adc2_channels.adcs_as_computer_fb;
+        adc_status_flags.as_computer_fb_index_external = (adc_status_flags.as_computer_fb_index_external + 1) %
+                                                         N_ADC_SAMPLES_AS_COMPUTER_FB;
 
         // Fourth channel
         uint16_t *relay_out_val = &adc2_sampled_signals.adcs_raw_relay_out[adc_status_flags.relay_out_index_external];
         *(relay_out_val)        = adc2_channels.adcs_relay_out;
+        adc_status_flags.relay_out_index_external = (adc_status_flags.relay_out_index_external + 1) %
+                                                    N_ADC_SAMPLES_RELAY_OUT;
 
         // Fifth channel
         uint16_t *lvms_out_val = &adc2_sampled_signals.adcs_raw_lvms_out[adc_status_flags.lvms_out_index_external];
         *(lvms_out_val)        = adc2_channels.adcs_lvms_out;
-
-        // Update external index
-        adc_status_flags.mux_fb_index_external = (adc_status_flags.mux_fb_index_external + 1) % N_ADC_SAMPLES_MUX_FB;
-        adc_status_flags.as_computer_fb_index_external = (adc_status_flags.as_computer_fb_index_external + 1) %
-                                                         N_ADC_SAMPLES_AS_COMPUTER_FB;
-        adc_status_flags.relay_out_index_external = (adc_status_flags.relay_out_index_external + 1) %
-                                                    N_ADC_SAMPLES_RELAY_OUT;
         adc_status_flags.lvms_out_index_external = (adc_status_flags.lvms_out_index_external + 1) %
                                                    N_ADC_SAMPLES_LVMS_OUT;
 
-        adc_status_flags.is_adc2_conv_complete = false;
-        // Valutare se aggiornare index dentro a timer
-    }
-    // ADC3 Signal is sampled directly using DMA
-}
+        // Sixth channel
+        uint16_t *batt_out_val = &adc2_sampled_signals.adcs_raw_batt_out[adc_status_flags.batt_out_index_external];
+        *(batt_out_val)        = adc2_channels.adcs_batt_out;
+        adc_status_flags.batt_out_index_external = (adc_status_flags.batt_out_index_external + 1) %
+                                                   N_ADC_SAMPLES_BATT_OUT;
 
-void ADC_init_status_flags() {
-    adc_status_flags.is_adc2_conv_complete   = false;
-    adc_status_flags.is_adc3_conv_complete   = false;
-    adc_status_flags.mux_hall_index_internal = 0;
-    adc_status_flags.mux_fb_index_internal   = 0;
-    adc_status_flags.mux_hall_index_external = 0;
-    adc_status_flags.mux_fb_index_external   = 0;
+        adc_status_flags.is_adc2_conv_complete = false;
+        adc_status_flags.is_value_stored       = true;
+    }
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *AdcHandle) {
     if (AdcHandle->Instance == ADC_HALL_AND_FB.Instance) {
-        adc_status_flags.is_adc2_conv_complete = true;
-    } else if (AdcHandle->Instance == ADC_BATTERY_FB.Instance) {
-        adc_status_flags.is_adc3_conv_complete = true;
+        if (!adc_status_flags.hall_calibration) {
+            adc_status_flags.is_adc2_conv_complete = true;
+        } else {
+            uint16_t *hall_sensor =
+                (uint16_t *)&adc2_sampled_signals.adcs_raw_hall[adc_status_flags.mux_hall_index_external];
+            *(hall_sensor + adc_status_flags.mux_hall_index_internal) = adc2_channels.mux_hall;
+
+            //Calibration is complete when the last sensor is reached and we have done N_ADC_SAMPLES for each one
+            if (adc_status_flags.mux_hall_index_internal == S_HALL2 &&
+                adc_status_flags.mux_hall_index_external == N_ADC_SAMPLES - 1) {
+                adc_status_flags.hall_calibration = false;
+            }
+
+            adc_status_flags.mux_hall_index_external = (adc_status_flags.mux_hall_index_external + 1) % N_ADC_SAMPLES;
+            adc_status_flags.is_value_stored         = true;
+        }
+    } else if (AdcHandle->Instance == CALIBRATION_ADC.Instance) {
+        vref_calibration = false;
     }
 }
 
@@ -291,77 +368,162 @@ float ADC_get_value_mV(ADC_HandleTypeDef *adcHandle, uint32_t value_from_adc) {
     return value_from_adc * ((float)ADC_FSVR_mV / ADC_get_tot_voltage_levels(adcHandle));
 }
 
-void ADC_start_DMA_readings() {
-    static bool oneTime = true;
-    if (oneTime) {
-        oneTime = false;
-        // Start a PWM timer in order to trigger ADC_BATTERY_FB
-        HAL_TIM_PWM_Start(&TIMER_ADC_BATTERY_FB, TIMER_ADC_BATTERY_FB_CHANNEL);
-        HAL_ADC_Start_DMA(&ADC_BATTERY_FB, (uint32_t *)adcs_raw_batt_out, N_ADC_SAMPLES_BATT_OUT);
+float ADC_get_calibrated_mV(ADC_HandleTypeDef *adcHandle, uint32_t value_from_adc) {
+    return value_from_adc * ((float)vref / ADC_get_tot_voltage_levels(adcHandle));
+}
+
+void relay_out_conversion() {
+    uint32_t result = 0;
+    for (uint8_t i = 0; i < N_ADC_SAMPLES_RELAY_OUT; i++) {
+        result += adc2_sampled_signals.adcs_raw_relay_out[i];
+    }
+    adcs_converted_values.relay_out = ADC_get_calibrated_mV(&ADC_HALL_AND_FB, result / N_ADC_SAMPLES_RELAY_OUT);
+
+#ifdef DEBUG
+    sprintf(buffer, "Relay out time: %lu\r\n", (HAL_GetTick() / 10));
+    cli_bms_debug(buffer, strlen(buffer));
+#endif
+}
+
+void lvms_out_conversion() {
+    uint32_t result = 0;
+    for (uint8_t i = 0; i < N_ADC_SAMPLES_LVMS_OUT; i++) {
+        result += adc2_sampled_signals.adcs_raw_lvms_out[i];
+    }
+    adcs_converted_values.lvms_out = ADC_get_calibrated_mV(&ADC_HALL_AND_FB, result / N_ADC_SAMPLES_LVMS_OUT);
+#ifdef DEBUG
+    sprintf(buffer, "Lvms out time: %lu\r\n", HAL_GetTick() / 10);
+    cli_bms_debug(buffer, strlen(buffer));
+#endif
+}
+
+void as_computer_fb_conversion() {
+    uint32_t result = 0;
+    for (uint8_t i = 0; i < N_ADC_SAMPLES_AS_COMPUTER_FB; i++) {
+        result += adc2_sampled_signals.adcs_raw_as_computer_fb[i];
+    }
+    adcs_converted_values.as_computer_fb =
+        ADC_get_calibrated_mV(&ADC_HALL_AND_FB, result / N_ADC_SAMPLES_AS_COMPUTER_FB);
+#ifdef DEBUG
+    sprintf(buffer, "as computer fb time: %lu\r\n", HAL_GetTick() / 10);
+    cli_bms_debug(buffer, strlen(buffer));
+#endif
+}
+
+void mux_hall_conversion() {
+    uint32_t result = 0;
+    uint16_t *mux_hall_raw;
+    uint8_t hall_sensor       = 0;
+    float *mux_hall_converted = (float *)&adcs_converted_values.mux_hall;
+    for (uint8_t i = 0; i < MUX_HALL_LEN; i++) {
+        for (uint8_t j = 0; j < N_ADC_SAMPLES_MUX_HALL; j++) {
+            mux_hall_raw = (uint16_t *)(&adc2_sampled_signals.adcs_raw_hall[j]) + i;
+            result += *mux_hall_raw;
         }
-};
-/**
- * NOTE: prepare to read shitty getters
- * Since __CUBEMIX e' stronzo (cit.)__ we can't map in an automaitc way adc ranks to a constant in the code
- * (we would need to manually write the MX_ADC_Init ourselves loosing CUBE MX functionality :( )
- * Therefore if ADC ranks change this values need to change accorgingly to their position and meaning
- **/
-
-uint16_t ADC_get_batt_fb_raw() {
-    uint32_t result = 0;
-    for (uint32_t i = 0; i < N_ADC_SAMPLES_BATT_OUT; i++) {
-        result += adcs_raw_batt_out[i];
+        if (i != S_HALL0 && i != S_HALL1 && i != S_HALL2) {
+            *(mux_hall_converted + i) = ADC_get_calibrated_mV(&ADC_HALL_AND_FB, result / N_ADC_SAMPLES_MUX_HALL);
+        } else {
+            *(mux_hall_converted + i) =
+                CT_get_electric_current_mA(result / N_ADC_SAMPLES_MUX_HALL, s_hall_vref[hall_sensor++]);
+        }
+        result = 0;
     }
-    return (uint16_t)(result / N_ADC_SAMPLES_BATT_OUT);
+
+#ifdef DEBUG
+    sprintf(buffer, "Mux hall time: %lu\r\n", HAL_GetTick() / 10);
+    cli_bms_debug(buffer, strlen(buffer));
+#endif
 }
 
-uint16_t ADC_get_HO_50S_SP33_1106_sensor_val() {
+void mux_fb_conversion() {
     uint32_t result = 0;
-    for (uint32_t i = 0; i < HO_50S_SP33_SAMPLES_FOR_AVERAGE; i++) {
-        result += adc1_values[i];
-    }
-    return (uint16_t)(result / HO_50S_SP33_SAMPLES_FOR_AVERAGE);
-};
+    uint16_t *mux_fb_raw;
+    float *mux_fb_converted = (float *)&adcs_converted_values.mux_fb;
 
-uint16_t ADC_get_t_batt1_val() {
-    uint32_t result = 0;
-    for (uint32_t i = 0; i < N_ADC2_SAMPLES_FOR_EACH_CHANNEL; i++) {
-        result += adc2_values[(N_ADC2_CONVERSIONS * i) + adc2_values_idx_term_couple_batt1];
+    for (uint8_t i = 0; i < MUX_FB_LEN; i++) {
+        for (uint8_t j = 0; j < N_ADC_SAMPLES_MUX_FB; j++) {
+            mux_fb_raw = (uint16_t *)(&adc2_sampled_signals.adcs_raw_fb[j]) + i;
+            result += *mux_fb_raw;
+        }
+
+        *(mux_fb_converted + i) = ADC_get_calibrated_mV(&ADC_HALL_AND_FB, result / N_ADC_SAMPLES_MUX_FB);
+        result                  = 0;
     }
-    return (uint16_t)(result / N_ADC2_SAMPLES_FOR_EACH_CHANNEL);
+
+#ifdef DEBUG
+    sprintf(buffer, "Mux fb time: %lu\r\n", HAL_GetTick() / 10);
+    cli_bms_debug(buffer, strlen(buffer));
+#endif
 }
 
-uint16_t ADC_get_t_batt2_val() {
+void batt_out_conversion() {
     uint32_t result = 0;
-    for (uint32_t i = 0; i < N_ADC2_SAMPLES_FOR_EACH_CHANNEL; i++) {
-        result += adc2_values[(N_ADC2_CONVERSIONS * i) + adc2_values_idx_term_couple_batt2];
-    }
-    return (uint16_t)(result / N_ADC2_SAMPLES_FOR_EACH_CHANNEL);
-};
 
-uint16_t ADC_get_t_dcdc12_val() {
-    uint32_t result = 0;
-    for (uint32_t i = 0; i < N_ADC2_SAMPLES_FOR_EACH_CHANNEL; i++) {
-        result += adc2_values[(N_ADC2_CONVERSIONS * i) + adc2_values_idx_term_couple_dcdc12v];
+    for (uint8_t i = 0; i < N_ADC_SAMPLES_BATT_OUT; i++) {
+        result += adc2_sampled_signals.adcs_raw_batt_out[i];
     }
-    return (uint16_t)(result / N_ADC2_SAMPLES_FOR_EACH_CHANNEL);
-};
+    adcs_converted_values.batt_out = ADC_get_calibrated_mV(&ADC_HALL_AND_FB, result / N_ADC_SAMPLES_BATT_OUT);
 
-uint16_t ADC_get_t_dcdc24_val() {
-    uint32_t result = 0;
-    for (uint32_t i = 0; i < N_ADC2_SAMPLES_FOR_EACH_CHANNEL; i++) {
-        result += adc2_values[(N_ADC2_CONVERSIONS * i) + adc2_values_idx_term_couple_dcdc24v];
-    }
-    return (uint16_t)(result / N_ADC2_SAMPLES_FOR_EACH_CHANNEL);
-};
+#ifdef DEBUG
+    sprintf(buffer, "Batt out time: %lu\r\n", HAL_GetTick() / 10);
+    cli_bms_debug(buffer, strlen(buffer));
+#endif
+}
 
 /* USER CODE END 0 */
 
+ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc2;
-ADC_HandleTypeDef hadc3;
+DMA_HandleTypeDef hdma_adc1;
 DMA_HandleTypeDef hdma_adc2;
-DMA_HandleTypeDef hdma_adc3;
 
+/* ADC1 init function */
+void MX_ADC1_Init(void) {
+    /* USER CODE BEGIN ADC1_Init 0 */
+
+    /* USER CODE END ADC1_Init 0 */
+
+    ADC_ChannelConfTypeDef sConfig = {0};
+
+    /* USER CODE BEGIN ADC1_Init 1 */
+
+    /* USER CODE END ADC1_Init 1 */
+    /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
+  */
+    hadc1.Instance                   = ADC1;
+    hadc1.Init.ClockPrescaler        = ADC_CLOCK_SYNC_PCLK_DIV4;
+    hadc1.Init.Resolution            = ADC_RESOLUTION_12B;
+    hadc1.Init.ScanConvMode          = ENABLE;
+    hadc1.Init.ContinuousConvMode    = DISABLE;
+    hadc1.Init.DiscontinuousConvMode = DISABLE;
+    hadc1.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_RISING;
+    hadc1.Init.ExternalTrigConv      = ADC_EXTERNALTRIGCONV_T5_CC1;
+    hadc1.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
+    hadc1.Init.NbrOfConversion       = 2;
+    hadc1.Init.DMAContinuousRequests = ENABLE;
+    hadc1.Init.EOCSelection          = ADC_EOC_SEQ_CONV;
+    if (HAL_ADC_Init(&hadc1) != HAL_OK) {
+        Error_Handler();
+    }
+    /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+  */
+    sConfig.Channel      = ADC_CHANNEL_VREFINT;
+    sConfig.Rank         = 1;
+    sConfig.SamplingTime = ADC_SAMPLETIME_144CYCLES;
+    if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) {
+        Error_Handler();
+    }
+    /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+  */
+    sConfig.Channel = ADC_CHANNEL_2;
+    sConfig.Rank    = 2;
+    if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) {
+        Error_Handler();
+    }
+    /* USER CODE BEGIN ADC1_Init 2 */
+
+    /* USER CODE END ADC1_Init 2 */
+}
 /* ADC2 init function */
 void MX_ADC2_Init(void) {
     /* USER CODE BEGIN ADC2_Init 0 */
@@ -384,7 +546,7 @@ void MX_ADC2_Init(void) {
     hadc2.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_NONE;
     hadc2.Init.ExternalTrigConv      = ADC_SOFTWARE_START;
     hadc2.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
-    hadc2.Init.NbrOfConversion       = 5;
+    hadc2.Init.NbrOfConversion       = 6;
     hadc2.Init.DMAContinuousRequests = ENABLE;
     hadc2.Init.EOCSelection          = ADC_EOC_SEQ_CONV;
     if (HAL_ADC_Init(&hadc2) != HAL_OK) {
@@ -392,7 +554,7 @@ void MX_ADC2_Init(void) {
     }
     /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
   */
-    sConfig.Channel      = ADC_CHANNEL_0;
+    sConfig.Channel      = ADC_CHANNEL_1;
     sConfig.Rank         = 1;
     sConfig.SamplingTime = ADC_SAMPLETIME_480CYCLES;
     if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK) {
@@ -400,7 +562,7 @@ void MX_ADC2_Init(void) {
     }
     /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
   */
-    sConfig.Channel = ADC_CHANNEL_1;
+    sConfig.Channel = ADC_CHANNEL_0;
     sConfig.Rank    = 2;
     if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK) {
         Error_Handler();
@@ -427,54 +589,61 @@ void MX_ADC2_Init(void) {
     if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK) {
         Error_Handler();
     }
+    /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
+  */
+    sConfig.Channel = ADC_CHANNEL_3;
+    sConfig.Rank    = 6;
+    if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK) {
+        Error_Handler();
+    }
     /* USER CODE BEGIN ADC2_Init 2 */
 
     /* USER CODE END ADC2_Init 2 */
 }
-/* ADC3 init function */
-void MX_ADC3_Init(void) {
-    /* USER CODE BEGIN ADC3_Init 0 */
-
-    /* USER CODE END ADC3_Init 0 */
-
-    ADC_ChannelConfTypeDef sConfig = {0};
-
-    /* USER CODE BEGIN ADC3_Init 1 */
-
-    /* USER CODE END ADC3_Init 1 */
-    /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
-  */
-    hadc3.Instance                   = ADC3;
-    hadc3.Init.ClockPrescaler        = ADC_CLOCK_SYNC_PCLK_DIV4;
-    hadc3.Init.Resolution            = ADC_RESOLUTION_12B;
-    hadc3.Init.ScanConvMode          = ENABLE;
-    hadc3.Init.ContinuousConvMode    = ENABLE;
-    hadc3.Init.DiscontinuousConvMode = DISABLE;
-    hadc3.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_RISING;
-    hadc3.Init.ExternalTrigConv      = ADC_EXTERNALTRIGCONV_T5_CC1;
-    hadc3.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
-    hadc3.Init.NbrOfConversion       = 1;
-    hadc3.Init.DMAContinuousRequests = ENABLE;
-    hadc3.Init.EOCSelection          = ADC_EOC_SEQ_CONV;
-    if (HAL_ADC_Init(&hadc3) != HAL_OK) {
-        Error_Handler();
-    }
-    /** Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time.
-  */
-    sConfig.Channel      = ADC_CHANNEL_3;
-    sConfig.Rank         = 1;
-    sConfig.SamplingTime = ADC_SAMPLETIME_480CYCLES;
-    if (HAL_ADC_ConfigChannel(&hadc3, &sConfig) != HAL_OK) {
-        Error_Handler();
-    }
-    /* USER CODE BEGIN ADC3_Init 2 */
-
-    /* USER CODE END ADC3_Init 2 */
-}
 
 void HAL_ADC_MspInit(ADC_HandleTypeDef *adcHandle) {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
-    if (adcHandle->Instance == ADC2) {
+    if (adcHandle->Instance == ADC1) {
+        /* USER CODE BEGIN ADC1_MspInit 0 */
+
+        /* USER CODE END ADC1_MspInit 0 */
+        /* ADC1 clock enable */
+        __HAL_RCC_ADC1_CLK_ENABLE();
+
+        __HAL_RCC_GPIOA_CLK_ENABLE();
+        /**ADC1 GPIO Configuration
+    PA2     ------> ADC1_IN2
+    */
+        GPIO_InitStruct.Pin  = VREF_ADC_Pin;
+        GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+        GPIO_InitStruct.Pull = GPIO_NOPULL;
+        HAL_GPIO_Init(VREF_ADC_GPIO_Port, &GPIO_InitStruct);
+
+        /* ADC1 DMA Init */
+        /* ADC1 Init */
+        hdma_adc1.Instance                 = DMA2_Stream4;
+        hdma_adc1.Init.Channel             = DMA_CHANNEL_0;
+        hdma_adc1.Init.Direction           = DMA_PERIPH_TO_MEMORY;
+        hdma_adc1.Init.PeriphInc           = DMA_PINC_DISABLE;
+        hdma_adc1.Init.MemInc              = DMA_MINC_ENABLE;
+        hdma_adc1.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
+        hdma_adc1.Init.MemDataAlignment    = DMA_MDATAALIGN_HALFWORD;
+        hdma_adc1.Init.Mode                = DMA_NORMAL;
+        hdma_adc1.Init.Priority            = DMA_PRIORITY_LOW;
+        hdma_adc1.Init.FIFOMode            = DMA_FIFOMODE_DISABLE;
+        if (HAL_DMA_Init(&hdma_adc1) != HAL_OK) {
+            Error_Handler();
+        }
+
+        __HAL_LINKDMA(adcHandle, DMA_Handle, hdma_adc1);
+
+        /* ADC1 interrupt Init */
+        HAL_NVIC_SetPriority(ADC_IRQn, 0, 0);
+        HAL_NVIC_EnableIRQ(ADC_IRQn);
+        /* USER CODE BEGIN ADC1_MspInit 1 */
+
+        /* USER CODE END ADC1_MspInit 1 */
+    } else if (adcHandle->Instance == ADC2) {
         /* USER CODE BEGIN ADC2_MspInit 0 */
 
         /* USER CODE END ADC2_MspInit 0 */
@@ -487,6 +656,7 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef *adcHandle) {
     PC3     ------> ADC2_IN13
     PA0-WKUP     ------> ADC2_IN0
     PA1     ------> ADC2_IN1
+    PA3     ------> ADC2_IN3
     PC4     ------> ADC2_IN14
     PC5     ------> ADC2_IN15
     */
@@ -495,7 +665,7 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef *adcHandle) {
         GPIO_InitStruct.Pull = GPIO_NOPULL;
         HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-        GPIO_InitStruct.Pin  = MUX_FB_OUT_Pin | MUX_HALL_Pin;
+        GPIO_InitStruct.Pin  = MUX_FB_OUT_Pin | MUX_HALL_Pin | BATT_OUT_ANALOG_FB_Pin;
         GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
         GPIO_InitStruct.Pull = GPIO_NOPULL;
         HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
@@ -524,51 +694,38 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef *adcHandle) {
         /* USER CODE BEGIN ADC2_MspInit 1 */
 
         /* USER CODE END ADC2_MspInit 1 */
-    } else if (adcHandle->Instance == ADC3) {
-        /* USER CODE BEGIN ADC3_MspInit 0 */
-
-        /* USER CODE END ADC3_MspInit 0 */
-        /* ADC3 clock enable */
-        __HAL_RCC_ADC3_CLK_ENABLE();
-
-        __HAL_RCC_GPIOA_CLK_ENABLE();
-        /**ADC3 GPIO Configuration
-    PA3     ------> ADC3_IN3
-    */
-        GPIO_InitStruct.Pin  = BATT_OUT_ANALOG_FB_Pin;
-        GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-        GPIO_InitStruct.Pull = GPIO_NOPULL;
-        HAL_GPIO_Init(BATT_OUT_ANALOG_FB_GPIO_Port, &GPIO_InitStruct);
-
-        /* ADC3 DMA Init */
-        /* ADC3 Init */
-        hdma_adc3.Instance                 = DMA2_Stream0;
-        hdma_adc3.Init.Channel             = DMA_CHANNEL_2;
-        hdma_adc3.Init.Direction           = DMA_PERIPH_TO_MEMORY;
-        hdma_adc3.Init.PeriphInc           = DMA_PINC_DISABLE;
-        hdma_adc3.Init.MemInc              = DMA_MINC_ENABLE;
-        hdma_adc3.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
-        hdma_adc3.Init.MemDataAlignment    = DMA_MDATAALIGN_HALFWORD;
-        hdma_adc3.Init.Mode                = DMA_CIRCULAR;
-        hdma_adc3.Init.Priority            = DMA_PRIORITY_LOW;
-        hdma_adc3.Init.FIFOMode            = DMA_FIFOMODE_DISABLE;
-        if (HAL_DMA_Init(&hdma_adc3) != HAL_OK) {
-            Error_Handler();
-        }
-
-        __HAL_LINKDMA(adcHandle, DMA_Handle, hdma_adc3);
-
-        /* ADC3 interrupt Init */
-        HAL_NVIC_SetPriority(ADC_IRQn, 0, 0);
-        HAL_NVIC_EnableIRQ(ADC_IRQn);
-        /* USER CODE BEGIN ADC3_MspInit 1 */
-
-        /* USER CODE END ADC3_MspInit 1 */
     }
 }
 
 void HAL_ADC_MspDeInit(ADC_HandleTypeDef *adcHandle) {
-    if (adcHandle->Instance == ADC2) {
+    if (adcHandle->Instance == ADC1) {
+        /* USER CODE BEGIN ADC1_MspDeInit 0 */
+
+        /* USER CODE END ADC1_MspDeInit 0 */
+        /* Peripheral clock disable */
+        __HAL_RCC_ADC1_CLK_DISABLE();
+
+        /**ADC1 GPIO Configuration
+    PA2     ------> ADC1_IN2
+    */
+        HAL_GPIO_DeInit(VREF_ADC_GPIO_Port, VREF_ADC_Pin);
+
+        /* ADC1 DMA DeInit */
+        HAL_DMA_DeInit(adcHandle->DMA_Handle);
+
+        /* ADC1 interrupt Deinit */
+        /* USER CODE BEGIN ADC1:ADC_IRQn disable */
+        /**
+    * Uncomment the line below to disable the "ADC_IRQn" interrupt
+    * Be aware, disabling shared interrupt may affect other IPs
+    */
+        /* HAL_NVIC_DisableIRQ(ADC_IRQn); */
+        /* USER CODE END ADC1:ADC_IRQn disable */
+
+        /* USER CODE BEGIN ADC1_MspDeInit 1 */
+
+        /* USER CODE END ADC1_MspDeInit 1 */
+    } else if (adcHandle->Instance == ADC2) {
         /* USER CODE BEGIN ADC2_MspDeInit 0 */
 
         /* USER CODE END ADC2_MspDeInit 0 */
@@ -579,12 +736,13 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef *adcHandle) {
     PC3     ------> ADC2_IN13
     PA0-WKUP     ------> ADC2_IN0
     PA1     ------> ADC2_IN1
+    PA3     ------> ADC2_IN3
     PC4     ------> ADC2_IN14
     PC5     ------> ADC2_IN15
     */
         HAL_GPIO_DeInit(GPIOC, AS_COMPUTER_FB_Pin | REAY_OUT_ANALOG_FB_Pin | LVMS_OUT_ANALOG_FB_Pin);
 
-        HAL_GPIO_DeInit(GPIOA, MUX_FB_OUT_Pin | MUX_HALL_Pin);
+        HAL_GPIO_DeInit(GPIOA, MUX_FB_OUT_Pin | MUX_HALL_Pin | BATT_OUT_ANALOG_FB_Pin);
 
         /* ADC2 DMA DeInit */
         HAL_DMA_DeInit(adcHandle->DMA_Handle);
@@ -601,33 +759,6 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef *adcHandle) {
         /* USER CODE BEGIN ADC2_MspDeInit 1 */
 
         /* USER CODE END ADC2_MspDeInit 1 */
-    } else if (adcHandle->Instance == ADC3) {
-        /* USER CODE BEGIN ADC3_MspDeInit 0 */
-
-        /* USER CODE END ADC3_MspDeInit 0 */
-        /* Peripheral clock disable */
-        __HAL_RCC_ADC3_CLK_DISABLE();
-
-        /**ADC3 GPIO Configuration
-    PA3     ------> ADC3_IN3
-    */
-        HAL_GPIO_DeInit(BATT_OUT_ANALOG_FB_GPIO_Port, BATT_OUT_ANALOG_FB_Pin);
-
-        /* ADC3 DMA DeInit */
-        HAL_DMA_DeInit(adcHandle->DMA_Handle);
-
-        /* ADC3 interrupt Deinit */
-        /* USER CODE BEGIN ADC3:ADC_IRQn disable */
-        /**
-    * Uncomment the line below to disable the "ADC_IRQn" interrupt
-    * Be aware, disabling shared interrupt may affect other IPs
-    */
-        /* HAL_NVIC_DisableIRQ(ADC_IRQn); */
-        /* USER CODE END ADC3:ADC_IRQn disable */
-
-        /* USER CODE BEGIN ADC3_MspDeInit 1 */
-
-        /* USER CODE END ADC3_MspDeInit 1 */
     }
 }
 

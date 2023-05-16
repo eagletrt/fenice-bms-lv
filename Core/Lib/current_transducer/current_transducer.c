@@ -55,26 +55,26 @@ static bool isOvercurrent = false;
  * @brief calculate the electric current in mA from the raw value got by ADC
  * 
  * @param adc_raw_value ADC output
+ * @param sensor_vref Voltage of hall sensor with current 0
  * @return electric current in mA
  */
-static float __calculate_current_mA(uint32_t adc_raw_value);
+static float __calculate_current_mA(uint32_t adc_raw_value, uint16_t sensor_vref);
 
 /* Exported functions --------------------------------------------------------*/
 
-float CT_get_electric_current_mA() {
-    uint32_t raw_value  = ADC_get_HO_50S_SP33_1106_sensor_val();
-    float current_in_mA = __calculate_current_mA(raw_value);
+float CT_get_electric_current_mA(uint32_t adc_raw_value, uint16_t sensor_vref) {
+    float current_in_mA = __calculate_current_mA(adc_raw_value, sensor_vref);
     //float current_in_mA = CT_get_average_electric_current(128)
     isOvercurrent = (current_in_mA > CT_OVERCURRENT_THRESHOLD_MA);
     return current_in_mA;
 }
 
-static float __calculate_current_mA(uint32_t adc_raw_value) {
-    float adc_val_mV = ADC_get_value_mV(&CURRENT_TRANSDUCER_HADC, adc_raw_value);
+static float __calculate_current_mA(uint32_t adc_raw_value, uint16_t sensor_vref) {
+    float adc_val_mV = ADC_get_calibrated_mV(&ADC_HALL_AND_FB, adc_raw_value);
 
     // current [mA] = ((Vadc-Vref)[mV] / Sensibility [mV/A])*1000
 
-    float current = ((adc_val_mV - HO_50_SP33_1106_VREF_mV) / HO_50_SP33_1106_THEORETICAL_SENSITIVITY) * 1000;
+    float current = ((adc_val_mV - sensor_vref) / HO_50_SP33_1106_THEORETICAL_SENSITIVITY) * 1000;
     return current;
 }
 
