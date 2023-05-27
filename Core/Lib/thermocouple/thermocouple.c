@@ -61,34 +61,14 @@ static void __push_into_history(struct __THC_Handle *hTHC, float value);
 static float __calculate_temperature_C(struct __THC_Handle *hTHC, uint32_t adc_raw_value);
 
 /* Exported variables --------------------------------------------------------*/
-THC_Handle_TD hTHC_DCDC12V = {
-    .hadc                  = &T_SENS_DCDC12V_HADC,
-    ._history              = {},
-    ._history_idx          = 0,
-    ._ADC_raw_value_getter = &ADC_get_t_dcdc12_val,
-    ._hadc                 = &T_SENS_DCDC12V_HADC,
-    ._adc_channel          = T_SENS_DCDC12V_ADC_CHNL};
-THC_Handle_TD hTHC_DCDC24V = {
-    .hadc                  = &T_SENS_DCDC24V_HADC,
-    ._history              = {},
-    ._history_idx          = 0,
-    ._ADC_raw_value_getter = &ADC_get_t_dcdc24_val,
-    ._hadc                 = &T_SENS_DCDC24V_HADC,
-    ._adc_channel          = T_SENS_DCDC24V_ADC_CHNL};
-THC_Handle_TD hTHC_BATT1 = {
-    .hadc                  = &T_SENS_BATT1_HADC,
-    ._history              = {},
-    ._history_idx          = 0,
-    ._ADC_raw_value_getter = &ADC_get_t_batt1_val,
-    ._hadc                 = &T_SENS_BATT1_HADC,
-    ._adc_channel          = T_SENS_BATT1_ADC_CHNL};
-THC_Handle_TD hTHC_BATT2 = {
-    .hadc                  = &T_SENS_BATT2_HADC,
-    ._history              = {},
-    ._history_idx          = 0,
-    ._ADC_raw_value_getter = &ADC_get_t_batt2_val,
-    ._hadc                 = &T_SENS_BATT2_HADC,
-    ._adc_channel          = T_SENS_BATT2_ADC_CHNL};
+THC_Handle_TD hTHC_DCDC12V =
+    {.hadc = NULL, ._history = {}, ._history_idx = 0, ._ADC_raw_value_getter = NULL, ._hadc = NULL, ._adc_channel = 0};
+THC_Handle_TD hTHC_DCDC24V =
+    {.hadc = NULL, ._history = {}, ._history_idx = 0, ._ADC_raw_value_getter = NULL, ._hadc = NULL, ._adc_channel = 0};
+THC_Handle_TD hTHC_BATT1 =
+    {.hadc = NULL, ._history = {}, ._history_idx = 0, ._ADC_raw_value_getter = NULL, ._hadc = NULL, ._adc_channel = 0};
+THC_Handle_TD hTHC_BATT2 =
+    {.hadc = NULL, ._history = {}, ._history_idx = 0, ._ADC_raw_value_getter = NULL, ._hadc = NULL, ._adc_channel = 0};
 
 static void __push_into_history(struct __THC_Handle *hTHC, float value) {
     hTHC->_history_idx                 = (hTHC->_history_idx + 1) % THC_HISTORY_LENGTH;

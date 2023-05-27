@@ -64,16 +64,16 @@ static inline void inverters_loop(Inverters_struct *inv) {
 
     if(inv->comm_status == primary_Toggle_ON) {
         if(inv->inv_status == INV_OFF) {
-            HAL_GPIO_WritePin(INV_RFE_GPIO_Port, INV_RFE_Pin, GPIO_PIN_SET);
+            // HAL_GPIO_WritePin(INV_RFE_GPIO_Port, INV_RFE_Pin, GPIO_PIN_SET);
             inv->inv_status = INV_RFE_ON;
             inv->rfe_on_timestamp = HAL_GetTick();
         } else if(inv->inv_status == INV_RFE_ON && (HAL_GetTick() - inv->rfe_on_timestamp > 500)) {
-            HAL_GPIO_WritePin(INV_FRG_GPIO_Port, INV_FRG_Pin, GPIO_PIN_SET);
+            // HAL_GPIO_WritePin(INV_FRG_GPIO_Port, INV_FRG_Pin, GPIO_PIN_SET);
             inv->inv_status = INV_ON;
         }
     } else if (inv->comm_status == primary_Toggle_OFF && inv->inv_status != INV_OFF) {
-        HAL_GPIO_WritePin(INV_RFE_GPIO_Port, INV_RFE_Pin, GPIO_PIN_RESET);
-        HAL_GPIO_WritePin(INV_FRG_GPIO_Port, INV_FRG_Pin, GPIO_PIN_RESET);
+        // HAL_GPIO_WritePin(INV_RFE_GPIO_Port, INV_RFE_Pin, GPIO_PIN_RESET);
+        // HAL_GPIO_WritePin(INV_FRG_GPIO_Port, INV_FRG_Pin, GPIO_PIN_RESET);
         inv->inv_status = INV_OFF;
     }
 }
