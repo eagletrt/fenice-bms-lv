@@ -16,6 +16,7 @@
 #include "stdio.h"
 #include "usart.h"
 
+#include <stdbool.h>
 #include <string.h>
 
 MCP23017_HandleTypeDef hmcp;
@@ -55,11 +56,6 @@ HAL_StatusTypeDef mcp23017_read_gpio(MCP23017_HandleTypeDef *hdev, uint8_t port)
     if (status == HAL_OK)
         hdev->gpio[port] = data[0];
     return status;
-}
-
-HAL_StatusTypeDef mcp23017_write_gpio(MCP23017_HandleTypeDef *hdev, uint8_t port) {
-    uint8_t data = {hdev->gpio[port]};
-    return mcp23017_write(hdev, REGISTER_GPIOA | port, &data);
 }
 
 void mcp23017_print_gpioA(MCP23017_HandleTypeDef *hdev, char *out) {
@@ -139,6 +135,7 @@ void mcp23017_print_gpioB(MCP23017_HandleTypeDef *hdev, char *out) {
         }
     }
 }
+
 /**
  * @brief Necessary and tested configuration to initialize correctly the MCP23017
  * 		  Using default address 0x20
@@ -148,12 +145,12 @@ void mcp23017_print_gpioB(MCP23017_HandleTypeDef *hdev, char *out) {
  */
 void mcp23017_basic_config_init(MCP23017_HandleTypeDef *hdev, I2C_HandleTypeDef *hi2c) {
     mcp23017_init(hdev, hi2c, MCP23017_ADDRESS);
-    error_reset(ERROR_MCP23017, 0);
-    if (mcp23017_iodir(hdev, MCP23017_PORTA, MCP23017_IODIR_ALL_INPUT) != HAL_OK) {
+    //error_reset(ERROR_MCP23017, 0);
+    if (mcp23017_iodir(hdev, MCP23017_PORTA, IODIR_GPIOA) != HAL_OK) {
         printl("INIT ERROR GPIOA", ERR_HEADER);
         error_set(ERROR_MCP23017, 0, HAL_GetTick());
     }
-    if (mcp23017_iodir(hdev, MCP23017_PORTB, MCP23017_IODIR_ALL_INPUT) != HAL_OK) {
+    if (mcp23017_iodir(hdev, MCP23017_PORTB, IODIR_GPIOB) != HAL_OK) {
         printl("INIT ERROR GPIOB", ERR_HEADER);
         error_set(ERROR_MCP23017, 0, HAL_GetTick());
     }
@@ -174,14 +171,14 @@ void mcp23017_basic_config_init(MCP23017_HandleTypeDef *hdev, I2C_HandleTypeDef 
         error_set(ERROR_MCP23017, 0, HAL_GetTick());
     }
 }
+
 /**
  * @brief Read and print registers GPIOA and GPIOB
  * 
  * @param hdev MCP23017_HandleTypeDef handle for the device
- * @param hi2c I2C Handle
  */
-void mcp23017_read_and_print_both(MCP23017_HandleTypeDef *hdev, I2C_HandleTypeDef *hi2c) {
-    HAL_StatusTypeDef res = HAL_I2C_Mem_Read(hi2c, hdev->addr, REGISTER_GPIOA, 1, hdev->gpio, 1, 100);
+void mcp23017_read_and_print_both(MCP23017_HandleTypeDef *hdev) {
+    HAL_StatusTypeDef res = HAL_I2C_Mem_Read(hdev->hi2c, hdev->addr, REGISTER_GPIOA, 1, hdev->gpio, 1, 100);
     if (res != HAL_OK) {
         printl("GPIOA READ ERROR", ERR_HEADER);
         error_set(ERROR_MCP23017, 0, HAL_GetTick());
@@ -189,7 +186,7 @@ void mcp23017_read_and_print_both(MCP23017_HandleTypeDef *hdev, I2C_HandleTypeDe
         error_reset(ERROR_MCP23017, 0);
         mcp23017_print_gpioA(hdev, NULL);
     }
-    res = HAL_I2C_Mem_Read(hi2c, hdev->addr, REGISTER_GPIOB, 1, hdev->gpio + 1, 1, 100);
+    res = HAL_I2C_Mem_Read(hdev->hi2c, hdev->addr, REGISTER_GPIOB, 1, hdev->gpio + 1, 1, 100);
     if (res != HAL_OK) {
         printl("GPIOB READ ERROR", ERR_HEADER);
         error_set(ERROR_MCP23017, 0, HAL_GetTick());
@@ -203,16 +200,15 @@ void mcp23017_read_and_print_both(MCP23017_HandleTypeDef *hdev, I2C_HandleTypeDe
  * @brief      Read registers GPIOA and GPIOB
  * 
  * @param hdev MCP23017_HandleTypeDef handle for the device
- * @param hi2c I2C Handle
  */
-void mcp23017_read_both(MCP23017_HandleTypeDef *hdev, I2C_HandleTypeDef *hi2c) {
-    HAL_StatusTypeDef res = HAL_I2C_Mem_Read(hi2c, hdev->addr, REGISTER_GPIOA, 1, hdev->gpio, 1, 100);
+void mcp23017_read_both(MCP23017_HandleTypeDef *hdev) {
+    HAL_StatusTypeDef res = HAL_I2C_Mem_Read(hdev->hi2c, hdev->addr, REGISTER_GPIOA, 1, &hdev->gpio[0], 1, 100);
     error_reset(ERROR_MCP23017, 0);
     if (res != HAL_OK) {
         printl("GPIOA READ ERROR", ERR_HEADER);
         error_set(ERROR_MCP23017, 0, HAL_GetTick());
     }
-    res = HAL_I2C_Mem_Read(hi2c, hdev->addr, REGISTER_GPIOB, 1, hdev->gpio + 1, 1, 100);
+    res = HAL_I2C_Mem_Read(hdev->hi2c, hdev->addr, REGISTER_GPIOB, 1, &hdev->gpio[1], 1, 100);
     if (res != HAL_OK) {
         printl("GPIOB READ ERROR", ERR_HEADER);
         error_set(ERROR_MCP23017, 0, HAL_GetTick());
@@ -228,10 +224,10 @@ uint8_t mcp23017_get_state(MCP23017_HandleTypeDef *hdev, uint8_t gpio_port, uint
  * @brief Test function of Read/Write registers
  * 
  * @param hdev MCP23017_HandleTypeDef handle for the device
- * @return 1 if all registers have passed the test
- * @return 0 if something has gone wrong
+ * @return true if all registers have passed the test
+ * @return false if something has gone wrong
  */
-uint8_t mcptest(MCP23017_HandleTypeDef *hdev) {
+uint8_t mcp23017_test(MCP23017_HandleTypeDef *hdev) {
     for (uint16_t reg = 0; reg < REGISTER_INTFA; reg++) {
         if (reg != 10 && reg != 11) {
             uint8_t data = 0;
@@ -243,7 +239,7 @@ uint8_t mcptest(MCP23017_HandleTypeDef *hdev) {
                 mcp23017_read(hdev, reg, &data);
                 if (data != (1 << bit)) {
                     data = 0xFF;
-                    return 1;
+                    return false;
                 }
             }
             mcp23017_write(hdev, reg, &reg_data);
@@ -262,12 +258,12 @@ uint8_t mcptest(MCP23017_HandleTypeDef *hdev) {
             mcp23017_read(hdev, reg, &data);
             if (data != (1 << bit)) {
                 data = 0xFF;
-                return 0;
+                return false;
             }
         }
         mcp23017_write(hdev, reg, &reg_data);
     }
     mcp23017_iodir(hdev, 0, 0xFF);
     mcp23017_iodir(hdev, 1, 0xFF);
-    return 1;
+    return true;
 }

@@ -88,6 +88,10 @@
 #define MCP23017_GPPU_IO6_ENABLED  0x40
 #define MCP23017_GPPU_IO7_ENABLED  0x80
 
+//Input / Output config for register A and B
+#define IODIR_GPIOB MCP23017_IODIR_ALL_OUTPUT | MCP23017_IODIR_IO7_INPUT | MCP23017_IODIR_IO6_INPUT
+#define IODIR_GPIOA MCP23017_IODIR_ALL_INPUT
+
 //GPIOB pins start from number 8
 enum GPIO_PINS {
     FB_INVERTERS = 0U,
@@ -123,12 +127,12 @@ HAL_StatusTypeDef mcp23017_iodir(MCP23017_HandleTypeDef *hdev, uint8_t port, uin
 HAL_StatusTypeDef mcp23017_ipol(MCP23017_HandleTypeDef *hdev, uint8_t port, uint8_t ipol);
 HAL_StatusTypeDef mcp23017_ggpu(MCP23017_HandleTypeDef *hdev, uint8_t port, uint8_t pu);
 HAL_StatusTypeDef mcp23017_read_gpio(MCP23017_HandleTypeDef *hdev, uint8_t port);
-HAL_StatusTypeDef mcp23017_write_gpio(MCP23017_HandleTypeDef *hdev, uint8_t port);
+HAL_StatusTypeDef mcp23017_write_gpio(MCP23017_HandleTypeDef *hdev, uint8_t port, uint8_t *data);
 void mcp23017_print_gpioA(MCP23017_HandleTypeDef *hdev, char *out);
 void mcp23017_print_gpioB(MCP23017_HandleTypeDef *hdev, char *out);
 void mcp23017_basic_config_init(MCP23017_HandleTypeDef *hdev, I2C_HandleTypeDef *hi2c);
-void mcp23017_read_both(MCP23017_HandleTypeDef *hdev, I2C_HandleTypeDef *hi2c);
-void mcp23017_read_and_print_both(MCP23017_HandleTypeDef *hdev, I2C_HandleTypeDef *hi2c);
+void mcp23017_read_both(MCP23017_HandleTypeDef *hdev);
+void mcp23017_read_and_print_both(MCP23017_HandleTypeDef *hdev);
 uint8_t mcp23017_get_state(MCP23017_HandleTypeDef *hdev, uint8_t gpio_port, uint8_t gpio_pin);
-uint8_t mcptest(MCP23017_HandleTypeDef *hdev);
+uint8_t mcp23017_test(MCP23017_HandleTypeDef *hdev);
 #endif

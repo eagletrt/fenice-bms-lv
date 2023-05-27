@@ -285,7 +285,7 @@ void _cli_adc(uint16_t argc, char **argv, char *out) {
 
 void _cli_feedbacks(uint16_t argc, char **argv, char *out) {
     out[0] = '\0';
-    mcp23017_read_both(&hmcp, &hi2c3);
+    mcp23017_read_both(&hmcp);
     mcp23017_print_gpioA(&hmcp, out);
     mcp23017_print_gpioB(&hmcp, out);
 }
