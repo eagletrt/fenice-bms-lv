@@ -221,6 +221,7 @@ int main(void) {
     /* USER CODE BEGIN WHILE */
     //errors_timer = HAL_GetTick();
     //static bool first = true;
+    mcp23017_set_gpio(&hmcp, MCP23017_PORTB, LED_R, 1);
     while (1) {
         // Running stage
         // if (is_bms_on_fault) {
@@ -397,7 +398,7 @@ static inline void check_DCDCs_voltages() {
  * 
  */
 void check_on_feedbacks() {
-    mcp23017_read_both(&hmcp, &hi2c3);
+    mcp23017_read_both(&hmcp);
     check_DCDCs_voltages();
     !FDBK_RELAY_get_state() ? error_set(ERROR_RELAY, 0, HAL_GetTick()) : error_reset(ERROR_RELAY, 0);
 }

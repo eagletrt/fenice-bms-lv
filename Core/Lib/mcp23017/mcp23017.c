@@ -58,6 +58,34 @@ HAL_StatusTypeDef mcp23017_read_gpio(MCP23017_HandleTypeDef *hdev, uint8_t port)
     return status;
 }
 
+HAL_StatusTypeDef mcp23017_write_gpio(MCP23017_HandleTypeDef *hdev, uint8_t port, uint8_t *data) {
+    return mcp23017_write(hdev, REGISTER_GPIOA | port, data);
+}
+
+/**
+ * @brief Set the pin state of a gpio output
+ * 
+ * @param hdev MCP23017_HandleTypeDef handle for the device
+ * @param port GPIO port to be written to this can be either MCP23017_PORTA or MCP23017_PORTB
+ * @param pin Pin of the GPIO bank that will be set
+ * @param pinState Value to be written to the pin, 0 for low 1 for high
+ * @return HAL_OK if all has gone well
+*/
+HAL_StatusTypeDef mcp23017_set_gpio(MCP23017_HandleTypeDef *hdev, uint8_t port, uint8_t pin, uint8_t pinState) {
+    uint8_t data;
+
+    mcp23017_read_gpio(hdev, port);
+    data = hdev->gpio[port];
+
+    if (!pinState) {
+        data &= ~(1 << (pin % 8));
+    } else {
+        data |= (1 << (pin % 8));
+    }
+
+    return mcp23017_write_gpio(hdev, port, &data);
+}
+
 void mcp23017_print_gpioA(MCP23017_HandleTypeDef *hdev, char *out) {
     char mcp_buff[30];
     for (uint8_t i = 0; i < GPIOA_TOTAL_FB; i++) {
@@ -170,6 +198,14 @@ void mcp23017_basic_config_init(MCP23017_HandleTypeDef *hdev, I2C_HandleTypeDef 
         printl("IPOL ERROR GPIOB", ERR_HEADER);
         error_set(ERROR_MCP23017, 0, HAL_GetTick());
     }
+    if (mcp23017_write_gpio(hdev, MCP23017_PORTA, &hdev->gpio[0]) != HAL_OK) {
+        printl("IPOL ERROR GPIOA", ERR_HEADER);
+        error_set(ERROR_MCP23017, 0, HAL_GetTick());
+    }
+    if (mcp23017_write_gpio(hdev, MCP23017_PORTB, &hdev->gpio[0]) != HAL_OK) {
+        printl("IPOL ERROR GPIOB", ERR_HEADER);
+        error_set(ERROR_MCP23017, 0, HAL_GetTick());
+    }
 }
 
 /**
@@ -178,7 +214,7 @@ void mcp23017_basic_config_init(MCP23017_HandleTypeDef *hdev, I2C_HandleTypeDef 
  * @param hdev MCP23017_HandleTypeDef handle for the device
  */
 void mcp23017_read_and_print_both(MCP23017_HandleTypeDef *hdev) {
-    HAL_StatusTypeDef res = HAL_I2C_Mem_Read(hdev->hi2c, hdev->addr, REGISTER_GPIOA, 1, hdev->gpio, 1, 100);
+    HAL_StatusTypeDef res = HAL_I2C_Mem_Read(hdev->hi2c, hdev->addr, REGISTER_GPIOA, 1, &hdev->gpio[0], 1, 100);
     if (res != HAL_OK) {
         printl("GPIOA READ ERROR", ERR_HEADER);
         error_set(ERROR_MCP23017, 0, HAL_GetTick());
@@ -186,7 +222,7 @@ void mcp23017_read_and_print_both(MCP23017_HandleTypeDef *hdev) {
         error_reset(ERROR_MCP23017, 0);
         mcp23017_print_gpioA(hdev, NULL);
     }
-    res = HAL_I2C_Mem_Read(hdev->hi2c, hdev->addr, REGISTER_GPIOB, 1, hdev->gpio + 1, 1, 100);
+    res = HAL_I2C_Mem_Read(hdev->hi2c, hdev->addr, REGISTER_GPIOB, 1, &hdev->gpio[1], 1, 100);
     if (res != HAL_OK) {
         printl("GPIOB READ ERROR", ERR_HEADER);
         error_set(ERROR_MCP23017, 0, HAL_GetTick());
