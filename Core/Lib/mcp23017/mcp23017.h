@@ -128,6 +128,7 @@ HAL_StatusTypeDef mcp23017_ipol(MCP23017_HandleTypeDef *hdev, uint8_t port, uint
 HAL_StatusTypeDef mcp23017_ggpu(MCP23017_HandleTypeDef *hdev, uint8_t port, uint8_t pu);
 HAL_StatusTypeDef mcp23017_read_gpio(MCP23017_HandleTypeDef *hdev, uint8_t port);
 HAL_StatusTypeDef mcp23017_write_gpio(MCP23017_HandleTypeDef *hdev, uint8_t port, uint8_t *data);
+HAL_StatusTypeDef mcp23017_set_gpio(MCP23017_HandleTypeDef *hdev, uint8_t port, uint8_t pin, uint8_t pinState);
 void mcp23017_print_gpioA(MCP23017_HandleTypeDef *hdev, char *out);
 void mcp23017_print_gpioB(MCP23017_HandleTypeDef *hdev, char *out);
 void mcp23017_basic_config_init(MCP23017_HandleTypeDef *hdev, I2C_HandleTypeDef *hi2c);
