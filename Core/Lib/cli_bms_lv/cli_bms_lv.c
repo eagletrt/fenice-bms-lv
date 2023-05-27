@@ -33,12 +33,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define N_COMMANDS 13
+#define N_COMMANDS 14
 
 cli_command_func_t _cli_volts;
 cli_command_func_t _cli_radiator;
 cli_command_func_t _cli_pumps;
 cli_command_func_t _cli_temps;
+cli_command_func_t _cli_adc;
 cli_command_func_t _cli_feedbacks;
 cli_command_func_t _cli_dmesg;
 cli_command_func_t _cli_reset;
@@ -54,6 +55,7 @@ cli_command_func_t *commands[N_COMMANDS] = {
     &_cli_radiator,
     &_cli_pumps,
     &_cli_temps,
+    &_cli_adc,
     &_cli_feedbacks,
     &_cli_dmesg,
     &_cli_reset,
@@ -69,6 +71,7 @@ char *command_names[N_COMMANDS] = {
     "radiator",
     "pumps",
     "temps",
+    "adc",
     "feedbacks",
     "dmesg",
     "reset",
@@ -201,17 +204,85 @@ void _cli_temps(uint16_t argc, char **argv, char *out) {
     sprintf(
         out,
         "ADC sensors:\r\n\t"
-        "Current: %f [mA]\r\n\t"
         "Batt1: %f [°C]\r\n\t"
         "Batt2: %f [°C]\r\n\t"
         "DCDC 12V: %f[°C]\r\n\t"
         "DCDC 24V: %f[°C]\r\n",
-        CT_get_electric_current_mA(),
         THC_get_temperature_C(&hTHC_BATT1),
         THC_get_temperature_C(&hTHC_BATT2),
         THC_get_temperature_C(&hTHC_DCDC12V),
         THC_get_temperature_C(&hTHC_DCDC24V));
 }
+
+void _cli_adc(uint16_t argc, char **argv, char *out) {
+    if (argc < 2) {
+        sprintf(out, "Invalid arguments \r\nUsage: adc {hall/fb/ind}\r\n");
+    } else {
+        if (strcmp(argv[1], "hall") == 0) {
+            sprintf(
+                out,
+                "Hall ocd 0: %.2f mV\r\n"
+                "Hall ocd 1: %.2f mV\r\n"
+                "Hall ocd 2: %.2f mV\r\n"
+                "S hall 0: %.2f mA\r\n"
+                "S hall 1: %.2f mA\r\n"
+                "S hall 2: %.2f mA\r\n",
+                adcs_converted_values.mux_hall.HALL_OCD0,
+                adcs_converted_values.mux_hall.HALL_OCD1,
+                adcs_converted_values.mux_hall.HALL_OCD2,
+                adcs_converted_values.mux_hall.S_HALL0,
+                adcs_converted_values.mux_hall.S_HALL1,
+                adcs_converted_values.mux_hall.S_HALL2);
+        } else if (strcmp(argv[1], "fb") == 0) {
+            sprintf(
+                out,
+                "SD_END: %.2f mV\r\n"
+                "BSPD_FB: %.2f mV\r\n"
+                "IMD_FB: %.2f mV\r\n"
+                "LVMS_FB: %.2f mV\r\n"
+                "RES_FB: %.2f mV\r\n"
+                "TSMS_FB: %.2f mV\r\n"
+                "LV_ENCL_1_FB: %.2f mV\r\n"
+                "LV_ENCL_2_FB: %.2f mV\r\n"
+                "HV_ENCL_1_FB: %.2f mV\r\n"
+                "HV_ENCL_2_FB: %.2f mV\r\n"
+                "BACK_PLATE_FB: %.2f mV\r\n"
+                "HVD_FB: %.2f mV\r\n"
+                "AMS_FB: %.2f mV\r\n"
+                "ASMS_FB: %.2f mV\r\n"
+                "INTERLOCK_IMD_FB: %.2f mV\r\n"
+                "SD_START: %.2f mV\r\n",
+                adcs_converted_values.mux_fb.SD_END,
+                adcs_converted_values.mux_fb.BSPD_FB,
+                adcs_converted_values.mux_fb.IMD_FB,
+                adcs_converted_values.mux_fb.LVMS_FB,
+                adcs_converted_values.mux_fb.RES_FB,
+                adcs_converted_values.mux_fb.TSMS_FB,
+                adcs_converted_values.mux_fb.LV_ENCL_1_FB,
+                adcs_converted_values.mux_fb.LV_ENCL_2_FB,
+                adcs_converted_values.mux_fb.HV_ENCL_1_FB,
+                adcs_converted_values.mux_fb.HV_ENCL_2_FB,
+                adcs_converted_values.mux_fb.BACK_PLATE_FB,
+                adcs_converted_values.mux_fb.HVD_FB,
+                adcs_converted_values.mux_fb.AMS_FB,
+                adcs_converted_values.mux_fb.ASMS_FB,
+                adcs_converted_values.mux_fb.INTERLOCK_IMD_FB,
+                adcs_converted_values.mux_fb.SD_START);
+        } else if (strcmp(argv[1], "ind") == 0) {
+            sprintf(
+                out,
+                "As computer fb: %.2f mV\r\n"
+                "Relay out: %.2f mV\r\n"
+                "Lvms out: %.2f mV\r\n"
+                "Batt out: %.2f mV\r\n",
+                adcs_converted_values.as_computer_fb,
+                adcs_converted_values.relay_out,
+                adcs_converted_values.lvms_out,
+                adcs_converted_values.batt_out);
+        }
+    }
+}
+
 void _cli_feedbacks(uint16_t argc, char **argv, char *out) {
     out[0] = '\0';
     mcp23017_read_both(&hmcp, &hi2c3);
@@ -283,19 +354,19 @@ void _cli_errors(uint16_t argc, char **argv, char *out) {
 
 void _cli_inv(uint16_t argc, char **argv, char *out) {
     if (strcmp(argv[1], "on") == 0) {
-        HAL_GPIO_WritePin(INV_RFE_GPIO_Port, INV_RFE_Pin, GPIO_PIN_SET);
-        HAL_Delay(1500);  // works
-        HAL_GPIO_WritePin(INV_FRG_GPIO_Port, INV_FRG_Pin, GPIO_PIN_SET);
+        // HAL_GPIO_WritePin(INV_RFE_GPIO_Port, INV_RFE_Pin, GPIO_PIN_SET);
+        // HAL_Delay(1500);  // works
+        // HAL_GPIO_WritePin(INV_FRG_GPIO_Port, INV_FRG_Pin, GPIO_PIN_SET);
     } else if (strcmp(argv[1], "off") == 0) {
-        HAL_GPIO_WritePin(INV_RFE_GPIO_Port, INV_RFE_Pin, GPIO_PIN_RESET);
-        HAL_Delay(1500);  // works
-        HAL_GPIO_WritePin(INV_FRG_GPIO_Port, INV_FRG_Pin, GPIO_PIN_RESET);
+        // HAL_GPIO_WritePin(INV_RFE_GPIO_Port, INV_RFE_Pin, GPIO_PIN_RESET);
+        // HAL_Delay(1500);  // works
+        // HAL_GPIO_WritePin(INV_FRG_GPIO_Port, INV_FRG_Pin, GPIO_PIN_RESET);
     }
-    sprintf(
-        out,
-        "[RFE]: %u\r\n[FRG]: %u\r\n",
-        HAL_GPIO_ReadPin(INV_RFE_GPIO_Port, INV_RFE_Pin),
-        HAL_GPIO_ReadPin(INV_FRG_GPIO_Port, INV_FRG_Pin));
+    // sprintf(
+    //     out,
+    //     "[RFE]: %u\r\n[FRG]: %u\r\n",
+    //     HAL_GPIO_ReadPin(INV_RFE_GPIO_Port, INV_RFE_Pin),
+    //     HAL_GPIO_ReadPin(INV_FRG_GPIO_Port, INV_FRG_Pin));
 }
 
 void _cli_cooling(uint16_t argc, char **argv, char *out) {
