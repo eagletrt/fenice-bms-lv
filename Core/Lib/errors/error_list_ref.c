@@ -18,7 +18,6 @@
 #include "error_list_ref.h"
 
 #include "fenice-config.h"
-#include "ltc_config.h"
 
 #include <stdio.h>
 

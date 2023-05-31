@@ -20,11 +20,11 @@
 #include "error.h"
 #include "i2c.h"
 #include "mcp23017.h"
+#include "monitor_int.h"
 #include "notes_buzzer.h"
 #include "radiator.h"
 #include "tim.h"
 #include "usart.h"
-#include "volt.h"
 
 /* CAN LIB */
 #include "../can-lib/lib/primary/c/ids.h"
@@ -123,7 +123,7 @@ void cli_bms_debug(char *msg, size_t length) {
 
 void _cli_volts(uint16_t argc, char **argv, char *out) {
     out[0] = '\0';
-    volt_read_and_store(out);
+    monitor_print_volt_cli(out);
     if (strcmp((argv[1]), "status") == 0) {
         sprintf(out + strlen(out), "Voltage status: %s \r\n", volt_status_name[volt_status]);
     }

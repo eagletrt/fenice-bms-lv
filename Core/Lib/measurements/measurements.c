@@ -19,6 +19,7 @@
 #include "error.h"
 #include "fenice-config.h"
 #include "main.h"
+#include "monitor_int.h"
 #include "thermocouple.h"
 #include "timer_utils.h"
 #include "volt.h"
@@ -28,7 +29,6 @@
 #endif
 
 uint8_t volatile flags;
-uint8_t open_wire_check_status = 0;
 
 void measurements_init(TIM_HandleTypeDef *htim) {
     __HAL_TIM_SetCompare(
@@ -76,25 +76,19 @@ void measurements_flags_check() {
         // Kinda ugly solution i know :(
         // From here
         if (!is_bms_on_fault) {
-// #ifdef MEAS_DEBUG
-//             cli_bms_debug("OPEN WIRE", 9);
-// #endif
-#ifdef LTC_ON_BOARD
-            volt_start_open_wire_check(open_wire_check_status);
-            open_wire_check_status += 1;                  // 1
-            volt_start_open_wire_check(open_wire_check_status);
-            open_wire_check_status += 1;                  // 2
-            volt_read_open_wire(open_wire_check_status);  // read pup
-            open_wire_check_status += 1;                  // 3
-            volt_start_open_wire_check(open_wire_check_status);
-            open_wire_check_status += 1;                  // 4
-            volt_start_open_wire_check(open_wire_check_status);
-            volt_read_open_wire(open_wire_check_status);  // read pud
-            volt_open_wire_check();
-            open_wire_check_status += (open_wire_check_status + 1) % 5;
-#else
-            // TODO: Send high level open wire check
+            // #ifdef MEAS_DEBUG
+            //             cli_bms_debug("OPEN WIRE", 9);
+            // #endif
+
+            if (volt_open_wire(&monitor_handler, LTC6811_MD_7KHZ_3KHZ, LTC6811_DCP_DISABLED, 10) == 0) {
+#ifdef NDEBUG_LTC
+                printl("Wire successful", NO_HEADER);
 #endif
+            } else {
+#ifdef NDEBUG_LTC
+                printl("Wire Error", NO_HEADER);
+#endif
+            }
         }
         flags &= ~MEAS_OPEN_WIRE_FLAG;
         // to here about 5/7 ms
@@ -114,6 +108,7 @@ void measurements_flags_check() {
     }
 
     if (flags & MEAS_VOLTS_AND_TEMPS_FLAG) {
+        monitor_read_voltage();
         flags &= ~MEAS_VOLTS_AND_TEMPS_FLAG;
     }
 
