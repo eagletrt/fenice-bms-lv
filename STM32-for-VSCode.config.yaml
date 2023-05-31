@@ -23,6 +23,7 @@ ldscript: STM32F446RETx_FLASH.ld # linker script
 cDefinitions: 
   - USE_HAL_DRIVER
   - STM32F446xx
+  - LTC_COUNT=1
 
 cxxDefinitions: []
 asDefinitions: []

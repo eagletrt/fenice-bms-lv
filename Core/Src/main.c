@@ -44,6 +44,7 @@
 #include "inverters.h"
 #include "mcp23017.h"
 #include "measurements.h"
+#include "monitor_int.h"
 #include "notes_buzzer.h"
 #include "pwm.h"
 #include "radiator.h"
@@ -51,7 +52,6 @@
 #include "string.h"
 #include "thermocouple.h"
 #include "timer_utils.h"
-#include "volt.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -172,6 +172,7 @@ int main(void) {
     // Blink to signal correct MX_XXX_init processes (usuefull for CAN transciever)
     cli_bms_lv_init();
     error_init();
+    monitor_init();
 
     init_inverter_struct(&car_inverters);
     //Init feedbacks chip
@@ -194,10 +195,10 @@ int main(void) {
     sprintf(main_buff, "LTC ID %s", ltc6810_return_serial_id());
     printl(main_buff, NO_HEADER);
 #endif
-    /*printl("Relay out disabled, waiting 1 seconds before reading voltages\r\n", NO_HEADER);
-    HAL_Delay(1000);*/
+    printl("Relay out disabled, waiting 1 seconds before reading voltages\r\n", NO_HEADER);
+    HAL_Delay(1000);
 
-    // check_initial_voltage();
+    check_initial_voltage();
 
     //check_DCDCs_voltages();
 
@@ -208,11 +209,6 @@ int main(void) {
     can_secondary_init();
 
     measurements_init(&MEASUREMENTS_TIMER);
-
-    pwm_start_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
-
-    HAL_Delay(BUZZER_ALARM_TIME);
-    pwm_stop_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
     // END OF WARM UP STAGE
 
     /* USER CODE END 2 */
@@ -327,15 +323,15 @@ void HAL_RCC_CSSCallback(void) {
  */
 static inline void check_initial_voltage() {
     sprintf(main_buff, "Checking if total voltage on board is above %.2fV", MIN_POWER_ON_VOLTAGE);
-    for (uint8_t i = DEAD_CELLS_OFFSET; i < VOLT_MAX_ATTEMPTS; i++) {
+    for (uint8_t i = 0; i < VOLT_MAX_ATTEMPTS; i++) {
         sprintf(main_buff, "Closing relay phase: attempt %d of %d", i + 1, VOLT_MAX_ATTEMPTS);
         printl(main_buff, NO_HEADER);
-        if (volt_read_and_print() == VOLT_OK) {
+        if (monitor_print_volt() == VOLT_OK) {
             printl("Relay on", NORM_HEADER);
             // TODO: CHANGE PIN L_OTHER
             //HAL_GPIO_WritePin(L_OTHER_GPIO_Port, L_OTHER_Pin, GPIO_PIN_SET);
             pwm_start_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
-            LV_MASTER_RELAY_set_state(GPIO_PIN_SET);
+            //LV_MASTER_RELAY_set_state(GPIO_PIN_SET);
             HAL_Delay(BUZZER_ALARM_TIME);
             pwm_stop_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
             i = VOLT_MAX_ATTEMPTS;

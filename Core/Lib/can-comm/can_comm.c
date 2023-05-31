@@ -23,9 +23,9 @@
 #include "fenice-config.h"
 #include "inverters.h"
 #include "main.h"
+#include "monitor_int.h"
 #include "radiator.h"
 #include "thermocouple.h"
-#include "volt.h"
 
 CAN_TxHeaderTypeDef tx_header;
 CAN_RxHeaderTypeDef rx_header;
