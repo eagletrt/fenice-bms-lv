@@ -22,6 +22,7 @@
 #define CAN_MAX_PAYLOAD_LENGTH 8
 
 #define LV_CELLS_COUNT 12
+#define NTC_COUNT      12
 
 /**
  * BMS LV COSTRAINTS

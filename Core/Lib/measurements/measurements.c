@@ -40,21 +40,25 @@ void measurements_init(TIM_HandleTypeDef *htim) {
         htim, MEAS_ALL_ANALOG_SIGNALS_TIMER_CHANNEL, TIM_MS_TO_TICKS(htim, MEAS_ALL_ANALOG_SIGNALS_INTERVAL_MS));
 
     __HAL_TIM_SetCompare(
-        htim, MEAS_LV_VERSION_AND_COOLING_TIMER_CHANNEL, TIM_MS_TO_TICKS(htim, MEAS_VOLTS_AND_TEMPS_INTERVAL_MS));
+        htim, MEAS_VOLTS_AND_TEMPS_TIMER_CHANNEL, TIM_MS_TO_TICKS(htim, MEAS_VOLTS_AND_TEMPS_INTERVAL_MS));
 
     __HAL_TIM_SetCompare(
         htim,
         MEAS_LV_VERSION_AND_COOLING_TIMER_CHANNEL,
         TIM_MS_TO_TICKS(htim, MEAS_LV_VERSION_AND_COOLING_INTERVAL_MS));
 
+    __HAL_TIM_SetCompare(htim, MEAS_CELL_TEMPS_TIMER_CHANNEL, TIM_MS_TO_TICKS(htim, MEAS_CELL_TEMPS_INTERVAL_MS));
+
     __HAL_TIM_CLEAR_IT(&OPEN_WIRE_MEASUREMENT_TIMER, TIM_IT_CC2);
     __HAL_TIM_CLEAR_IT(htim, TIM_IT_CC1);
     __HAL_TIM_CLEAR_IT(htim, TIM_IT_CC2);
     __HAL_TIM_CLEAR_IT(htim, TIM_IT_CC3);
+    __HAL_TIM_CLEAR_IT(htim, TIM_IT_CC4);
 
     HAL_TIM_OC_Start_IT(htim, MEAS_ALL_ANALOG_SIGNALS_TIMER_CHANNEL);
     HAL_TIM_OC_Start_IT(htim, MEAS_VOLTS_AND_TEMPS_TIMER_CHANNEL);
     HAL_TIM_OC_Start_IT(htim, MEAS_LV_VERSION_AND_COOLING_TIMER_CHANNEL);
+    HAL_TIM_OC_Start_IT(htim, MEAS_CELL_TEMPS_TIMER_CHANNEL);
     HAL_TIM_OC_Start_IT(&OPEN_WIRE_MEASUREMENT_TIMER, OPEN_WIRE_TIMER_CHANNEL);
 
     flags = 0;
@@ -93,10 +97,13 @@ void measurements_flags_check() {
         flags &= ~MEAS_OPEN_WIRE_FLAG;
         // to here about 5/7 ms
     }
-    if (flags & MEAS_ALL_ANALOG_SIGNALS_FLAG) {
-        //uint16_t raw = ADC_get_batt_fb_raw();
-        // convert
+    if (flags & MEAS_CELL_TEMPS_FLAG) {
+        monitor_read_temp();
+        flags &= ~MEAS_CELL_TEMPS_FLAG;
+    }
 
+    if (flags & MEAS_ALL_ANALOG_SIGNALS_FLAG) {
+        monitor_temp_conversion();
         relay_out_conversion();
         lvms_out_conversion();
         as_computer_fb_conversion();
@@ -153,6 +160,12 @@ void measurements_oc_handler(TIM_HandleTypeDef *htim) {
                     MEAS_LV_VERSION_AND_COOLING_TIMER_CHANNEL,
                     counter + TIM_MS_TO_TICKS(htim, MEAS_LV_VERSION_AND_COOLING_INTERVAL_MS));
                 flags |= MEAS_LV_VERSION_AND_COOLING_FLAG;
+                break;
+
+            case MEAS_CELL_TEMPS_TIMER_ACTIVE_CHANNEL:
+                __HAL_TIM_SetCompare(
+                    htim, MEAS_CELL_TEMPS_TIMER_CHANNEL, counter + TIM_MS_TO_TICKS(htim, MEAS_CELL_TEMPS_INTERVAL_MS));
+                flags |= MEAS_CELL_TEMPS_FLAG;
                 break;
 
             default:

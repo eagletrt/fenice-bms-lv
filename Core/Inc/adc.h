@@ -332,3 +332,4 @@ void batt_out_conversion();
 #endif
 
 #endif /* __ADC_H__ */
+
