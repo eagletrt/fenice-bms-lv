@@ -24,6 +24,7 @@ cDefinitions:
   - USE_HAL_DRIVER
   - STM32F446xx
   - LTC_COUNT=1
+  - NOLOGGER
 
 cxxDefinitions: []
 asDefinitions: []

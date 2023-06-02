@@ -25,6 +25,7 @@
 #include "error.h"
 #include "main.h"
 #include "measurements.h"
+#include "monitor_int.h"
 
 /* Radiator1 -> TIM4 CH3 */
 /* Radiator2 -> TIM4 CH4 */
@@ -705,6 +706,7 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim) {
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
     static int samples = 0;
+    //static int cell    = 0;
     if (htim->Instance == TIMER_ADC_MEAS.Instance) {
         /*** NOTE: Using mux_fb_index_internal only because the address of the mux is shared between the
                       muxes *and because fb_mux has 16 channels and hall_mux only 8,

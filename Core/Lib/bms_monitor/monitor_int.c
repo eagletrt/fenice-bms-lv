@@ -20,14 +20,17 @@
 #include <string.h>
 
 voltage_t voltages[LV_CELLS_COUNT] = {0};
-float temperatures[NTC_COUNT]      = {0.0};
+float cell_temps[NTC_COUNT]        = {0.0};
 float total_voltage_on_board       = 0.0;
 char buff[500];
 uint8_t voltage_min_index;
 uint8_t volt_status;
 float total_voltage_on_board;
 LTC6811_HandleTypeDef monitor_handler;
-
+uint8_t cell_col_index                                    = 255;
+uint8_t cell_row_index                                    = 0;
+uint16_t cell_temps_raw[CELL_TEMPS_ARRAY_SIZE][NTC_COUNT] = {0};
+uint8_t stocazzo                                          = 0;
 void monitor_init() {
     LTC6811_CFGR config;
     config.ADCOPT             = 0;
@@ -179,6 +182,71 @@ uint8_t monitor_print_volt_cli(char *buf) {
 }
 
 void monitor_read_temp() {
+    uint16_t raw_temp[3] = {0};
+    uint32_t timeout     = 2;
+    HAL_StatusTypeDef status;
+    if (cell_col_index != 255) {
+        ltc6811_adax(&monitor_handler, LTC6811_MD_27KHZ_14KHZ, LTC6811_CHG_GPIO_1);
+        // Poll for conversion status with a timeout
+        uint32_t t0 = HAL_GetTick();
+        while ((status = ltc6811_pladc(&monitor_handler)) != HAL_OK && HAL_GetTick() - t0 < timeout)
+            ;
+        volatile uint32_t delta = HAL_GetTick() - t0;
+        if (status != HAL_OK) {
+            // throw error!
+        }
+        ltc6811_rdaux(&monitor_handler, LTC6811_AVAR, &raw_temp);
+
+        cell_temps_raw[cell_row_index][cell_col_index] = raw_temp[0];
+
+        // if (cell_temps[cell_index] > MAX_CELLS_ALLOWED_TEMP) {
+        //     error_set(ERROR_CELL_OVER_TEMPERATURE, cell_index);
+        // } else if (cell_temps[cell_index] < MIN_CELLS_ALLOWED_TEMP) {
+        //     error_set(ERROR_CELL_OVER_TEMPERATURE, cell_index);
+        //     error_set(ERROR_CELL_UNDER_TEMPERATURE, cell_index);
+        // } else {
+        //     error_reset(ERROR_CELL_OVER_TEMPERATURE, cell_index);
+        //     error_reset(ERROR_CELL_UNDER_TEMPERATURE, cell_index);
+        // }
+
+        cell_col_index = (cell_col_index + 1) % NTC_COUNT;
+        stocazzo       = (stocazzo + 1) % (NTC_COUNT * CELL_TEMPS_ARRAY_SIZE);
+        cell_row_index = (cell_row_index + 1) % CELL_TEMPS_ARRAY_SIZE;
+        if (stocazzo == 0) {
+            HAL_GPIO_TogglePin(NC_MCU0_GPIO_Port, NC_MCU0_Pin);
+        }
+    } else {
+        cell_col_index = 0;
+    }
+    monitor_handler.config->GPIO = (cell_col_index & 1) << 4 | (cell_col_index & 2) << 2 | (cell_col_index & 4) |
+                                   (cell_col_index & 8) >> 2 | 1;
+    ltc6811_wrcfg(&monitor_handler);
+    ltc6811_adax(&monitor_handler, LTC6811_MD_7KHZ_3KHZ, LTC6811_CHG_GPIO_1);
+}
+
+void monitor_temp_conversion() {
+    for (int i = 0; i < NTC_COUNT; i++) {
+        float val = 0;
+        for (int j = 0; j < CELL_TEMPS_ARRAY_SIZE; j++) {
+            val += cell_temps_raw[j][i];
+        }
+        val /= CELL_TEMPS_ARRAY_SIZE;
+        val           = (val / 10.0) * 1.0;
+        float val2    = val * val;
+        float val3    = val2 * val;
+        float val4    = val3 * val;
+        cell_temps[i] = (float)(TEMP_CONST_a + TEMP_CONST_b * val + TEMP_CONST_c * val2 + TEMP_CONST_d * val3 +
+                                TEMP_CONST_e * val4);
+    }
+}
+
+void monitor_print_temps(char *buf) {
+    memset(buff, 0, sizeof(buff));
+    for (uint8_t i = 0; i < NTC_COUNT; i++) {
+        sprintf(buff, "Cell %u: %.4f[°C]\r\n", i, cell_temps[i]);
+        sprintf(buf + strlen(buf), "%s", buff);
+    }
+    //sprintf(buf + strlen(buf), "%s", buff);
 }
 
 // #ifdef CELL_0_IS_ALIVE

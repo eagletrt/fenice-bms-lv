@@ -49,7 +49,6 @@
 #include "radiator.h"
 #include "stdio.h"
 #include "string.h"
-#include "temperature.h"
 #include "thermocouple.h"
 #include "timer_utils.h"
 /* USER CODE END Includes */
@@ -172,7 +171,7 @@ int main(void) {
     ADC_start_ADC2_readings();
     // Blink to signal correct MX_XXX_init processes (usuefull for CAN transciever)
     cli_bms_lv_init();
-    //error_init();
+    error_init();
     ADC_init_status_flags();
     ADC_init_mux();
     ADC_Vref_Calibration();
@@ -208,7 +207,7 @@ int main(void) {
     printl("Relay out disabled, waiting 1 seconds before reading voltages\r\n", NO_HEADER);
     HAL_Delay(1000);
 
-    //check_initial_voltage();
+    check_initial_voltage();
 
     //check_DCDCs_voltages();
 
@@ -218,7 +217,7 @@ int main(void) {
     can_primary_init();
     can_secondary_init();
 
-    //measurements_init(&MEASUREMENTS_TIMER);
+    measurements_init(&MEASUREMENTS_TIMER);
     // END OF WARM UP STAGE
 
     /* USER CODE END 2 */
@@ -233,6 +232,7 @@ int main(void) {
         if (is_bms_on_fault) {
             bms_error_state();
         } else {
+            measurements_flags_check();
             cli_loop(&cli_bms_lv);
             //TODO: REMOVE measurements_flags_check();  // measure and sends via can
             // check_on_feedbacks();  //check dcdcs and relay fb

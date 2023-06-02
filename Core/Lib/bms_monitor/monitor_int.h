@@ -15,10 +15,22 @@
 #include "monitor_config.h"
 #include "spi.h"
 
+//coefficient for conversion formula from voltage input to temperature
+#define TEMP_CONST_a 127.02004615145405
+#define TEMP_CONST_b -0.06979687590434158
+#define TEMP_CONST_c 2.1026948971763155e-05
+#define TEMP_CONST_d -3.3042552498294913e-09
+#define TEMP_CONST_e 1.3552262617901958e-13
+
+#define CELL_TEMPS_ARRAY_SIZE 5
+
 extern voltage_t voltages[LV_CELLS_COUNT];
+extern uint16_t cell_temps_raw[CELL_TEMPS_ARRAY_SIZE][NTC_COUNT];
 extern float total_voltage_on_board;
 extern uint8_t volt_status;
 extern LTC6811_HandleTypeDef monitor_handler;
+extern uint8_t cell_row_index;
+extern uint8_t cell_col_index;
 
 typedef enum { VOLT_OK = 0U, VOLT_UNDER_VOLTAGE, VOLT_OVER_VOLTAGE, VOLT_ERR, VOLT_ENUM_SIZE } voltage_meas_status;
 
@@ -58,5 +70,15 @@ uint8_t monitor_print_volt_cli(char *buf);
  * @return uint8_t The index of the lower-voltage cell
  */
 uint8_t monitor_get_min_cell();
+
+/**
+ * @brief Convert all the temperature from the temperature matrix and store
+ * the new value in an array
+*/
+void monitor_temp_conversion();
+
+void monitor_read_temp();
+
+void monitor_print_temps(char *buf);
 
 #endif  // MONITOR_INT_H

@@ -201,17 +201,8 @@ void _cli_pumps(uint16_t argc, char **argv, char *out) {
     }
 }
 void _cli_temps(uint16_t argc, char **argv, char *out) {
-    sprintf(
-        out,
-        "ADC sensors:\r\n\t"
-        "Batt1: %f [°C]\r\n\t"
-        "Batt2: %f [°C]\r\n\t"
-        "DCDC 12V: %f[°C]\r\n\t"
-        "DCDC 24V: %f[°C]\r\n",
-        THC_get_temperature_C(&hTHC_BATT1),
-        THC_get_temperature_C(&hTHC_BATT2),
-        THC_get_temperature_C(&hTHC_DCDC12V),
-        THC_get_temperature_C(&hTHC_DCDC24V));
+    out[0] = '\0';
+    monitor_print_temps(out);
 }
 
 void _cli_adc(uint16_t argc, char **argv, char *out) {
