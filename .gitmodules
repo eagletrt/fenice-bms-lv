@@ -1,6 +1,7 @@
 [submodule "Core/Lib/micro-libs"]
 	path = Core/Lib/micro-libs
 	url = git@github.com:eagletrt/micro-libs.git
+	branch = bms-monitor
 [submodule "Core/Lib/can-lib"]
 	path = Core/Lib/can-lib
 	url = git@github.com:eagletrt/can.git

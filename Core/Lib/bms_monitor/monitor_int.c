@@ -20,6 +20,7 @@
 #include <string.h>
 
 voltage_t voltages[LV_CELLS_COUNT] = {0};
+float temperatures[NTC_COUNT]      = {0.0};
 float total_voltage_on_board       = 0.0;
 char buff[500];
 uint8_t voltage_min_index;
@@ -63,10 +64,10 @@ uint8_t monitor_read_voltage() {
             // Check whether a cell is undervoltage or overvoltage and set/reset its specific error
             if ((float)voltages[i] / 1000 <= VOLT_MIN_ALLOWED_VOLTAGE) {
                 volt_status = VOLT_UNDER_VOLTAGE;
-                error_set(ERROR_CELL_UNDERVOLTAGE, i, HAL_GetTick());
+                error_set(ERROR_CELL_UNDERVOLTAGE, i);
             } else if ((float)voltages[i] / 1000 >= VOLT_MAX_ALLOWED_VOLTAGE) {
                 volt_status = VOLT_OVER_VOLTAGE;
-                error_set(ERROR_CELL_OVERVOLTAGE, i, HAL_GetTick());
+                error_set(ERROR_CELL_OVERVOLTAGE, i);
             } else {
                 //cli_bms_debug("SAMPLE AND READ, REMOVED UNDERVOLTAGE", 37);
                 if (!is_bms_on_fault) {
@@ -104,12 +105,12 @@ uint8_t monitor_print_volt() {
         } else {
             if ((float)voltages[i] / 1000 >= VOLT_MAX_ALLOWED_VOLTAGE) {
                 sprintf(buff, "Error! Max allowed voltage exceeded (Cell %u: %.3fV)", i, (float)voltages[i] / 1000);
-                error_set(ERROR_CELL_OVERVOLTAGE, i, HAL_GetTick());
+                error_set(ERROR_CELL_OVERVOLTAGE, i);
                 volt_status = VOLT_OVER_VOLTAGE;
                 voltages[i] = 0xff;
             } else if ((float)voltages[i] / 1000 <= VOLT_MIN_ALLOWED_VOLTAGE) {
                 sprintf(buff, "Error! Min allowed voltage exceeded (Cell %u: %.3fV)", i, (float)voltages[i] / 1000);
-                error_set(ERROR_CELL_UNDERVOLTAGE, i, HAL_GetTick());
+                error_set(ERROR_CELL_UNDERVOLTAGE, i);
                 volt_status = VOLT_UNDER_VOLTAGE;
                 voltages[i] = 0x00;
             } else {
@@ -151,7 +152,7 @@ uint8_t monitor_print_volt_cli(char *buf) {
             } else if ((float)voltages[i] / 1000 <= VOLT_MIN_ALLOWED_VOLTAGE) {
                 sprintf(
                     buff, "Error! Min allowed voltage exceeded (Cell %u: %.3fV) \r\n", i, (float)voltages[i] / 1000);
-                error_set(ERROR_CELL_UNDERVOLTAGE, i, HAL_GetTick());
+                error_set(ERROR_CELL_UNDERVOLTAGE, i);
                 volt_status = VOLT_UNDER_VOLTAGE;
                 //voltages[i] = 0x00;
             } else {
@@ -175,6 +176,9 @@ uint8_t monitor_print_volt_cli(char *buf) {
     }
     sprintf(buf + strlen(buf), "Total voltage on board: %.3fV \r\n", total_voltage_on_board);
     return volt_status;
+}
+
+void monitor_read_temp() {
 }
 
 // #ifdef CELL_0_IS_ALIVE

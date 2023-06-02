@@ -20,7 +20,6 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-#include "adc.h"
 #include "can.h"
 #include "dac.h"
 #include "gpio.h"
@@ -50,6 +49,7 @@
 #include "radiator.h"
 #include "stdio.h"
 #include "string.h"
+#include "temperature.h"
 #include "thermocouple.h"
 #include "timer_utils.h"
 /* USER CODE END Includes */
@@ -141,6 +141,7 @@ int main(void) {
     MX_TIM4_Init();
     MX_UART5_Init();
     MX_TIM10_Init();
+    MX_TIM1_Init();
     /* USER CODE BEGIN 2 */
     /* USER CODE BEGIN 2 */
 
@@ -171,7 +172,12 @@ int main(void) {
     ADC_start_ADC2_readings();
     // Blink to signal correct MX_XXX_init processes (usuefull for CAN transciever)
     cli_bms_lv_init();
-    error_init();
+    //error_init();
+    ADC_init_status_flags();
+    ADC_init_mux();
+    ADC_Vref_Calibration();
+    // ADC_hall_sensor_calibration();
+    // ADC_start_ADC2_readings();
     monitor_init();
 
     init_inverter_struct(&car_inverters);
@@ -188,6 +194,10 @@ int main(void) {
     pwm_set_period(&INTERNAL_FAN_HTIM, 0.04);
     pwm_set_duty_cicle(&INTERNAL_FAN_HTIM, INTERNAL_FAN_PWM_TIM_CHNL, 0.9);
     pwm_start_channel(&INTERNAL_FAN_HTIM, INTERNAL_FAN_PWM_TIM_CHNL);
+    pwm_start_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
+    //LV_MASTER_RELAY_set_state(GPIO_PIN_SET);
+    HAL_Delay(BUZZER_ALARM_TIME);
+    pwm_stop_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
 
     // Keeps SPI CS high
     // ltc6810_disable_cs(&SPI);
@@ -198,7 +208,7 @@ int main(void) {
     printl("Relay out disabled, waiting 1 seconds before reading voltages\r\n", NO_HEADER);
     HAL_Delay(1000);
 
-    check_initial_voltage();
+    //check_initial_voltage();
 
     //check_DCDCs_voltages();
 
@@ -208,7 +218,7 @@ int main(void) {
     can_primary_init();
     can_secondary_init();
 
-    measurements_init(&MEASUREMENTS_TIMER);
+    //measurements_init(&MEASUREMENTS_TIMER);
     // END OF WARM UP STAGE
 
     /* USER CODE END 2 */
@@ -220,24 +230,22 @@ int main(void) {
     mcp23017_set_gpio(&hmcp, MCP23017_PORTB, LED_R, 1);
     while (1) {
         // Running stage
-        // if (is_bms_on_fault) {
-        //     bms_error_state();
-        // } else {
-        //     cli_loop(&cli_bms_lv);
-        //     //TODO: REMOVE measurements_flags_check();  // measure and sends via can
-        //     check_on_feedbacks();  //check dcdcs and relay fb
-        //     if (error_count() > 0 && errors_timer + 10 > errors_timer) {
-        //         can_primary_send(primary_ID_LV_ERRORS);
-        //         errors_timer = HAL_GetTick();
-        //     }
+        if (is_bms_on_fault) {
+            bms_error_state();
+        } else {
+            cli_loop(&cli_bms_lv);
+            //TODO: REMOVE measurements_flags_check();  // measure and sends via can
+            // check_on_feedbacks();  //check dcdcs and relay fb
+            // if (error_count() > 0 && errors_timer + 10 > errors_timer) {
+            //     can_primary_send(primary_ID_LV_ERRORS);
+            //     errors_timer = HAL_GetTick();
+            // }
 
-        //     inverters_loop(&car_inverters);
+            // inverters_loop(&car_inverters);
 
-        //     cooling_routine(10);
-        // }
-        ADC_Routine();
-        measurements_flags_check();
-        cli_loop(&cli_bms_lv);
+            // cooling_routine(10);
+        }
+        // ADC_Routine();
         //cooling_routine(10);
         /*if (!first) {
             first = true;
@@ -341,7 +349,7 @@ static inline void check_initial_voltage() {
     }
 
     if (volt_status != VOLT_OK) {
-        error_set(ERROR_RELAY, 0, HAL_GetTick());
+        error_set(ERROR_RELAY, 0);
         //is_bms_on_fault = true;
     } else {
         error_reset(ERROR_RELAY, 0);
@@ -358,20 +366,20 @@ static inline void fans_radiators_pumps_init() {
         pwm_start_channel(&INTERNAL_FAN_HTIM, INTERNAL_FAN_PWM_TIM_CHNL);
         error_reset(ERROR_FAN, 0);
     } else {
-        error_set(ERROR_FAN, 0, HAL_GetTick());
+        error_set(ERROR_FAN, 0);
     }
 
     if (FDBK_12V_RADIATORS_get_state()) {
         start_both_radiator(&RAD_R_HTIM, RAD_L_PWM_TIM_CHNL, RAD_R_PWM_TIM_CHNL);
         error_reset(ERROR_RADIATOR, 1);
     } else {
-        error_set(ERROR_RADIATOR, 1, HAL_GetTick());
+        error_set(ERROR_RADIATOR, 1);
     }
     if (FDBK_24V_PUMPS_get_state()) {
         dac_pump_handle_init(&hdac_pump, 0.0, 0.0);
         error_reset(ERROR_PUMP, 0);
     } else {
-        error_set(ERROR_PUMP, 0, HAL_GetTick());
+        error_set(ERROR_PUMP, 0);
     }
 #ifdef PUMP_SAMPLE_TEST
     if (FDBK_24V_PUMPS_get_state()) {
@@ -385,8 +393,8 @@ static inline void fans_radiators_pumps_init() {
  * 
  */
 static inline void check_DCDCs_voltages() {
-    !FDBK_DCDC_12V_get_state() ? error_set(ERROR_DCDC12, 0, HAL_GetTick()) : error_reset(ERROR_DCDC12, 0);
-    !FDBK_DCDC_24V_get_state() ? error_set(ERROR_DCDC24, 0, HAL_GetTick()) : error_reset(ERROR_DCDC24, 0);
+    // !FDBK_DCDC_12V_get_state() ? error_set(ERROR_DCDC12, 0, HAL_GetTick()) : error_reset(ERROR_DCDC12, 0);
+    // !FDBK_DCDC_24V_get_state() ? error_set(ERROR_DCDC24, 0, HAL_GetTick()) : error_reset(ERROR_DCDC24, 0);
 }
 
 /**
@@ -396,7 +404,7 @@ static inline void check_DCDCs_voltages() {
 void check_on_feedbacks() {
     mcp23017_read_both(&hmcp);
     check_DCDCs_voltages();
-    !FDBK_RELAY_get_state() ? error_set(ERROR_RELAY, 0, HAL_GetTick()) : error_reset(ERROR_RELAY, 0);
+    !FDBK_RELAY_get_state() ? error_set(ERROR_RELAY, 0) : error_reset(ERROR_RELAY, 0);
 }
 
 /**
@@ -408,14 +416,14 @@ void bms_error_state() {
     // TODO: CHANGE PIN L_OTHER
     //HAL_GPIO_WritePin(RELAY_GPIO_Port, RELAY_Pin, GPIO_PIN_RESET);
     //HAL_GPIO_WritePin(L_ERR_GPIO_Port, L_ERR_Pin, GPIO_PIN_SET);
-    error_state_inverters(&car_inverters);
+    //error_state_inverters(&car_inverters);
     printl("ERROR STATE", ERR_HEADER);
     //HAL_GPIO_WritePin(L_OTHER_GPIO_Port, L_OTHER_Pin, GPIO_PIN_RESET);
     while (1) {
         cli_loop(&cli_bms_lv);
-        measurements_flags_check();  // measure and sends via can
+        //measurements_flags_check();  // measure and sends via can
         //HAL_GPIO_TogglePin(L_ERR_GPIO_Port, L_ERR_Pin);
-        HAL_Delay(100);
+        //HAL_Delay(100);
     }
 }
 

@@ -176,35 +176,35 @@ void mcp23017_basic_config_init(MCP23017_HandleTypeDef *hdev, I2C_HandleTypeDef 
     //error_reset(ERROR_MCP23017, 0);
     if (mcp23017_iodir(hdev, MCP23017_PORTA, IODIR_GPIOA) != HAL_OK) {
         printl("INIT ERROR GPIOA", ERR_HEADER);
-        error_set(ERROR_MCP23017, 0, HAL_GetTick());
+        error_set(ERROR_MCP23017, 0);
     }
     if (mcp23017_iodir(hdev, MCP23017_PORTB, IODIR_GPIOB) != HAL_OK) {
         printl("INIT ERROR GPIOB", ERR_HEADER);
-        error_set(ERROR_MCP23017, 0, HAL_GetTick());
+        error_set(ERROR_MCP23017, 0);
     }
     if (mcp23017_ggpu(hdev, MCP23017_PORTA, MCP23017_GPPU_ALL_DISABLED) != HAL_OK) {
         printl("GGPU ERROR GPIOA", ERR_HEADER);
-        error_set(ERROR_MCP23017, 0, HAL_GetTick());
+        error_set(ERROR_MCP23017, 0);
     }
     if (mcp23017_ggpu(hdev, MCP23017_PORTB, MCP23017_GPPU_ALL_DISABLED) != HAL_OK) {
         printl("GGPU ERROR GPIOB", ERR_HEADER);
-        error_set(ERROR_MCP23017, 0, HAL_GetTick());
+        error_set(ERROR_MCP23017, 0);
     }
     if (mcp23017_ipol(hdev, MCP23017_PORTA, MCP23017_IPOL_ALL_NORMAL) != HAL_OK) {
         printl("IPOL ERROR GPIOA", ERR_HEADER);
-        error_set(ERROR_MCP23017, 0, HAL_GetTick());
+        error_set(ERROR_MCP23017, 0);
     }
     if (mcp23017_ipol(hdev, MCP23017_PORTB, MCP23017_IPOL_ALL_NORMAL) != HAL_OK) {
         printl("IPOL ERROR GPIOB", ERR_HEADER);
-        error_set(ERROR_MCP23017, 0, HAL_GetTick());
+        error_set(ERROR_MCP23017, 0);
     }
     if (mcp23017_write_gpio(hdev, MCP23017_PORTA, &hdev->gpio[0]) != HAL_OK) {
         printl("IPOL ERROR GPIOA", ERR_HEADER);
-        error_set(ERROR_MCP23017, 0, HAL_GetTick());
+        error_set(ERROR_MCP23017, 0);
     }
     if (mcp23017_write_gpio(hdev, MCP23017_PORTB, &hdev->gpio[0]) != HAL_OK) {
         printl("IPOL ERROR GPIOB", ERR_HEADER);
-        error_set(ERROR_MCP23017, 0, HAL_GetTick());
+        error_set(ERROR_MCP23017, 0);
     }
 }
 
@@ -217,7 +217,7 @@ void mcp23017_read_and_print_both(MCP23017_HandleTypeDef *hdev) {
     HAL_StatusTypeDef res = HAL_I2C_Mem_Read(hdev->hi2c, hdev->addr, REGISTER_GPIOA, 1, &hdev->gpio[0], 1, 100);
     if (res != HAL_OK) {
         printl("GPIOA READ ERROR", ERR_HEADER);
-        error_set(ERROR_MCP23017, 0, HAL_GetTick());
+        error_set(ERROR_MCP23017, 0);
     } else {
         error_reset(ERROR_MCP23017, 0);
         mcp23017_print_gpioA(hdev, NULL);
@@ -225,7 +225,7 @@ void mcp23017_read_and_print_both(MCP23017_HandleTypeDef *hdev) {
     res = HAL_I2C_Mem_Read(hdev->hi2c, hdev->addr, REGISTER_GPIOB, 1, &hdev->gpio[1], 1, 100);
     if (res != HAL_OK) {
         printl("GPIOB READ ERROR", ERR_HEADER);
-        error_set(ERROR_MCP23017, 0, HAL_GetTick());
+        error_set(ERROR_MCP23017, 0);
     } else {
         error_reset(ERROR_MCP23017, 0);
         mcp23017_print_gpioB(hdev, NULL);
@@ -242,12 +242,12 @@ void mcp23017_read_both(MCP23017_HandleTypeDef *hdev) {
     error_reset(ERROR_MCP23017, 0);
     if (res != HAL_OK) {
         printl("GPIOA READ ERROR", ERR_HEADER);
-        error_set(ERROR_MCP23017, 0, HAL_GetTick());
+        error_set(ERROR_MCP23017, 0);
     }
     res = HAL_I2C_Mem_Read(hdev->hi2c, hdev->addr, REGISTER_GPIOB, 1, &hdev->gpio[1], 1, 100);
     if (res != HAL_OK) {
         printl("GPIOB READ ERROR", ERR_HEADER);
-        error_set(ERROR_MCP23017, 0, HAL_GetTick());
+        error_set(ERROR_MCP23017, 0);
     }
 }
 

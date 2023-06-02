@@ -22,6 +22,7 @@
 
 /* USER CODE BEGIN 0 */
 #include "current_transducer.h"
+#include "error.h"
 #include "stdbool.h"
 #include "tim.h"
 
@@ -169,6 +170,9 @@ void ADC_Vref_Calibration() {
     vref_int /= 500;
 
     vref = ADC_get_value_mV(&hadc1, vdda) * ((float)*factory_calibration / vref_int);
+    if (vref < 3100 || vref > 330) {
+        // error_set(ERROR_ADC_INIT, 0);
+    }
 }
 
 void ADC_hall_sensor_calibration() {
@@ -497,7 +501,7 @@ void MX_ADC1_Init(void) {
     hadc1.Init.ContinuousConvMode    = DISABLE;
     hadc1.Init.DiscontinuousConvMode = DISABLE;
     hadc1.Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_RISING;
-    hadc1.Init.ExternalTrigConv      = ADC_EXTERNALTRIGCONV_T5_CC1;
+    hadc1.Init.ExternalTrigConv      = ADC_EXTERNALTRIGCONV_T1_CC1;
     hadc1.Init.DataAlign             = ADC_DATAALIGN_RIGHT;
     hadc1.Init.NbrOfConversion       = 2;
     hadc1.Init.DMAContinuousRequests = ENABLE;

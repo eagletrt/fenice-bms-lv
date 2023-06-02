@@ -55,29 +55,21 @@ llist_node error_list_ref_dcdc12[1]                       = {NULL};
 llist_node error_list_ref_dcdc24[1]                       = {NULL};
 
 llist_node *const error_list_ref_array[ERROR_NUM_ERRORS] = {
-    [ERROR_CELL_UNDERVOLTAGE]        = error_list_ref_low_voltages,
-    [ERROR_CELL_OVERVOLTAGE]         = error_list_ref_high_voltages,
-    [ERROR_DCDC12_UNDER_TEMPERATURE] = error_list_ref_dcdc12_low_temp,
-    [ERROR_DCDC12_OVER_TEMPERATURE]  = error_list_ref_dcdc12_high_temp,
-    [ERROR_DCDC24_UNDER_TEMPERATURE] = error_list_ref_dcdc24_low_temp,
-    [ERROR_DCDC24_OVER_TEMPERATURE]  = error_list_ref_dcdc24_high_temp,
-    [ERROR_OVER_CURRENT]             = error_list_ref_over_current,
-    [ERROR_CELL_UNDER_TEMPERATURE]   = error_list_ref_cells_low_temp,
-    [ERROR_CELL_OVER_TEMPERATURE]    = error_list_ref_cells_high_temp,
-    [ERROR_RELAY]                    = error_list_ref_relay,
-    [ERROR_LTC6810]                  = error_list_ref_ltc6810,
-    [ERROR_VOLTAGES_NOT_READY]       = error_list_ref_voltages_not_ready,
-    [ERROR_OPEN_WIRE]                = error_list_ref_open_wire,
-    [ERROR_MCP23017]                 = error_list_ref_mcp23017,
-    [ERROR_CAN]                      = error_list_ref_can,
-    [ERROR_SPI]                      = error_list_ref_spi,
-    [ERROR_RADIATOR]                 = error_list_ref_radiators,
-    [ERROR_FAN]                      = error_list_ref_fan,
-    [ERROR_PUMP]                     = error_list_ref_pumps,
-    [ERROR_ADC_INIT]                 = error_list_ref_adc_init,
-    [ERROR_DCDC12]                   = error_list_ref_dcdc12,
-    [ERROR_DCDC24]                   = error_list_ref_dcdc24,
-};
+    [ERROR_CELL_UNDERVOLTAGE]      = error_list_ref_low_voltages,
+    [ERROR_CELL_OVERVOLTAGE]       = error_list_ref_high_voltages,
+    [ERROR_OVER_CURRENT]           = error_list_ref_over_current,
+    [ERROR_CELL_UNDER_TEMPERATURE] = error_list_ref_cells_low_temp,
+    [ERROR_CELL_OVER_TEMPERATURE]  = error_list_ref_cells_high_temp,
+    [ERROR_RELAY]                  = error_list_ref_relay,
+    [ERROR_VOLTAGES_NOT_READY]     = error_list_ref_voltages_not_ready,
+    [ERROR_OPEN_WIRE]              = error_list_ref_open_wire,
+    [ERROR_MCP23017]               = error_list_ref_mcp23017,
+    [ERROR_CAN]                    = error_list_ref_can,
+    [ERROR_SPI]                    = error_list_ref_spi,
+    [ERROR_RADIATOR]               = error_list_ref_radiators,
+    [ERROR_FAN]                    = error_list_ref_fan,
+    [ERROR_PUMP]                   = error_list_ref_pumps,
+    [ERROR_ADC_INIT]               = error_list_ref_adc_init};
 
 /**
  * @brief Returns the cell memory position of error_list_ref_array

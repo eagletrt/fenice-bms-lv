@@ -36,6 +36,7 @@ BUILD_DIR = build
 ######################################
 # C sources
 C_SOURCES =  \
+Core/Lib/bms_monitor/monitor_int.c \
 Core/Lib/can-comm/can_comm.c \
 Core/Lib/cli_bms_lv/cli_bms_lv.c \
 Core/Lib/current_transducer/current_transducer.c \
@@ -44,13 +45,15 @@ Core/Lib/errors/error.c \
 Core/Lib/errors/error_list_ref.c \
 Core/Lib/health_signals/health_signals.c \
 Core/Lib/inverters/inverters.c \
-Core/Lib/ltc6810/ltc6810-driver.c \
 Core/Lib/mcp23017/mcp23017.c \
 Core/Lib/measurements/measurements.c \
 Core/Lib/micro-libs/blink/blink.c \
+Core/Lib/micro-libs/bms-monitor/ltc6811/ltc6811.c \
+Core/Lib/micro-libs/bms-monitor/volt/volt.c \
 Core/Lib/micro-libs/circ-buf/circ-buf.c \
 Core/Lib/micro-libs/cli/cli.c \
 Core/Lib/micro-libs/ctrl-nwk-utils/ctrl-nwk-utils.c \
+Core/Lib/micro-libs/error-utils/error-utils.c \
 Core/Lib/micro-libs/invlib/invlib.c \
 Core/Lib/micro-libs/llist/llist.c \
 Core/Lib/micro-libs/pid/pid.c \
@@ -73,10 +76,10 @@ Core/Src/spi.c \
 Core/Src/stm32f4xx_hal_msp.c \
 Core/Src/stm32f4xx_it.c \
 Core/Src/system_stm32f4xx.c \
+Core/Src/temperature.c \
 Core/Src/template.c \
 Core/Src/tim.c \
 Core/Src/usart.c \
-Core/Src/volt.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc.c \
 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc_ex.c \
@@ -120,7 +123,7 @@ PREFIX = arm-none-eabi-
 POSTFIX = "
 # The gcc compiler bin path can be either defined in make command via GCC_PATH variable (> make GCC_PATH=xxx)
 # either it can be added to the PATH environment variable.
-GCC_PATH="/Users/tommasocanova/Library/Application Support/Code/User/globalStorage/bmd.stm32-for-vscode/@xpack-dev-tools/arm-none-eabi-gcc/10.2.1-1.1.2/.content/bin
+GCC_PATH="/Users/dimitri/Library/Application Support/Code/User/globalStorage/bmd.stm32-for-vscode/@xpack-dev-tools/arm-none-eabi-gcc/11.3.1-1.1.2/.content/bin
 ifdef GCC_PATH
 CXX = $(GCC_PATH)/$(PREFIX)g++$(POSTFIX)
 CC = $(GCC_PATH)/$(PREFIX)gcc$(POSTFIX)
@@ -158,6 +161,7 @@ AS_DEFS =
 
 # C defines
 C_DEFS =  \
+-DLTC_COUNT=1 \
 -DSTM32F446xx \
 -DUSE_HAL_DRIVER
 
@@ -174,6 +178,7 @@ AS_INCLUDES = \
 # C includes
 C_INCLUDES =  \
 -ICore/Inc \
+-ICore/Lib/bms_monitor \
 -ICore/Lib/can-comm \
 -ICore/Lib/can-lib/lib/bms/c \
 -ICore/Lib/can-lib/lib/primary/c \
@@ -187,13 +192,16 @@ C_INCLUDES =  \
 -ICore/Lib/errors \
 -ICore/Lib/health_signals \
 -ICore/Lib/inverters \
--ICore/Lib/ltc6810 \
 -ICore/Lib/mcp23017 \
 -ICore/Lib/measurements \
 -ICore/Lib/micro-libs/blink \
+-ICore/Lib/micro-libs/bms-monitor \
+-ICore/Lib/micro-libs/bms-monitor/ltc6811 \
+-ICore/Lib/micro-libs/bms-monitor/volt \
 -ICore/Lib/micro-libs/circ-buf \
 -ICore/Lib/micro-libs/cli \
 -ICore/Lib/micro-libs/ctrl-nwk-utils \
+-ICore/Lib/micro-libs/error-utils \
 -ICore/Lib/micro-libs/invlib \
 -ICore/Lib/micro-libs/llist \
 -ICore/Lib/micro-libs/pid \
