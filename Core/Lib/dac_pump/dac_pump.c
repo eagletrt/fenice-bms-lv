@@ -52,14 +52,14 @@ uint8_t dac_pump_set_value_on_both_channels(DAC_Pump_Handle *hdp) {
 
     if (HAL_DAC_SetValue(&PUMP_DAC, PUMP_L_CHNL, DAC_ALIGN_12B_R, hdp->last_analog_value_L) != HAL_OK) {
         error = -1;
-        error_set(ERROR_PUMP, 0, HAL_GetTick());
+        error_set(ERROR_PUMP, 0);
     } else {
         hdp->is_L_on = 1;
         error_reset(ERROR_PUMP, 0);
     }
     if (HAL_DAC_SetValue(&PUMP_DAC, PUMP_R_CHNL, DAC_ALIGN_12B_R, hdp->last_analog_value_R) != HAL_OK) {
         error = -1;
-        error_set(ERROR_PUMP, 1, HAL_GetTick());
+        error_set(ERROR_PUMP, 1);
     } else {
         hdp->is_R_on = 1;
         error_reset(ERROR_PUMP, 1);
@@ -87,7 +87,7 @@ uint8_t dac_pump_store_and_set_value_on_both_channels(DAC_Pump_Handle *hdp, floa
 
     if (HAL_DAC_SetValue(&PUMP_DAC, PUMP_L_CHNL, DAC_ALIGN_12B_R, analog_val_l) != HAL_OK) {
         error = -1;
-        error_set(ERROR_PUMP, 0, HAL_GetTick());
+        error_set(ERROR_PUMP, 0);
     } else {
         hdp->is_L_on             = 1;
         hdp->last_analog_value_L = analog_val_l;
@@ -95,7 +95,7 @@ uint8_t dac_pump_store_and_set_value_on_both_channels(DAC_Pump_Handle *hdp, floa
     }
     if (HAL_DAC_SetValue(&PUMP_DAC, PUMP_R_CHNL, DAC_ALIGN_12B_R, analog_val_r) != HAL_OK) {
         error = -1;
-        error_set(ERROR_PUMP, 1, HAL_GetTick());
+        error_set(ERROR_PUMP, 1);
     } else {
         hdp->is_R_on             = 1;
         hdp->last_analog_value_R = analog_val_r;
@@ -118,7 +118,7 @@ uint8_t dac_pump_store_and_set_value_on_single_channel(DAC_Pump_Handle *hdp, uin
     HAL_DAC_Start(&PUMP_DAC, channel);
     if (HAL_DAC_SetValue(&PUMP_DAC, channel, DAC_ALIGN_12B_R, analog_value) != HAL_OK) {
         error = -1;
-        error_set(ERROR_PUMP, channel == PUMP_L_CHNL ? 0 : 1, HAL_GetTick());
+        error_set(ERROR_PUMP, channel == PUMP_L_CHNL ? 0 : 1);
     } else {
         if (channel == PUMP_L_CHNL) {
             hdp->last_analog_value_L = analog_value;
@@ -146,7 +146,7 @@ uint8_t dac_pump_break_single(DAC_Pump_Handle *hdp, uint32_t channel) {
     HAL_DAC_Start(&PUMP_DAC, channel);
     if (HAL_DAC_SetValue(&PUMP_DAC, channel, DAC_ALIGN_12B_R, analog_value) != HAL_OK) {
         error = -1;
-        error_set(ERROR_PUMP, channel == PUMP_L_CHNL ? 0 : 1, HAL_GetTick());
+        error_set(ERROR_PUMP, channel == PUMP_L_CHNL ? 0 : 1);
     } else {
         if (channel == PUMP_L_CHNL) {
             hdp->last_analog_value_L = analog_value;
@@ -173,11 +173,11 @@ uint8_t dac_pump_break_both(DAC_Pump_Handle *hdp) {
     HAL_DAC_Start(&PUMP_DAC, PUMP_R_CHNL);
     if (HAL_DAC_SetValue(&PUMP_DAC, PUMP_R_CHNL, DAC_ALIGN_12B_R, analog_value) != HAL_OK) {
         error = -1;
-        error_set(ERROR_PUMP, 1, HAL_GetTick());
+        error_set(ERROR_PUMP, 1);
     }
     if (HAL_DAC_SetValue(&PUMP_DAC, PUMP_L_CHNL, DAC_ALIGN_12B_R, analog_value) != HAL_OK) {
         error = -1;
-        error_set(ERROR_PUMP, 0, HAL_GetTick());
+        error_set(ERROR_PUMP, 0);
     } else {
         hdp->last_analog_value_L = 0;
         hdp->is_L_on             = 0;
@@ -208,7 +208,7 @@ uint8_t dac_pump_store_and_set_proportional_on_single_channel(
     HAL_DAC_Start(&PUMP_DAC, channel);
     if (HAL_DAC_SetValue(&PUMP_DAC, channel, DAC_ALIGN_12B_R, analog_value) != HAL_OK) {
         error = -1;
-        error_set(ERROR_PUMP, channel == PUMP_L_CHNL ? 0 : 1, HAL_GetTick());
+        error_set(ERROR_PUMP, channel == PUMP_L_CHNL ? 0 : 1);
     } else {
         if (channel == PUMP_L_CHNL) {
             hdp->last_analog_value_L = analog_value;
@@ -237,7 +237,7 @@ uint8_t dac_pump_store_and_set_proportional_on_both_channels(
 
     if (HAL_DAC_SetValue(&PUMP_DAC, PUMP_L_CHNL, DAC_ALIGN_12B_R, analog_val_l) != HAL_OK) {
         error = -1;
-        error_set(ERROR_PUMP, 0, HAL_GetTick());
+        error_set(ERROR_PUMP, 0);
     } else {
         hdp->is_L_on             = 1;
         hdp->last_analog_value_L = analog_val_l;
@@ -245,7 +245,7 @@ uint8_t dac_pump_store_and_set_proportional_on_both_channels(
     }
     if (HAL_DAC_SetValue(&PUMP_DAC, PUMP_R_CHNL, DAC_ALIGN_12B_R, analog_val_r) != HAL_OK) {
         error = -1;
-        error_set(ERROR_PUMP, 1, HAL_GetTick());
+        error_set(ERROR_PUMP, 1);
     } else {
         hdp->is_R_on             = 1;
         hdp->last_analog_value_R = analog_val_r;

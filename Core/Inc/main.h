@@ -326,14 +326,14 @@ static inline uint8_t get_feedback_state(uint8_t feedback) {
 #define OPEN_WIRE_TIMER_ACTIVE_CHANNEL                   HAL_TIM_ACTIVE_CHANNEL_2
 
 /* ERRORS TIMER*/
-#define HTIM_ERR               htim2
+#define HTIM_ERR               htim5
 #define ERR_TIM_CHANNEL        TIM_CHANNEL_4
 #define ERR_TIM_ACTIVE_CHANNEL HAL_TIM_ACTIVE_CHANNEL_4
 
 /* ADC STUFF */
 
 #define TIMER_ADC_MEAS                htim10
-#define TIMER_ADC_CALIBRATION         htim5
+#define TIMER_ADC_CALIBRATION         htim1
 #define TIMER_ADC_CALIBRATION_CHANNEL TIM_CHANNEL_1
 #define ADC_HALL_AND_FB               hadc2
 #define CALIBRATION_ADC               hadc1

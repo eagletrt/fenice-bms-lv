@@ -10,17 +10,18 @@
 #ifndef ERROR_H
 #define ERROR_H
 
+#include "error-utils.h"
 #include "llist.h"
 
 #include <inttypes.h>
 #include <stdbool.h>
 
-#define error_toggle_check(condition, error_type, index) \
+/*#define error_toggle_check(condition, error_type, index) \
     if ((condition)) {                                   \
         error_set((error_type), (index), HAL_GetTick()); \
     } else {                                             \
         error_reset((error_type), (index));              \
-    }
+    }*/
 
 /**
  * @brief	Error type definitions
@@ -36,22 +37,16 @@ typedef enum {
     ERROR_CAN,
     ERROR_SPI,
     ERROR_OVER_CURRENT,
-    ERROR_DCDC12_UNDER_TEMPERATURE,
-    ERROR_DCDC12_OVER_TEMPERATURE,
-    ERROR_DCDC24_UNDER_TEMPERATURE,
-    ERROR_DCDC24_OVER_TEMPERATURE,
     ERROR_CELL_UNDER_TEMPERATURE,
     ERROR_CELL_OVER_TEMPERATURE,
     ERROR_RELAY,
-    ERROR_LTC6810,
+    ERROR_BMS_MONITOR,
     ERROR_VOLTAGES_NOT_READY,
     ERROR_MCP23017,
     ERROR_RADIATOR,
     ERROR_FAN,
     ERROR_PUMP,
     ERROR_ADC_INIT,
-    ERROR_DCDC12,
-    ERROR_DCDC24,
     ERROR_NUM_ERRORS
 
 } __attribute__((__packed__)) error_id;
@@ -77,27 +72,29 @@ typedef enum { STATE_WARNING, STATE_FATAL } __attribute__((__packed__)) error_st
 
 /** @brief	Defines an error instance */
 typedef struct {
-    error_id id;    /* Defines the type of error */
-    uint8_t offset; /* Identifies different instances of a type */
+    error_id id;        /* Defines the type of error */
+    uint8_t offset;     /* Identifies different instances of a type */
     error_state state;
     uint32_t timestamp; /* Last time the error activated */
 } error_t;
 
-extern llist er_list;
+// extern llist er_list;
+extern ERROR_UTILS_HandleTypeDef error_handler;
 
 void error_init();
-void error_init_error(error_t *error, error_id id, uint8_t offset, uint32_t timestamp);
-bool error_set(error_id type, uint8_t offset, uint32_t now);
-error_t *error_get_top();
-bool error_set_fatal(error_t *error);
+//void error_init_error(error_t *error, error_id id, uint8_t offset, uint32_t timestamp);
+void error_set(error_id type, uint8_t offset);
+//error_t *error_get_top();
+//bool error_set_fatal(error_t *error);
 
-bool error_reset(error_id type, uint8_t offset);
+void error_reset(error_id type, uint8_t offset);
 
-size_t error_get_fatal();
+//size_t error_get_fatal();
 size_t error_count();
-void error_dump(error_t errors[]);
-bool compare_timeouts(error_t *a, error_t *b);
-uint32_t get_timeout_delta(error_t *error);
-void _error_handle_tim_oc_irq();
+void bms_error_callback(size_t eror_index, size_t instance_index);
+//void error_dump(error_t errors[]);
+//bool compare_timeouts(error_t *a, error_t *b);
+//uint32_t get_timeout_delta(error_t *error);
+//void _error_handle_tim_oc_irq();
 
 #endif /* ERROR_H_ */
