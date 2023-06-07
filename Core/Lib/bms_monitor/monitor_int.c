@@ -9,7 +9,6 @@
 
 #include "monitor_int.h"
 
-#include "cli_bms_lv.h"
 #include "error.h"
 #include "fenice-config.h"
 #include "main.h"
@@ -44,6 +43,10 @@ void monitor_init() {
     monitor_handler.config[0] = config;
 
     ltc6811_wrcfg(&monitor_handler);
+
+    if (ltc6811_rdcfg(&monitor_handler) != HAL_OK) {
+        error_set(ERROR_BMS_MONITOR, 0);
+    }
 }
 
 uint8_t monitor_get_min_cell() {
@@ -62,7 +65,9 @@ uint8_t monitor_read_voltage() {
     VOLT_CHANNEL cells     = VOLT_CHANNEL_ALL;
     if (volt_read(&monitor_handler, LTC6811_MD_7KHZ_3KHZ, LTC6811_DCP_DISABLED, &cells, &voltages, 5) == 1) {
         volt_status = VOLT_ERR;
+        error_set(ERROR_BMS_MONITOR, 0);
     } else {
+        error_reset(ERROR_BMS_MONITOR, 0);
         for (uint8_t i = 0; i < LV_CELLS_COUNT; i++) {
             // Check whether a cell is undervoltage or overvoltage and set/reset its specific error
             if ((float)voltages[i] / 1000 <= VOLT_MIN_ALLOWED_VOLTAGE) {
@@ -95,7 +100,9 @@ uint8_t monitor_print_volt() {
     if (volt_read(&monitor_handler, LTC6811_MD_7KHZ_3KHZ, LTC6811_DCP_DISABLED, &cells, &voltages, 5) == 1) {
         printl("LTC ERROR!", ERR_HEADER);
         volt_status = VOLT_ERR;
+        error_set(ERROR_BMS_MONITOR, 0);
     } else {
+        error_reset(ERROR_BMS_MONITOR, 0);
         voltage_min_index = monitor_get_min_cell();
     }
     memset(buff, 0, sizeof(buff));

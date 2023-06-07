@@ -103,8 +103,8 @@ void check_on_feedbacks();
 #define RAD_L_GPIO_Port                      GPIOA
 #define RAD_R_Pin                            GPIO_PIN_7
 #define RAD_R_GPIO_Port                      GPIOA
-#define REAY_OUT_ANALOG_FB_Pin               GPIO_PIN_4
-#define REAY_OUT_ANALOG_FB_GPIO_Port         GPIOC
+#define RELAY_OUT_ANALOG_FB_Pin              GPIO_PIN_4
+#define RELAY_OUT_ANALOG_FB_GPIO_Port        GPIOC
 #define LVMS_OUT_ANALOG_FB_Pin               GPIO_PIN_5
 #define LVMS_OUT_ANALOG_FB_GPIO_Port         GPIOC
 #define FAN_Pin                              GPIO_PIN_0
@@ -144,8 +144,8 @@ void check_on_feedbacks();
  * @return GPIO_PIN_SET: if LVMR is closed
  */
 static inline GPIO_PinState LV_MASTER_RELAY_get_state() {
-    //return true;
-    return mcp23017_get_state(&hmcp, MCP23017_PORTB, FB_FAN) == 0x1 ? true : false;
+    //return mcp23017_get_state(&hmcp, MCP23017_PORTB, FB_FAN) == 0x1 ? true : false;
+    return HAL_GPIO_ReadPin(RELAY_GPIO_Port, RELAY_Pin);
 }
 
 /**

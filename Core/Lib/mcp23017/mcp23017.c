@@ -173,7 +173,7 @@ void mcp23017_print_gpioB(MCP23017_HandleTypeDef *hdev, char *out) {
  */
 void mcp23017_basic_config_init(MCP23017_HandleTypeDef *hdev, I2C_HandleTypeDef *hi2c) {
     mcp23017_init(hdev, hi2c, MCP23017_ADDRESS);
-    //error_reset(ERROR_MCP23017, 0);
+    error_reset(ERROR_MCP23017, 0);
     if (mcp23017_iodir(hdev, MCP23017_PORTA, IODIR_GPIOA) != HAL_OK) {
         printl("INIT ERROR GPIOA", ERR_HEADER);
         error_set(ERROR_MCP23017, 0);

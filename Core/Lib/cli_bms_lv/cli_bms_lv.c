@@ -319,28 +319,26 @@ void _cli_can_send(uint16_t argc, char **argv, char *out) {
 }
 
 void _cli_errors(uint16_t argc, char **argv, char *out) {
-    // uint16_t count = error_count();
-    // error_t errors[count];
-    // error_dump(errors);
+    size_t count = 0;
+    error_t errors[ERROR_NUM_ERRORS];
+    error_dump(errors, &count);
 
-    // uint32_t now = HAL_GetTick();
-    // sprintf(out, "total %u\r\n", count);
-    // for (uint16_t i = 0; i < count; i++) {
-    //     sprintf(
-    //         out + strlen(out),
-    //         "\r\nid..........%i (%s)\r\n"
-    //         "timestamp...T+%lu (%lums ago)\r\n"
-    //         "offset......%u\r\n"
-    //         "state.......%s\r\n"
-    //         "timeout delta %lu\r\n",
-    //         errors[i].id,
-    //         error_names[errors[i].id],
-    //         errors[i].timestamp,
-    //         now - errors[i].timestamp,
-    //         errors[i].offset,
-    //         errors[i].state == STATE_WARNING ? "warning" : "fatal",
-    //         get_timeout_delta(&errors[i]));
-    // }
+    uint32_t now = HAL_GetTick();
+    sprintf(out, "total %u\r\n", count);
+    for (uint16_t i = 0; i < count; i++) {
+        sprintf(
+            out + strlen(out),
+            "\r\nid..........%i (%s)\r\n"
+            "timestamp...T+%lu (%lums ago)\r\n"
+            "offset......%u\r\n"
+            "state.......%s\r\n",
+            errors[i].id,
+            error_names[errors[i].id],
+            errors[i].timestamp,
+            now - errors[i].timestamp,
+            errors[i].offset,
+            errors[i].state == STATE_WARNING ? "warning" : "fatal");
+    }
 }
 
 void _cli_inv(uint16_t argc, char **argv, char *out) {

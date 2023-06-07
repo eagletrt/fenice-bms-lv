@@ -64,15 +64,30 @@ void measurements_init(TIM_HandleTypeDef *htim) {
     flags = 0;
 }
 
-//TODO implement overcurrent check for the 3 hall sensors
 void check_overcurrent() {
-    /*if (CT_get_electric_current_mA() > MAX_CURRENT_ALLOWED_mA) {
-        error_set(ERROR_OVER_CURRENT, 0, HAL_GetTick());
+    if (adcs_converted_values.mux_hall.S_HALL0 > MAX_CURRENT_ALLOWED_mA) {
+        error_set(ERROR_OVER_CURRENT, 0);
     } else {
         if (!is_bms_on_fault) {
             error_reset(ERROR_OVER_CURRENT, 0);
         }
-    }*/
+    }
+
+    if (adcs_converted_values.mux_hall.S_HALL1 > MAX_CURRENT_ALLOWED_mA) {
+        error_set(ERROR_OVER_CURRENT, 1);
+    } else {
+        if (!is_bms_on_fault) {
+            error_reset(ERROR_OVER_CURRENT, 1);
+        }
+    }
+
+    if (adcs_converted_values.mux_hall.S_HALL2 > MAX_CURRENT_ALLOWED_mA) {
+        error_set(ERROR_OVER_CURRENT, 2);
+    } else {
+        if (!is_bms_on_fault) {
+            error_reset(ERROR_OVER_CURRENT, 2);
+        }
+    }
 }
 
 void measurements_flags_check() {
@@ -84,11 +99,13 @@ void measurements_flags_check() {
             //             cli_bms_debug("OPEN WIRE", 9);
             // #endif
 
-            if (volt_open_wire(&monitor_handler, LTC6811_MD_7KHZ_3KHZ, LTC6811_DCP_DISABLED, 10) == 0) {
+            if (volt_open_wire(&monitor_handler, LTC6811_MD_7KHZ_3KHZ, LTC6811_DCP_DISABLED, 10) != 0) {
+                error_set(ERROR_OPEN_WIRE, 0);
 #ifdef NDEBUG_LTC
                 printl("Wire successful", NO_HEADER);
 #endif
             } else {
+                error_reset(ERROR_OPEN_WIRE, 0);
 #ifdef NDEBUG_LTC
                 printl("Wire Error", NO_HEADER);
 #endif
@@ -109,6 +126,7 @@ void measurements_flags_check() {
         as_computer_fb_conversion();
         mux_fb_conversion();
         mux_hall_conversion();
+        check_overcurrent();
         batt_out_conversion();
         // cansend
         flags &= ~MEAS_ALL_ANALOG_SIGNALS_FLAG;
