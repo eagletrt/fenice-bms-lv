@@ -11,18 +11,29 @@
 #define ERROR_H
 
 #include "error-utils.h"
-#include "llist.h"
 
 #include <inttypes.h>
 #include <stdbool.h>
 
-/*#define error_toggle_check(condition, error_type, index) \
+#define error_toggle_check(condition, error_type, index) \
     if ((condition)) {                                   \
-        error_set((error_type), (index), HAL_GetTick()); \
+        error_set((error_type), (index));                \
     } else {                                             \
         error_reset((error_type), (index));              \
-    }*/
+    }
 
+#define OPEN_WIRE_ERROR_INSTANCES     1
+#define CAN_ERROR_INSTANCES           2  //One instance for can primary and one for can secondary
+#define SPI_ERROR_INSTANCES           1
+#define OVER_CURRENT_ERROR_INSTANCES  3  // 3 is the number of current sensor present on the bms lv
+#define RELAY_ERROR_INSTANCES         1
+#define BMS_MONITOR_ERROR_INSTANCES   1
+#define VOLTAGE_READY_ERROR_INSTANCES 1
+#define MCP23017_ERROR_INSTANCES      1
+#define RADIATOR_ERROR_INSTANCES      2
+#define FAN_ERROR_INSTANCES           1
+#define PUMP_ERROR_INSTANCES          2
+#define ADC_ERROR_INSTANCES           1
 /**
  * @brief	Error type definitions
  *
@@ -47,6 +58,7 @@ typedef enum {
     ERROR_FAN,
     ERROR_PUMP,
     ERROR_ADC_INIT,
+    ERROR_ADC_MUX,
     ERROR_NUM_ERRORS
 
 } __attribute__((__packed__)) error_id;
@@ -67,7 +79,6 @@ typedef enum {
  * an error is fatal when it stays active till the error timeout (ERROR_FATAL)
  * an error becomes inactive
  **/
-
 typedef enum { STATE_WARNING, STATE_FATAL } __attribute__((__packed__)) error_state;
 
 /** @brief	Defines an error instance */
@@ -78,23 +89,40 @@ typedef struct {
     uint32_t timestamp; /* Last time the error activated */
 } error_t;
 
-// extern llist er_list;
 extern ERROR_UTILS_HandleTypeDef error_handler;
 
+/**
+ * @brief Initializes the error library
+*/
 void error_init();
-//void error_init_error(error_t *error, error_id id, uint8_t offset, uint32_t timestamp);
-void error_set(error_id type, uint8_t offset);
-//error_t *error_get_top();
-//bool error_set_fatal(error_t *error);
 
+/**
+ * @brief Activates an error
+ * @param type The error type
+ * @param offset The offset of the instance in error
+*/
+void error_set(error_id type, uint8_t offset);
+
+/**
+ * @brief Deactivates an error
+ * @param type The error type
+ * @param offset The offset of the instance in error
+*/
 void error_reset(error_id type, uint8_t offset);
 
-//size_t error_get_fatal();
-size_t error_count();
-void bms_error_callback(size_t eror_index, size_t instance_index);
-//void error_dump(error_t errors[]);
-//bool compare_timeouts(error_t *a, error_t *b);
-//uint32_t get_timeout_delta(error_t *error);
-//void _error_handle_tim_oc_irq();
+/**
+ * @brief Global callback for the error library
+ * @param type The error type
+ * @param offset The offset of the instance in error
+*/
+void bms_error_callback(size_t error_index, size_t instance_index);
+
+/**
+ * @brief Insert in an array all the current errors presents on the bms lv
+ * @param errors Array in which the errors are copied
+ * @param error_count Number of errors that are currently presents
+ * @return An array of running errors
+*/
+void error_dump(error_t errors[], size_t *error_count);
 
 #endif /* ERROR_H_ */

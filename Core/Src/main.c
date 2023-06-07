@@ -164,19 +164,17 @@ int main(void) {
     // TODO: change button pin
     //HAL_GPIO_WritePin(L_ERR_GPIO_Port, L_ERR_Pin, GPIO_PIN_SET);
 
-    ADC_init_status_flags();
-    ADC_init_mux();
-    ADC_Vref_Calibration();
-    ADC_hall_sensor_calibration();
-    ADC_start_ADC2_readings();
     // Blink to signal correct MX_XXX_init processes (usuefull for CAN transciever)
     cli_bms_lv_init();
     error_init();
+
+    //Init ADC related stuff
     ADC_init_status_flags();
     ADC_init_mux();
     ADC_Vref_Calibration();
     // ADC_hall_sensor_calibration();
     // ADC_start_ADC2_readings();
+
     monitor_init();
 
     init_inverter_struct(&car_inverters);
@@ -224,7 +222,7 @@ int main(void) {
 
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
-    //errors_timer = HAL_GetTick();
+    errors_timer = HAL_GetTick();
     //static bool first = true;
     mcp23017_set_gpio(&hmcp, MCP23017_PORTB, LED_R, 1);
     while (1) {
@@ -232,15 +230,15 @@ int main(void) {
         if (is_bms_on_fault) {
             bms_error_state();
         } else {
-            measurements_flags_check();
             cli_loop(&cli_bms_lv);
+            ADC_Routine();
+            measurements_flags_check();
+            if (error_utils_get_count(&error_handler) > 0 && errors_timer + 10 > errors_timer) {
+                can_primary_send(primary_ID_LV_ERRORS);
+                errors_timer = HAL_GetTick();
+            }
             //TODO: REMOVE measurements_flags_check();  // measure and sends via can
             // check_on_feedbacks();  //check dcdcs and relay fb
-            // if (error_count() > 0 && errors_timer + 10 > errors_timer) {
-            //     can_primary_send(primary_ID_LV_ERRORS);
-            //     errors_timer = HAL_GetTick();
-            // }
-
             // inverters_loop(&car_inverters);
 
             // cooling_routine(10);
@@ -339,7 +337,7 @@ static inline void check_initial_voltage() {
             // TODO: CHANGE PIN L_OTHER
             //HAL_GPIO_WritePin(L_OTHER_GPIO_Port, L_OTHER_Pin, GPIO_PIN_SET);
             pwm_start_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
-            //LV_MASTER_RELAY_set_state(GPIO_PIN_SET);
+            LV_MASTER_RELAY_set_state(GPIO_PIN_SET);
             HAL_Delay(BUZZER_ALARM_TIME);
             pwm_stop_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
             i = VOLT_MAX_ATTEMPTS;
@@ -371,9 +369,9 @@ static inline void fans_radiators_pumps_init() {
 
     if (FDBK_12V_RADIATORS_get_state()) {
         start_both_radiator(&RAD_R_HTIM, RAD_L_PWM_TIM_CHNL, RAD_R_PWM_TIM_CHNL);
-        error_reset(ERROR_RADIATOR, 1);
+        error_reset(ERROR_RADIATOR, 0);
     } else {
-        error_set(ERROR_RADIATOR, 1);
+        error_set(ERROR_RADIATOR, 0);
     }
     if (FDBK_24V_PUMPS_get_state()) {
         dac_pump_handle_init(&hdac_pump, 0.0, 0.0);
@@ -414,7 +412,7 @@ void check_on_feedbacks() {
 void bms_error_state() {
     // ERROR stage
     // TODO: CHANGE PIN L_OTHER
-    //HAL_GPIO_WritePin(RELAY_GPIO_Port, RELAY_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(RELAY_GPIO_Port, RELAY_Pin, GPIO_PIN_RESET);
     //HAL_GPIO_WritePin(L_ERR_GPIO_Port, L_ERR_Pin, GPIO_PIN_SET);
     //error_state_inverters(&car_inverters);
     printl("ERROR STATE", ERR_HEADER);

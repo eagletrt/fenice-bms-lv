@@ -727,8 +727,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
             }
             volatile uint8_t add = ADC_get_mux_address_by_port_name(adc_status_flags.mux_address_index);
             if (add == 255) {
-                //TODO: throw error
+                error_set(ERROR_ADC_MUX, 0);
             } else {
+                error_reset(ERROR_ADC_MUX, 0);
                 ADC_set_mux_address(add);
             }
 
