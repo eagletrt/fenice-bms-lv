@@ -415,12 +415,14 @@ void bms_error_state() {
     HAL_GPIO_WritePin(RELAY_GPIO_Port, RELAY_Pin, GPIO_PIN_RESET);
     //HAL_GPIO_WritePin(L_ERR_GPIO_Port, L_ERR_Pin, GPIO_PIN_SET);
     //error_state_inverters(&car_inverters);
-    printl("ERROR STATE", ERR_HEADER);
+    printl("ERROR STATE \n", ERR_HEADER);
     //HAL_GPIO_WritePin(L_OTHER_GPIO_Port, L_OTHER_Pin, GPIO_PIN_RESET);
     while (1) {
         cli_loop(&cli_bms_lv);
-        //measurements_flags_check();  // measure and sends via can
-        //HAL_GPIO_TogglePin(L_ERR_GPIO_Port, L_ERR_Pin);
+        measurements_flags_check();  // measure and sends via can
+        // TODO: choose an error pin!
+        mcp23017_set_gpio(&hmcp, MCP23017_PORTB, LED_G, 1);
+
         //HAL_Delay(100);
     }
 }

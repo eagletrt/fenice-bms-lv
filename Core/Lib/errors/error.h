@@ -32,7 +32,7 @@
 #define MCP23017_ERROR_INSTANCES      1
 #define RADIATOR_ERROR_INSTANCES      2
 #define FAN_ERROR_INSTANCES           1
-#define PUMP_ERROR_INSTANCES          2
+#define PUMP_ERROR_INSTANCES          2  // First one is referred to left pump while the other one is the right one
 #define ADC_ERROR_INSTANCES           1
 /**
  * @brief	Error type definitions

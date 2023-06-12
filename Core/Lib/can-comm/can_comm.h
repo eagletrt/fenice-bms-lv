@@ -28,8 +28,8 @@
 HAL_StatusTypeDef can_send(CAN_HandleTypeDef *hcan, uint8_t *buffer, CAN_TxHeaderTypeDef *header);
 HAL_StatusTypeDef can_primary_send(uint16_t id);
 HAL_StatusTypeDef can_secondary_send(uint16_t id);
-extern primary_message_SET_RADIATOR_SPEED_conversion rads_speed_msg;
-extern primary_message_SET_PUMPS_SPEED_conversion pumps_speed_msg;
+// extern primary_message_SET_RADIATOR_SPEED_conversion rads_speed_msg;
+// extern primary_message_SET_PUMPS_SPEED_conversion pumps_speed_msg;
 void can_primary_init();
 void can_secondary_init();
 #endif

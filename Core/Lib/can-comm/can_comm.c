@@ -13,7 +13,8 @@
 
 #include "can_comm.h"
 
-#include "../can-lib/lib/primary/c/network.h"
+//#include "../can-lib/lib/primary/c/network.h"
+//#include "../can-lib/lib/primary/primary_network.h"
 
 /* CAN LIB */
 #include "../current_transducer/current_transducer.h"
