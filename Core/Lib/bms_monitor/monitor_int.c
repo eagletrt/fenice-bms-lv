@@ -206,22 +206,17 @@ void monitor_read_temp() {
 
         cell_temps_raw[cell_row_index][cell_col_index] = raw_temp[0];
 
-        // if (cell_temps[cell_index] > MAX_CELLS_ALLOWED_TEMP) {
-        //     error_set(ERROR_CELL_OVER_TEMPERATURE, cell_index);
-        // } else if (cell_temps[cell_index] < MIN_CELLS_ALLOWED_TEMP) {
-        //     error_set(ERROR_CELL_OVER_TEMPERATURE, cell_index);
-        //     error_set(ERROR_CELL_UNDER_TEMPERATURE, cell_index);
-        // } else {
-        //     error_reset(ERROR_CELL_OVER_TEMPERATURE, cell_index);
-        //     error_reset(ERROR_CELL_UNDER_TEMPERATURE, cell_index);
-        // }
-
+        // Update col and row indexes according to NTC COUNT and CELL_TEMPS_ARRAY_SIZE
         cell_col_index = (cell_col_index + 1) % NTC_COUNT;
-        stocazzo       = (stocazzo + 1) % (NTC_COUNT * CELL_TEMPS_ARRAY_SIZE);
         cell_row_index = (cell_row_index + 1) % CELL_TEMPS_ARRAY_SIZE;
-        if (stocazzo == 0) {
+
+#ifdef NDEBUG
+        // Measure how much time a conversion will take
+        spin = (spin + 1) % (NTC_COUNT * CELL_TEMPS_ARRAY_SIZE);
+        if (spin == 0) {
             HAL_GPIO_TogglePin(NC_MCU0_GPIO_Port, NC_MCU0_Pin);
         }
+#endif
     } else {
         cell_col_index = 0;
     }
@@ -244,6 +239,14 @@ void monitor_temp_conversion() {
         float val4    = val3 * val;
         cell_temps[i] = (float)(TEMP_CONST_a + TEMP_CONST_b * val + TEMP_CONST_c * val2 + TEMP_CONST_d * val3 +
                                 TEMP_CONST_e * val4);
+        if (cell_temps[i] > MAX_CELLS_ALLOWED_TEMP) {
+            error_set(ERROR_CELL_OVER_TEMPERATURE, i);
+        } else if (cell_temps[i] < MIN_CELLS_ALLOWED_TEMP) {
+            error_set(ERROR_CELL_UNDER_TEMPERATURE, i);
+        } else {
+            error_reset(ERROR_CELL_OVER_TEMPERATURE, i);
+            error_reset(ERROR_CELL_UNDER_TEMPERATURE, i);
+        }
     }
 }
 

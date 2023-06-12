@@ -138,6 +138,8 @@ void measurements_flags_check() {
     }
 
     if (flags & MEAS_LV_VERSION_AND_COOLING_FLAG) {
+        // cansend LV VERSION
+        // cansend COOLING INFO
         flags &= ~MEAS_LV_VERSION_AND_COOLING_FLAG;
     }
 }

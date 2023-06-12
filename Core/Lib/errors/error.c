@@ -152,19 +152,26 @@ void error_init() {
 void bms_error_callback(size_t error_index, size_t instance_index) {
     printl("ERROR TIM ELAPSED\r\n", NOTHING);
     //bms_error_state();
-    if (!fatal_error[error_index])
-        fatal_error[error_index] = instance_index + 1;
-    is_bms_on_fault = true;
+    // if (!fatal_error[error_index])
+    fatal_error[error_index] = instance_index + 1;
+    is_bms_on_fault          = true;
 }
 
 void error_set(error_id type, uint8_t offset) {
+#ifdef NDEBUG
     char error_buff[50] = {};
-    sprintf(error_buff, "ADD ERROR ID: %i, (%s)", type, error_names[type]);
+    sprintf(error_buff, "ADD ERROR ID: %i-%u, (%s)", type, offset, error_names[type]);
     printl(error_buff, NO_HEADER);
+#endif
     error_utils_error_set(&error_handler, type, offset);
 }
 
 void error_reset(error_id type, uint8_t offset) {
+#ifdef NDEBUG
+    char error_buff[50] = {};
+    sprintf(error_buff, "REMOVE ERROR ID: %i-%u, (%s)", type, offset, error_names[type]);
+    printl(error_buff, NO_HEADER);
+#endif
     error_utils_error_reset(&error_handler, type, offset);
 }
 
