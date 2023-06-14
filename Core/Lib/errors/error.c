@@ -150,7 +150,7 @@ void error_init() {
 }
 
 void bms_error_callback(size_t error_index, size_t instance_index) {
-    printl("ERROR TIM ELAPSED\r\n", NOTHING);
+    // printl("ERROR TIM ELAPSED\r\n", NOTHING);
     //bms_error_state();
     // if (!fatal_error[error_index])
     fatal_error[error_index] = instance_index + 1;
