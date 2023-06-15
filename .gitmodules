@@ -5,5 +5,5 @@
 [submodule "Core/Lib/can-lib"]
 	path = Core/Lib/can-lib
 	url = git@github.com:eagletrt/can.git
-	branch = build
+	branch = build-evo
 	
