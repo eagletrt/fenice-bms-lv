@@ -31,6 +31,7 @@ extern uint8_t volt_status;
 extern LTC6811_HandleTypeDef monitor_handler;
 extern uint8_t cell_row_index;
 extern uint8_t cell_col_index;
+extern float cell_temps[NTC_COUNT];
 
 typedef enum { VOLT_OK = 0U, VOLT_UNDER_VOLTAGE, VOLT_OVER_VOLTAGE, VOLT_ERR, VOLT_ENUM_SIZE } voltage_meas_status;
 

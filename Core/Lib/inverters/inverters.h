@@ -31,7 +31,7 @@ typedef struct {
 extern Inverters_struct car_inverters;
 
 static inline void init_inverter_struct(Inverters_struct *inv) {
-    inv->comm_status      = primary_Toggle_OFF;
+    inv->comm_status      = PRIMARY_SET_INVERTER_CONNECTION_STATUS_STATUS_OFF_CHOICE;
     inv->inv_status = INV_OFF;
     inv->last_cmd_timestamp = 0;
     inv->rfe_on_timestamp = 0;
@@ -59,10 +59,10 @@ static inline uint8_t get_inverter_status(Inverters_struct *inv) {
  */
 static inline void inverters_loop(Inverters_struct *inv) {
     if(HAL_GetTick() - inv->last_cmd_timestamp > 450) {
-        inv->comm_status = primary_Toggle_OFF;
+        inv->comm_status = PRIMARY_SET_INVERTER_CONNECTION_STATUS_STATUS_OFF_CHOICE;
     }
 
-    if(inv->comm_status == primary_Toggle_ON) {
+    if(inv->comm_status == PRIMARY_SET_INVERTER_CONNECTION_STATUS_STATUS_ON_CHOICE) {
         if(inv->inv_status == INV_OFF) {
             // HAL_GPIO_WritePin(INV_RFE_GPIO_Port, INV_RFE_Pin, GPIO_PIN_SET);
             inv->inv_status = INV_RFE_ON;
@@ -71,7 +71,7 @@ static inline void inverters_loop(Inverters_struct *inv) {
             // HAL_GPIO_WritePin(INV_FRG_GPIO_Port, INV_FRG_Pin, GPIO_PIN_SET);
             inv->inv_status = INV_ON;
         }
-    } else if (inv->comm_status == primary_Toggle_OFF && inv->inv_status != INV_OFF) {
+    } else if (inv->comm_status == PRIMARY_SET_INVERTER_CONNECTION_STATUS_STATUS_OFF_CHOICE && inv->inv_status != INV_OFF) {
         // HAL_GPIO_WritePin(INV_RFE_GPIO_Port, INV_RFE_Pin, GPIO_PIN_RESET);
         // HAL_GPIO_WritePin(INV_FRG_GPIO_Port, INV_FRG_Pin, GPIO_PIN_RESET);
         inv->inv_status = INV_OFF;
@@ -79,7 +79,7 @@ static inline void inverters_loop(Inverters_struct *inv) {
 }
 
 static inline void error_state_inverters(Inverters_struct *inv) {
-    set_inverter_status(inv, primary_Toggle_OFF);
+    set_inverter_status(inv, PRIMARY_SET_INVERTER_CONNECTION_STATUS_STATUS_OFF_CHOICE);
     inverters_loop(inv);
 }
 

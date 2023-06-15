@@ -27,7 +27,7 @@
 #include "usart.h"
 
 /* CAN LIB */
-#include "../can-lib/lib/primary/c/ids.h"
+#include "../can-lib/lib/primary/primary_network.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -305,15 +305,16 @@ void _cli_can_send(uint16_t argc, char **argv, char *out) {
         sprintf(out, "Invalid arguments \r\nUsage: can {volts/cooling/current/temp}\r\n");
     } else {
         if (strcmp(argv[1], "volts") == 0) {
-            can_primary_send(primary_ID_LV_VOLTAGE);
+            can_primary_send(PRIMARY_LV_CELLS_VOLTAGE_INDEX, 0);
+            can_primary_send(PRIMARY_LV_CELLS_VOLTAGE_INDEX, 1);
         } else if (strcmp(argv[1], "cooling") == 0) {
-            can_primary_send(primary_ID_COOLING_STATUS);
+            can_primary_send(PRIMARY_COOLING_STATUS_INDEX, 0);
         } else if (strcmp(argv[1], "total") == 0) {
-            can_primary_send(primary_ID_LV_TOTAL_VOLTAGE);
+            can_primary_send(PRIMARY_LV_TOTAL_VOLTAGE_INDEX, 0);
         } else if (strcmp(argv[1], "current") == 0) {
-            can_primary_send(primary_ID_LV_CURRENT);
+            can_primary_send(PRIMARY_LV_CURRENTS_INDEX, 0);
         } else if (strcmp(argv[1], "temp") == 0) {
-            can_primary_send(primary_ID_LV_TEMPERATURE);
+            can_primary_send(PRIMARY_LV_CELLS_TEMP_INDEX, 0);
         }
     }
 }

@@ -10,9 +10,8 @@
  */
 #ifndef CAN_COMM_H__
 #define CAN_COMM_H__
-
-#include "../can-lib/lib/primary/c/ids.h"
-#include "../can-lib/lib/primary/c/network.h"
+#define primary_NETWORK_IMPLEMENTATION
+#include "../can-lib/lib/primary/primary_network.h"
 #include "can.h"
 
 #define CAN_SLAVE_START_FILTER_BANK 14
@@ -26,7 +25,25 @@
         }                                                 \
     }
 HAL_StatusTypeDef can_send(CAN_HandleTypeDef *hcan, uint8_t *buffer, CAN_TxHeaderTypeDef *header);
-HAL_StatusTypeDef can_primary_send(uint16_t id);
+
+/**
+ * @brief Function to send a message to the primary network
+ * 
+ * @param id Message ID
+ * @param optional_offset Used to send temperatures or cells voltage, necessary if the message is longer than 8 bytes
+ * If not used, set to 0.
+ * eg: index 0 -> voltage 0-2, index 1 -> voltage 3-5.
+ * 
+ * @return HAL_StatusTypeDef 
+ */
+HAL_StatusTypeDef can_primary_send(uint16_t id, uint8_t optional_offset);
+
+/**
+ * @brief Function to send a message to the secondary network 
+ * 
+ * @param id Mesage ID
+ * @return HAL_StatusTypeDef 
+ */
 HAL_StatusTypeDef can_secondary_send(uint16_t id);
 // extern primary_message_SET_RADIATOR_SPEED_conversion rads_speed_msg;
 // extern primary_message_SET_PUMPS_SPEED_conversion pumps_speed_msg;
