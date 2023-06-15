@@ -29,7 +29,8 @@ LTC6811_HandleTypeDef monitor_handler;
 uint8_t cell_col_index                                    = 255;
 uint8_t cell_row_index                                    = 0;
 uint16_t cell_temps_raw[CELL_TEMPS_ARRAY_SIZE][NTC_COUNT] = {0};
-uint8_t stocazzo                                          = 0;
+VOLT_CHANNEL cells                                        = VOLT_CHANNEL_ALL;
+
 void monitor_init() {
     LTC6811_CFGR config;
     config.ADCOPT             = 0;
@@ -62,7 +63,6 @@ uint8_t monitor_get_min_cell() {
 uint8_t monitor_read_voltage() {
     volt_status            = VOLT_OK;
     total_voltage_on_board = 0.0;
-    VOLT_CHANNEL cells     = VOLT_CHANNEL_ALL;
     if (volt_read(&monitor_handler, LTC6811_MD_7KHZ_3KHZ, LTC6811_DCP_DISABLED, &cells, &voltages, 5) == 1) {
         volt_status = VOLT_ERR;
         error_set(ERROR_BMS_MONITOR, 0);
@@ -96,7 +96,6 @@ uint8_t monitor_print_volt() {
     volt_status            = VOLT_OK;
     voltage_min_index      = -1;
     total_voltage_on_board = 0.0;
-    VOLT_CHANNEL cells     = VOLT_CHANNEL_ALL;
     if (volt_read(&monitor_handler, LTC6811_MD_7KHZ_3KHZ, LTC6811_DCP_DISABLED, &cells, &voltages, 5) == 1) {
         printl("LTC ERROR!", ERR_HEADER);
         volt_status = VOLT_ERR;

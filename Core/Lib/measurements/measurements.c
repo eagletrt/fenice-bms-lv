@@ -11,8 +11,7 @@
 
 #include "measurements.h"
 
-#include "../can-lib/lib/primary/c/ids.h"
-#include "../can-lib/lib/primary/c/watchdog.h"
+#include "../can-lib/lib/primary/primary_network.h"
 #include "adc.h"
 #include "can_comm.h"
 #include "current_transducer.h"

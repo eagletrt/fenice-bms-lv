@@ -38,6 +38,10 @@ BUILD_DIR = build
 C_SOURCES =  \
 Core/Lib/bms_monitor/monitor_int.c \
 Core/Lib/can-comm/can_comm.c \
+Core/Lib/can-lib/lib/bms/bms_network.c \
+Core/Lib/can-lib/lib/inverters/inverters_network.c \
+Core/Lib/can-lib/lib/primary/primary_network.c \
+Core/Lib/can-lib/lib/secondary/secondary_network.c \
 Core/Lib/cli_bms_lv/cli_bms_lv.c \
 Core/Lib/current_transducer/current_transducer.c \
 Core/Lib/dac_pump/dac_pump.c \
@@ -122,7 +126,7 @@ PREFIX = arm-none-eabi-
 POSTFIX = "
 # The gcc compiler bin path can be either defined in make command via GCC_PATH variable (> make GCC_PATH=xxx)
 # either it can be added to the PATH environment variable.
-GCC_PATH="/Users/dimitri/Library/Application Support/Code/User/globalStorage/bmd.stm32-for-vscode/@xpack-dev-tools/arm-none-eabi-gcc/11.3.1-1.1.2/.content/bin
+GCC_PATH="/Users/tommasocanova/Library/Application Support/Code/User/globalStorage/bmd.stm32-for-vscode/@xpack-dev-tools/arm-none-eabi-gcc/10.2.1-1.1.2/.content/bin
 ifdef GCC_PATH
 CXX = $(GCC_PATH)/$(PREFIX)g++$(POSTFIX)
 CC = $(GCC_PATH)/$(PREFIX)gcc$(POSTFIX)
@@ -180,12 +184,14 @@ C_INCLUDES =  \
 -ICore/Inc \
 -ICore/Lib/bms_monitor \
 -ICore/Lib/can-comm \
--ICore/Lib/can-lib/lib/bms/c \
--ICore/Lib/can-lib/lib/primary/c \
--ICore/Lib/can-lib/lib/secondary/c \
--ICore/Lib/can-lib/proto/bms/cpp \
--ICore/Lib/can-lib/proto/primary/cpp \
--ICore/Lib/can-lib/proto/secondary/cpp \
+-ICore/Lib/can-lib/lib/bms \
+-ICore/Lib/can-lib/lib/inverters \
+-ICore/Lib/can-lib/lib/primary \
+-ICore/Lib/can-lib/lib/secondary \
+-ICore/Lib/can-lib/proto/bms \
+-ICore/Lib/can-lib/proto/inverters \
+-ICore/Lib/can-lib/proto/primary \
+-ICore/Lib/can-lib/proto/secondary \
 -ICore/Lib/cli_bms_lv \
 -ICore/Lib/current_transducer \
 -ICore/Lib/dac_pump \
