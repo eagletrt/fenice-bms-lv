@@ -47,6 +47,7 @@ void monitor_init() {
 
     if (ltc6811_rdcfg(&monitor_handler) != HAL_OK) {
         error_set(ERROR_BMS_MONITOR, 0);
+        
     }
 }
 

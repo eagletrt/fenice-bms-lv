@@ -117,6 +117,16 @@ HAL_StatusTypeDef can_primary_send(uint16_t id, uint8_t optional_offset) {
         version.canlib_build_time = CANLIB_BUILD_TIME;
         primary_lv_version_pack(buffer, &version, PRIMARY_LV_VERSION_BYTE_SIZE);
         tx_header.DLC = PRIMARY_LV_VERSION_BYTE_SIZE;
+    } else if (id == PRIMARY_LV_ERRORS_FRAME_ID) {
+        primary_lv_errors_t raw_errors;
+        primary_lv_errors_conversion_to_raw_struct(&raw_errors, &primary_lv_errors);
+        primary_lv_errors_pack(buffer, &raw_errors, PRIMARY_LV_ERRORS_BYTE_SIZE);
+        tx_header.DLC = PRIMARY_LV_ERRORS_BYTE_SIZE;
+    } else if (id == PRIMARY_LV_FEEDBACKS_FRAME_ID) {
+        primary_lv_feedbacks_t raw_feedbacks;
+        primary_lv_feedbacks_conversion_to_raw_struct(&raw_feedbacks, &primary_lv_feedbacks_converted);
+        primary_lv_feedbacks_pack(buffer, &raw_feedbacks, PRIMARY_LV_FEEDBACKS_BYTE_SIZE);
+        tx_header.DLC = PRIMARY_LV_FEEDBACKS_BYTE_SIZE;
     } else if (id == PRIMARY_LV_CELLS_VOLTAGE_FRAME_ID) {
         primary_lv_cells_voltage_t raw_volts;
         raw_volts.start_index = optional_offset;
@@ -164,21 +174,6 @@ HAL_StatusTypeDef can_primary_send(uint16_t id, uint8_t optional_offset) {
         car_inverters_conn.status = car_inverters.comm_status;
         primary_inverter_connection_status_pack(
             buffer, &car_inverters_conn, PRIMARY_INVERTER_CONNECTION_STATUS_BYTE_SIZE);
-    } else if (id == PRIMARY_LV_ERRORS_FRAME_ID) {
-        // primary_LvErrors lv_warnings = 0;
-        // primary_LvErrors lv_errors   = 0;
-        // size_t error_count           = 0;
-        // error_t error_array[ERROR_NUM_ERRORS];
-        // error_dump(error_array, &error_count);
-
-        // for (uint8_t i = 0; i < error_count; i++) {
-        //     if (error_array[i].state == STATE_WARNING) {
-        //         CANLIB_BITSET(lv_warnings, error_array[i].id);
-        //     } else if (error_array[i].state == STATE_FATAL) {
-        //         CANLIB_BITSET(lv_errors, error_array[i].id);
-        //     }
-        // }
-        //tx_header.DLC = primary_serialize_LV_ERRORS(buffer, lv_warnings, lv_errors);
     }
 
     return can_send(&CANP, buffer, &tx_header);
