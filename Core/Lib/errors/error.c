@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+primary_lv_errors_converted_t primary_lv_errors;
 /**
  * Reaction times by the rules:
  * 	- 500ms for voltages and current
@@ -153,16 +154,133 @@ void bms_error_callback(size_t error_index, size_t instance_index) {
     // printl("ERROR TIM ELAPSED\r\n", NOTHING);
     //bms_error_state();
     // if (!fatal_error[error_index])
+    set_error_bitset(error_index, 1);
     fatal_error[error_index] = instance_index + 1;
     is_bms_on_fault          = true;
 }
 
+void set_warning_bitset(error_id type, uint8_t val) {
+    switch (type) {
+        case ERROR_CELL_UNDERVOLTAGE:
+            primary_lv_errors.warnings_cell_undervoltage = val;
+            break;
+        case ERROR_CELL_OVERVOLTAGE:
+            primary_lv_errors.warnings_cell_overvoltage = val;
+            break;
+        case ERROR_OPEN_WIRE:
+            primary_lv_errors.warnings_battery_open_wire = val;
+            break;
+        case ERROR_CAN:
+            primary_lv_errors.warnings_can = val;
+            break;
+        case ERROR_SPI:
+            primary_lv_errors.warnings_spi = val;
+            break;
+        case ERROR_OVER_CURRENT:
+            primary_lv_errors.warnings_over_current = val;
+            break;
+        case ERROR_CELL_UNDER_TEMPERATURE:
+            primary_lv_errors.warnings_cell_under_temperature = val;
+            break;
+        case ERROR_CELL_OVER_TEMPERATURE:
+            primary_lv_errors.warnings_cell_over_temperature = val;
+            break;
+        case ERROR_RELAY:
+            primary_lv_errors.warnings_relay = val;
+            break;
+        case ERROR_BMS_MONITOR:
+            primary_lv_errors.warnings_bms_monitor = val;
+            break;
+        case ERROR_VOLTAGES_NOT_READY:
+            primary_lv_errors.warnings_voltages_not_ready = val;
+            break;
+        case ERROR_MCP23017:
+            primary_lv_errors.warnings_mcp23017 = val;
+            break;
+        case ERROR_RADIATOR:
+            primary_lv_errors.warnings_radiator = val;
+            break;
+        case ERROR_FAN:
+            primary_lv_errors.warnings_fan = val;
+            break;
+        case ERROR_PUMP:
+            primary_lv_errors.warnings_pump = val;
+            break;
+        case ERROR_ADC_INIT:
+            primary_lv_errors.warnings_adc_init = val;
+            break;
+        case ERROR_ADC_MUX:
+            primary_lv_errors.warnings_mux = val;
+            break;
+        default:
+            break;
+    }
+}
+
+void set_error_bitset(error_id type, uint8_t val) {
+    switch (type) {
+        case ERROR_CELL_UNDERVOLTAGE:
+            primary_lv_errors.errors_cell_undervoltage = val;
+            break;
+        case ERROR_CELL_OVERVOLTAGE:
+            primary_lv_errors.errors_cell_overvoltage = val;
+            break;
+        case ERROR_OPEN_WIRE:
+            primary_lv_errors.errors_battery_open_wire = val;
+            break;
+        case ERROR_CAN:
+            primary_lv_errors.errors_can = val;
+            break;
+        case ERROR_SPI:
+            primary_lv_errors.errors_spi = val;
+            break;
+        case ERROR_OVER_CURRENT:
+            primary_lv_errors.errors_over_current = val;
+            break;
+        case ERROR_CELL_UNDER_TEMPERATURE:
+            primary_lv_errors.errors_cell_under_temperature = val;
+            break;
+        case ERROR_CELL_OVER_TEMPERATURE:
+            primary_lv_errors.errors_cell_over_temperature = val;
+            break;
+        case ERROR_RELAY:
+            primary_lv_errors.errors_relay = val;
+            break;
+        case ERROR_BMS_MONITOR:
+            primary_lv_errors.errors_bms_monitor = val;
+            break;
+        case ERROR_VOLTAGES_NOT_READY:
+            primary_lv_errors.errors_voltages_not_ready = val;
+            break;
+        case ERROR_MCP23017:
+            primary_lv_errors.errors_mcp23017 = val;
+            break;
+        case ERROR_RADIATOR:
+            primary_lv_errors.errors_radiator = val;
+            break;
+        case ERROR_FAN:
+            primary_lv_errors.errors_fan = val;
+            break;
+        case ERROR_PUMP:
+            primary_lv_errors.errors_pump = val;
+            break;
+        case ERROR_ADC_INIT:
+            primary_lv_errors.errors_adc_init = val;
+            break;
+        case ERROR_ADC_MUX:
+            primary_lv_errors.errors_mux = val;
+            break;
+        default:
+            break;
+    }
+}
 void error_set(error_id type, uint8_t offset) {
 #ifdef NDEBUG
     char error_buff[50] = {};
     sprintf(error_buff, "ADD ERROR ID: %i-%u, (%s)", type, offset, error_names[type]);
     printl(error_buff, NO_HEADER);
 #endif
+    set_warning_bitset(type, 1);
     error_utils_error_set(&error_handler, type, offset);
 }
 
@@ -172,6 +290,7 @@ void error_reset(error_id type, uint8_t offset) {
     sprintf(error_buff, "REMOVE ERROR ID: %i-%u, (%s)", type, offset, error_names[type]);
     printl(error_buff, NO_HEADER);
 #endif
+    set_warning_bitset(type, 0);
     error_utils_error_reset(&error_handler, type, offset);
 }
 

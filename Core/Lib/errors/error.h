@@ -10,6 +10,7 @@
 #ifndef ERROR_H
 #define ERROR_H
 
+#include "../can-lib/lib/primary/primary_network.h"
 #include "error-utils.h"
 
 #include <inttypes.h>
@@ -34,6 +35,9 @@
 #define FAN_ERROR_INSTANCES           1
 #define PUMP_ERROR_INSTANCES          2  // First one is referred to left pump while the other one is the right one
 #define ADC_ERROR_INSTANCES           1
+
+extern primary_lv_errors_converted_t primary_lv_errors;
+
 /**
  * @brief	Error type definitions
  *
@@ -83,8 +87,8 @@ typedef enum { STATE_WARNING, STATE_FATAL } __attribute__((__packed__)) error_st
 
 /** @brief	Defines an error instance */
 typedef struct {
-    error_id id;        /* Defines the type of error */
-    uint8_t offset;     /* Identifies different instances of a type */
+    error_id id;    /* Defines the type of error */
+    uint8_t offset; /* Identifies different instances of a type */
     error_state state;
     uint32_t timestamp; /* Last time the error activated */
 } error_t;

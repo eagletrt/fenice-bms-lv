@@ -29,7 +29,7 @@ extern "C" {
 #include "main.h"
 
 /* USER CODE BEGIN Includes */
-
+#include "can_comm.h"
 /* USER CODE END Includes */
 
 extern ADC_HandleTypeDef hadc1;
@@ -207,6 +207,8 @@ extern ADC2_Sampled_Signals_t adc2_sampled_signals;
 extern ADC_status_flags_t adc_status_flags;
 extern ADC_converted adcs_converted_values;
 
+extern primary_lv_feedbacks_converted_t primary_lv_feedbacks_converted;
+
 extern ADC_ChannelConfTypeDef UserAdcConfig;
 /* USER CODE END Private defines */
 
@@ -325,6 +327,11 @@ void mux_fb_conversion();
 */
 void batt_out_conversion();
 
+/**
+ * @brief Populate the struct with all feedbacks needed for cansend routine 
+ * 
+ */
+void update_can_feedbacks();
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
@@ -332,4 +339,3 @@ void batt_out_conversion();
 #endif
 
 #endif /* __ADC_H__ */
-

@@ -234,10 +234,12 @@ int main(void) {
         cli_loop(&cli_bms_lv);
         ADC_Routine();
         measurements_flags_check();
-        if (error_utils_get_count(&error_handler) > 0 && errors_timer + 10 > errors_timer) {
-            can_primary_send(PRIMARY_LV_ERRORS_FRAME_ID, 0);
-            errors_timer = HAL_GetTick();
-        }
+
+        // if (error_utils_get_count(&error_handler) > 0 && errors_timer + 10 > errors_timer) {
+        //     can_primary_send(PRIMARY_LV_ERRORS_FRAME_ID, 0);
+        //     errors_timer = HAL_GetTick();
+        // }
+
         //TODO: REMOVE measurements_flags_check();  // measure and sends via can
         // check_on_feedbacks();  //check dcdcs and relay fb
         // inverters_loop(&car_inverters);
