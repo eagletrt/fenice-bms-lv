@@ -211,7 +211,7 @@ void monitor_read_temp() {
 
 #ifdef NDEBUG
         // Measure how much time a conversion will take
-        spin = (spin + 1) % (NTC_COUNT * CELL_TEMPS_ARRAY_SIZE);
+        uint8_t spin = (spin + 1) % (NTC_COUNT * CELL_TEMPS_ARRAY_SIZE);
         if (spin == 0) {
             HAL_GPIO_TogglePin(NC_MCU0_GPIO_Port, NC_MCU0_Pin);
         }

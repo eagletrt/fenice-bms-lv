@@ -21,12 +21,19 @@
  */
 #define CAN_MAX_PAYLOAD_LENGTH 8
 
-#define LV_CELLS_COUNT 12
+#define LV_CELLS_COUNT 6
 #define NTC_COUNT      12
-
 /**
  * BMS LV COSTRAINTS
  */
+
+/**
+ * @brief LTC6811 needs a different hardware configuration if it used with fewer than 12 cells
+ * In a six cells configuration, without using this flag, the first six cells are seen in the position [0-2] and [6-8]
+ * This flag allows to see the first six cells in the position [0-5]
+ * 
+ */
+#define LTC_SIX_CELLS_HW_FIX
 
 //#define DEAD_CELLS_OFFSET \ 1  //If one or more cells are not working anymore this offset could help to exclude those cells
 /** BASED ON LIPO STANDARD */

@@ -125,7 +125,7 @@ ERROR_UTILS_ErrorTypeDef lv_errors[] = {
 
     {.expiry_delay_ms  = TIMEOUT_RADIATOR,
      .instances        = radiator_error,
-     .instances_length = RADIATOR_ERROR_INSTANCES},                                                     //ERROR_RADIATOR
+     .instances_length = RADIATOR_ERROR_INSTANCES},  //ERROR_RADIATOR
 
     {.expiry_delay_ms = TIMEOUT_FAN, .instances = fan_error, .instances_length = FAN_ERROR_INSTANCES},  //ERROR_FAN
 

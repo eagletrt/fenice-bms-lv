@@ -91,24 +91,16 @@ void check_overcurrent() {
 
 void measurements_flags_check() {
     if (flags & MEAS_OPEN_WIRE_FLAG) {
-        // Kinda ugly solution i know :(
-        // From here
-        if (!is_bms_on_fault) {
-            // #ifdef MEAS_DEBUG
-            //             cli_bms_debug("OPEN WIRE", 9);
-            // #endif
-
-            if (volt_open_wire(&monitor_handler, LTC6811_MD_7KHZ_3KHZ, LTC6811_DCP_DISABLED, 10) != 0) {
-                error_set(ERROR_OPEN_WIRE, 0);
+        if (volt_open_wire(&monitor_handler, LTC6811_MD_7KHZ_3KHZ, LTC6811_DCP_DISABLED, 10) != 0) {
+            error_set(ERROR_OPEN_WIRE, 0);
 #ifdef NDEBUG_LTC
-                printl("Wire successful", NO_HEADER);
+            printl("Wire successful", NO_HEADER);
 #endif
-            } else {
-                error_reset(ERROR_OPEN_WIRE, 0);
+        } else {
+            error_reset(ERROR_OPEN_WIRE, 0);
 #ifdef NDEBUG_LTC
-                printl("Wire Error", NO_HEADER);
+            printl("Wire Error", NO_HEADER);
 #endif
-            }
         }
         flags &= ~MEAS_OPEN_WIRE_FLAG;
         // to here about 5/7 ms
