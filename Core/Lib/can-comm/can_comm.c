@@ -129,10 +129,14 @@ HAL_StatusTypeDef can_primary_send(uint16_t id, uint8_t optional_offset) {
         tx_header.DLC = PRIMARY_LV_FEEDBACKS_BYTE_SIZE;
     } else if (id == PRIMARY_LV_CELLS_VOLTAGE_FRAME_ID) {
         primary_lv_cells_voltage_t raw_volts;
-        raw_volts.start_index = optional_offset;
-        raw_volts.voltage_0   = voltages[0 + optional_offset];
-        raw_volts.voltage_1   = voltages[1 + optional_offset];
-        raw_volts.voltage_2   = voltages[2 + optional_offset];
+        primary_lv_cells_voltage_converted_t conv_volts;
+        conv_volts.start_index = optional_offset;
+
+        conv_volts.voltage_0 = voltages[0 + optional_offset] / 1000;
+        conv_volts.voltage_1 = voltages[1 + optional_offset] / 1000;
+        conv_volts.voltage_2 = voltages[2 + optional_offset] / 1000;
+        primary_lv_cells_voltage_conversion_to_raw_struct(&raw_volts, &conv_volts);
+        primary_lv_cells_voltage_raw_to_conversion_struct(&conv_volts, &raw_volts);
         primary_lv_cells_voltage_pack(buffer, &raw_volts, PRIMARY_LV_CELLS_VOLTAGE_BYTE_SIZE);
         tx_header.DLC = PRIMARY_LV_CELLS_VOLTAGE_BYTE_SIZE;
     } else if (id == PRIMARY_LV_TOTAL_VOLTAGE_FRAME_ID) {

@@ -130,7 +130,7 @@ void measurements_flags_check() {
     if (flags & MEAS_VOLTS_AND_TEMPS_FLAG) {
         monitor_read_voltage();
         can_primary_send(PRIMARY_LV_CELLS_VOLTAGE_FRAME_ID, 0);
-        can_primary_send(PRIMARY_LV_CELLS_VOLTAGE_FRAME_ID, 1);
+        can_primary_send(PRIMARY_LV_CELLS_VOLTAGE_FRAME_ID, 3);
         can_primary_send(PRIMARY_LV_TOTAL_VOLTAGE_FRAME_ID, 0);
         monitor_temp_conversion();
         can_primary_send(PRIMARY_LV_CELLS_TEMP_FRAME_ID, 0);

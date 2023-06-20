@@ -172,7 +172,7 @@ int main(void) {
     ADC_init_status_flags();
     ADC_init_mux();
     ADC_Vref_Calibration();
-    ADC_hall_sensor_calibration();
+    // ADC_hall_sensor_calibration();
     ADC_start_ADC2_readings();
 
     monitor_init();
@@ -185,16 +185,16 @@ int main(void) {
 
     // Buzzer congiguration
     pwm_set_period(&BZZR_HTIM, 1);
-    pwm_set_duty_cicle(&BZZR_HTIM, BZZR_PWM_TIM_CHNL, 0.5);
+    pwm_set_duty_cicle(&BZZR_HTIM, BZZR_PWM_TIM_CHNL, 0.25);
 
     // Other fan, set at 25 KHz
     pwm_set_period(&INTERNAL_FAN_HTIM, 0.04);
     pwm_set_duty_cicle(&INTERNAL_FAN_HTIM, INTERNAL_FAN_PWM_TIM_CHNL, 0.9);
     pwm_start_channel(&INTERNAL_FAN_HTIM, INTERNAL_FAN_PWM_TIM_CHNL);
-    pwm_start_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
+    // pwm_start_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
     //LV_MASTER_RELAY_set_state(GPIO_PIN_SET);
-    HAL_Delay(BUZZER_ALARM_TIME);
-    pwm_stop_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
+    // HAL_Delay(BUZZER_ALARM_TIME);
+    // pwm_stop_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
 
     // Keeps SPI CS high
     // ltc6810_disable_cs(&SPI);
@@ -205,8 +205,8 @@ int main(void) {
     printl("Relay out disabled, waiting 1 seconds before reading voltages\r\n", NO_HEADER);
     HAL_Delay(1000);
 
-    // check_initial_voltage();
-    LV_MASTER_RELAY_set_state(GPIO_PIN_SET);
+    check_initial_voltage();
+    //LV_MASTER_RELAY_set_state(GPIO_PIN_SET);
 
     //check_DCDCs_voltages();
 
@@ -231,9 +231,9 @@ int main(void) {
         // if (is_bms_on_fault) {
         //     bms_error_state();
         // } else {
-        cli_loop(&cli_bms_lv);
         ADC_Routine();
         measurements_flags_check();
+        cli_loop(&cli_bms_lv);
 
         // if (error_utils_get_count(&error_handler) > 0 && errors_timer + 10 > errors_timer) {
         //     can_primary_send(PRIMARY_LV_ERRORS_FRAME_ID, 0);
