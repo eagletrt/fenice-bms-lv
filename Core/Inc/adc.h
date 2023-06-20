@@ -119,7 +119,6 @@ typedef struct __attribute__((packed)) {
 
 typedef struct {
     bool is_adc2_conv_complete;
-    bool hall_calibration;                  //flag for hall sensor calibration, true if it needs to be done
     bool is_value_stored;                   //check if value is stored in the buffer
     uint8_t mux_hall_index_external;        // long as N_SAMPLES
     uint8_t mux_hall_index_internal;        //  long as MUX

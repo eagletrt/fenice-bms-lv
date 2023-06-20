@@ -136,8 +136,7 @@ ADC2_Sampled_Signals_t adc2_sampled_signals;
 ADC_converted adcs_converted_values;
 
 bool vref_calibration = true;
-uint16_t vref;            // Voltage used by the ADC as a reference
-uint16_t s_hall_vref[3];  // Voltage of hall sensor at current 0
+uint16_t vref;  // Voltage used by the ADC as a reference
 primary_lv_feedbacks_converted_t primary_lv_feedbacks_converted;
 
 void ADC_start_ADC2_readings() {
@@ -176,43 +175,12 @@ void ADC_Vref_Calibration() {
     }
 }
 
-void ADC_hall_sensor_calibration() {
-    adc_status_flags.mux_address_index       = S_HALL0;
-    adc_status_flags.mux_hall_index_internal = S_HALL0;
-    uint32_t result                          = 0;
-    HAL_TIM_Base_Start_IT(&TIMER_ADC_MEAS);
-
-    while (adc_status_flags.hall_calibration)  //wait to have enough data to perform the calibration
-    {
-    }
-
-    HAL_TIM_Base_Stop_IT(&TIMER_ADC_MEAS);
-
-    for (uint8_t i = 0; i < 3; i++) {
-        for (uint8_t j = 0; j < N_ADC_SAMPLES; j++) {
-            uint16_t *hall_sensor = (uint16_t *)(&adc2_sampled_signals.adcs_raw_hall[j]) + S_HALL0;
-            result += *(hall_sensor + i * 2);
-        }
-        s_hall_vref[i] = ADC_get_calibrated_mV(&ADC_HALL_AND_FB, result / N_ADC_SAMPLES);
-        result         = 0;
-    }
-
-    /*this is done to start from the first address of the multiplexer since samples 
-    would be equal to its maximum value so it will trigger the next address
-    */
-    adc_status_flags.mux_address_index       = MAX_MUX_LEN - 1;
-    adc_status_flags.mux_hall_index_internal = MUX_HALL_LEN - 1;
-    adc_status_flags.mux_fb_index_internal   = MUX_FB_LEN - 1;
-    adc_status_flags.is_adc2_conv_complete   = false;
-}
-
 void ADC_init_mux() {
     ADC_set_mux_address(0x0);
 }
 
 void ADC_init_status_flags() {
     adc_status_flags.is_adc2_conv_complete   = false;
-    adc_status_flags.hall_calibration        = true;  //flag for calibrating the hall sensors
     adc_status_flags.is_value_stored         = true;  // in order to start the first conversion
     adc_status_flags.mux_address_index       = 0;
     adc_status_flags.mux_hall_index_internal = 0;
@@ -322,22 +290,9 @@ void ADC_Routine() {
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *AdcHandle) {
     if (AdcHandle->Instance == ADC_HALL_AND_FB.Instance) {
-        if (!adc_status_flags.hall_calibration) {
-            adc_status_flags.is_adc2_conv_complete = true;
-        } else {
-            uint16_t *hall_sensor =
-                (uint16_t *)&adc2_sampled_signals.adcs_raw_hall[adc_status_flags.mux_hall_index_external];
-            *(hall_sensor + adc_status_flags.mux_hall_index_internal) = adc2_channels.mux_hall;
-
-            //Calibration is complete when the last sensor is reached and we have done N_ADC_SAMPLES for each one
-            if (adc_status_flags.mux_hall_index_internal == S_HALL2 &&
-                adc_status_flags.mux_hall_index_external == N_ADC_SAMPLES - 1) {
-                adc_status_flags.hall_calibration = false;
-            }
-
-            adc_status_flags.mux_hall_index_external = (adc_status_flags.mux_hall_index_external + 1) % N_ADC_SAMPLES;
-            adc_status_flags.is_value_stored         = true;
-        }
+        adc_status_flags.is_adc2_conv_complete   = true;
+        adc_status_flags.mux_hall_index_external = (adc_status_flags.mux_hall_index_external + 1) % N_ADC_SAMPLES;
+        adc_status_flags.is_value_stored         = true;
     } else if (AdcHandle->Instance == CALIBRATION_ADC.Instance) {
         vref_calibration = false;
     }
@@ -428,8 +383,7 @@ void mux_hall_conversion() {
         if (i != S_HALL0 && i != S_HALL1 && i != S_HALL2) {
             *(mux_hall_converted + i) = ADC_get_calibrated_mV(&ADC_HALL_AND_FB, result / N_ADC_SAMPLES_MUX_HALL);
         } else {
-            *(mux_hall_converted + i) =
-                CT_get_electric_current_mA(result / N_ADC_SAMPLES_MUX_HALL, s_hall_vref[hall_sensor++]);
+            *(mux_hall_converted + i) = CT_get_electric_current_mA(result / N_ADC_SAMPLES_MUX_HALL);
         }
         result = 0;
     }
