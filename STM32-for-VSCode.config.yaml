@@ -17,7 +17,7 @@ targetMCU: stm32f4x
 cpu: -mcpu=cortex-m4
 fpu: -mfpu=fpv4-sp-d16
 floatAbi: -mfloat-abi=hard
-ldscript: STM32F446RETx_FLASH.ld # linker script
+ldscript: STM32F446RETx_FLASH_BLT.ld # linker script
 
 # Compiler definitions. The -D prefix for the compiler will be automatically added.
 cDefinitions: 
