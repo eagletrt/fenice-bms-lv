@@ -17,6 +17,7 @@
 #include "current_transducer.h"
 #include "error.h"
 #include "fenice-config.h"
+#include "health_signals.h"
 #include "main.h"
 #include "monitor_int.h"
 #include "thermocouple.h"
@@ -119,6 +120,7 @@ void measurements_flags_check() {
         check_overcurrent();
         batt_out_conversion();
         update_can_feedbacks();
+        update_health_status(&hs, &adcs_converted_values);
         can_primary_send(PRIMARY_LV_CURRENTS_FRAME_ID, 0);
         can_primary_send(PRIMARY_LV_FEEDBACKS_FRAME_ID, 0);
         can_primary_send(PRIMARY_LV_ERRORS_FRAME_ID, 0);

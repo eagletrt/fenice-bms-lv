@@ -40,6 +40,7 @@
 #include "dma.h"
 #include "error.h"
 #include "fenice-config.h"
+#include "health_signals.h"
 #include "inverters.h"
 #include "mcp23017.h"
 #include "measurements.h"
@@ -167,6 +168,7 @@ int main(void) {
     // Blink to signal correct MX_XXX_init processes (usuefull for CAN transciever)
     cli_bms_lv_init();
     error_init();
+    health_init(&hs);
 
     //Init ADC related stuff
     ADC_init_status_flags();
@@ -224,17 +226,17 @@ int main(void) {
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
     errors_timer = HAL_GetTick();
-    //static bool first = true;
     mcp23017_set_gpio(&hmcp, MCP23017_PORTB, LED_R, 1);
+    //static bool first = true;
     while (1) {
         // Running stage
-        // if (is_bms_on_fault) {
-        //     bms_error_state();
-        // } else {
-        ADC_Routine();
-        measurements_flags_check();
-        cli_loop(&cli_bms_lv);
-
+        if (is_bms_on_fault) {
+            bms_error_state();
+        } else {
+            ADC_Routine();
+            measurements_flags_check();
+            cli_loop(&cli_bms_lv);
+        }
         // if (error_utils_get_count(&error_handler) > 0 && errors_timer + 10 > errors_timer) {
         //     can_primary_send(PRIMARY_LV_ERRORS_FRAME_ID, 0);
         //     errors_timer = HAL_GetTick();
@@ -337,8 +339,7 @@ static inline void check_initial_voltage() {
         printl(main_buff, NO_HEADER);
         if (monitor_print_volt() == VOLT_OK) {
             printl("Relay on", NORM_HEADER);
-            // TODO: CHANGE PIN L_OTHER
-            //HAL_GPIO_WritePin(L_OTHER_GPIO_Port, L_OTHER_Pin, GPIO_PIN_SET);
+            mcp23017_set_gpio(&hmcp, MCP23017_PORTB, LED_R, 1);
             pwm_start_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
             LV_MASTER_RELAY_set_state(GPIO_PIN_SET);
             HAL_Delay(BUZZER_ALARM_TIME);
@@ -414,19 +415,17 @@ void check_on_feedbacks() {
  */
 void bms_error_state() {
     // ERROR stage
-    // TODO: CHANGE PIN L_OTHER
-    // HAL_GPIO_WritePin(RELAY_GPIO_Port, RELAY_Pin, GPIO_PIN_RESET);
-    //HAL_GPIO_WritePin(L_ERR_GPIO_Port, L_ERR_Pin, GPIO_PIN_SET);
-    //error_state_inverters(&car_inverters);
-    printl("ERROR STATE \n", ERR_HEADER);
-    //HAL_GPIO_WritePin(L_OTHER_GPIO_Port, L_OTHER_Pin, GPIO_PIN_RESET);
-    while (1) {
-        cli_loop(&cli_bms_lv);
-        measurements_flags_check();  // measure and sends via can
-        // TODO: choose an error pin!
-        mcp23017_set_gpio(&hmcp, MCP23017_PORTB, LED_G, 1);
+    mcp23017_set_gpio(&hmcp, MCP23017_PORTB, LED_R, 0);
+    mcp23017_set_gpio(&hmcp, MCP23017_PORTB, LED_G, 1);
+    LV_MASTER_RELAY_set_state(GPIO_PIN_RESET);
 
-        //HAL_Delay(100);
+    error_state_inverters(&car_inverters);
+    printl("ERROR STATE \n", ERR_HEADER);
+    while (1) {
+        ADC_Routine();
+        // measure and sends via can
+        measurements_flags_check();
+        cli_loop(&cli_bms_lv);
     }
 }
 

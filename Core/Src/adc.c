@@ -337,7 +337,8 @@ void relay_out_conversion() {
     for (uint8_t i = 0; i < N_ADC_SAMPLES_RELAY_OUT; i++) {
         result += adc2_sampled_signals.adcs_raw_relay_out[i];
     }
-    adcs_converted_values.relay_out = ADC_get_calibrated_mV(&ADC_HALL_AND_FB, result / N_ADC_SAMPLES_RELAY_OUT);
+    adcs_converted_values.relay_out = ADC_get_calibrated_mV(&ADC_HALL_AND_FB, result / N_ADC_SAMPLES_RELAY_OUT) *
+                                      ADC2_VOLTAGE_DIVIDER_MULTIPLIER;
 
 #ifdef DEBUG
     sprintf(buffer, "Relay out time: %lu\r\n", (HAL_GetTick() / 10));
@@ -350,7 +351,8 @@ void lvms_out_conversion() {
     for (uint8_t i = 0; i < N_ADC_SAMPLES_LVMS_OUT; i++) {
         result += adc2_sampled_signals.adcs_raw_lvms_out[i];
     }
-    adcs_converted_values.lvms_out = ADC_get_calibrated_mV(&ADC_HALL_AND_FB, result / N_ADC_SAMPLES_LVMS_OUT);
+    adcs_converted_values.lvms_out = ADC_get_calibrated_mV(&ADC_HALL_AND_FB, result / N_ADC_SAMPLES_LVMS_OUT) *
+                                     ADC2_VOLTAGE_DIVIDER_MULTIPLIER;
 #ifdef DEBUG
     sprintf(buffer, "Lvms out time: %lu\r\n", HAL_GetTick() / 10);
     cli_bms_debug(buffer, strlen(buffer));
@@ -363,7 +365,8 @@ void as_computer_fb_conversion() {
         result += adc2_sampled_signals.adcs_raw_as_computer_fb[i];
     }
     adcs_converted_values.as_computer_fb =
-        ADC_get_calibrated_mV(&ADC_HALL_AND_FB, result / N_ADC_SAMPLES_AS_COMPUTER_FB);
+        ADC_get_calibrated_mV(&ADC_HALL_AND_FB, result / N_ADC_SAMPLES_AS_COMPUTER_FB) *
+        ADC2_VOLTAGE_DIVIDER_MULTIPLIER;
 #ifdef DEBUG
     sprintf(buffer, "as computer fb time: %lu\r\n", HAL_GetTick() / 10);
     cli_bms_debug(buffer, strlen(buffer));
@@ -382,6 +385,9 @@ void mux_hall_conversion() {
         }
         if (i != S_HALL0 && i != S_HALL1 && i != S_HALL2) {
             *(mux_hall_converted + i) = ADC_get_calibrated_mV(&ADC_HALL_AND_FB, result / N_ADC_SAMPLES_MUX_HALL);
+        } else if (i == S_HALL2) {
+            *(mux_hall_converted + i) = CT_get_electric_current_mA(result / N_ADC_SAMPLES_MUX_HALL) -
+                                        S_HALL_2_OFFSET_mA;
         } else {
             *(mux_hall_converted + i) = CT_get_electric_current_mA(result / N_ADC_SAMPLES_MUX_HALL);
         }
@@ -453,7 +459,8 @@ void batt_out_conversion() {
     for (uint8_t i = 0; i < N_ADC_SAMPLES_BATT_OUT; i++) {
         result += adc2_sampled_signals.adcs_raw_batt_out[i];
     }
-    adcs_converted_values.batt_out = ADC_get_calibrated_mV(&ADC_HALL_AND_FB, result / N_ADC_SAMPLES_BATT_OUT);
+    adcs_converted_values.batt_out = ADC_get_calibrated_mV(&ADC_HALL_AND_FB, result / N_ADC_SAMPLES_BATT_OUT) *
+                                     ADC2_VOLTAGE_DIVIDER_MULTIPLIER;
 
 #ifdef DEBUG
     sprintf(buffer, "Batt out time: %lu\r\n", HAL_GetTick() / 10);

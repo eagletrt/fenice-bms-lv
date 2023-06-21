@@ -18,6 +18,7 @@
 #include "dac.h"
 #include "dac_pump.h"
 #include "error.h"
+#include "health_signals.h"
 #include "i2c.h"
 #include "mcp23017.h"
 #include "monitor_int.h"
@@ -33,7 +34,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define N_COMMANDS 14
+#define N_COMMANDS 15
 
 cli_command_func_t _cli_volts;
 cli_command_func_t _cli_radiator;
@@ -49,6 +50,7 @@ cli_command_func_t _cli_can_send;
 cli_command_func_t _cli_inv;
 cli_command_func_t _cli_cooling;
 cli_command_func_t _cli_errors;
+cli_command_func_t _cli_health_signals;
 
 cli_command_func_t *commands[N_COMMANDS] = {
     &_cli_volts,
@@ -64,6 +66,7 @@ cli_command_func_t *commands[N_COMMANDS] = {
     &_cli_inv,
     &_cli_cooling,
     &_cli_errors,
+    &_cli_health_signals,
     &_cli_help};
 
 char *command_names[N_COMMANDS] = {
@@ -80,6 +83,7 @@ char *command_names[N_COMMANDS] = {
     "inv",
     "cooling",
     "errors",
+    "health",
     "?"};
 
 char *volt_status_name[VOLT_ENUM_SIZE] = {
@@ -121,6 +125,29 @@ void cli_bms_debug(char *msg, size_t length) {
     }
 }
 
+void _cli_health_signals(uint16_t argc, char **argv, char *out) {
+    out[0] = '\0';
+    sprintf(
+        out,
+        "Health signals bitset\r\n"
+        "LVMS_OUT: %d (1 if > %.3f)\r\n"
+        "RELAY_OUT: %d (1 if > %.3f)\r\n"
+        "BATTERY_VOLTAGE_OUT: %d (1 if > %.3f)\r\n"
+        "CHARGER_CURRENT_OUT: %d (1 if > %.3f)\r\n"
+        "BATTERY_CURRENT_OUT: %d (1 if > %.3f)\r\n"
+        "SIGN_BATTERY_CURRENT_OUT: %d (1 if positive)\r\n",
+        hs.lvms_out,
+        MIN_LVMS_VOLTAGE_mV,
+        hs.relay_out,
+        MIN_RELAY_VOLTAGE_mV,
+        hs.battery_voltage_out,
+        MIN_BATTERY_VOLTAGE_mV,
+        hs.charger_current,
+        MIN_BATTERY_CURRENT_THRESHOLD_mA,
+        hs.battery_current,
+        MIN_CHARGER_CURRENT_THRESHOLD_mA,
+        hs.sign_battery_current);
+}
 void _cli_volts(uint16_t argc, char **argv, char *out) {
     out[0] = '\0';
     monitor_print_volt_cli(out);
@@ -212,12 +239,13 @@ void _cli_adc(uint16_t argc, char **argv, char *out) {
         if (strcmp(argv[1], "hall") == 0) {
             sprintf(
                 out,
-                "Hall ocd 0: %.2f mV\r\n"
-                "Hall ocd 1: %.2f mV\r\n"
-                "Hall ocd 2: %.2f mV\r\n"
-                "S hall 0: %.2f mA\r\n"
-                "S hall 1: %.2f mA\r\n"
-                "S hall 2: %.2f mA\r\n",
+                "Current values\r\nOCD (Over Current Detection) and S (shunt current value)\r\n"
+                "Hall ocd 0 (AS_Battery): %.2f mV\r\n"
+                "Hall ocd 1 (LV_Battery): %.2f mV\r\n"
+                "Hall ocd 2 (Charger): %.2f mV\r\n"
+                "S hall 0 (AS_Battery): %.2f mA\r\n"
+                "S hall 1 (LV_Battery): %.2f mA\r\n"
+                "S hall 2 (Charger): %.2f mA\r\n",
                 adcs_converted_values.mux_hall.HALL_OCD0,
                 adcs_converted_values.mux_hall.HALL_OCD1,
                 adcs_converted_values.mux_hall.HALL_OCD2,
