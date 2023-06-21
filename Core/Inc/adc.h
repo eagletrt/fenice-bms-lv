@@ -180,7 +180,7 @@ typedef struct {
 } ADC_converted;
 
 #define MAX_MUX_LEN                  16
-#define N_ADC_SAMPLES                200
+#define N_ADC_SAMPLES                20
 #define N_ADC_SAMPLES_MUX_HALL       N_ADC_SAMPLES
 #define N_ADC_SAMPLES_MUX_FB         N_ADC_SAMPLES
 #define N_ADC_SAMPLES_AS_COMPUTER_FB N_ADC_SAMPLES
@@ -190,6 +190,9 @@ typedef struct {
 
 #define N_ADC_CALIBRATION_SAMPLES  500
 #define N_ADC_CALIBRATION_CHANNELS 2
+
+#define ADC2_VOLTAGE_DIVIDER_MULTIPLIER 9.0f
+#define S_HALL_2_OFFSET_mA              1500.0f
 
 typedef struct {
     MUX_HALL_VALUES adcs_raw_hall[N_ADC_SAMPLES_MUX_HALL];      // Multiplexed values
