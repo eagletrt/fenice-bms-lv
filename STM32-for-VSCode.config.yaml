@@ -17,10 +17,11 @@ targetMCU: stm32f4x
 cpu: -mcpu=cortex-m4
 fpu: -mfpu=fpv4-sp-d16
 floatAbi: -mfloat-abi=hard
+#ldscript: STM32F446RETx_FLASH_BLT.ld
 ldscript: STM32F446RETx_FLASH.ld # linker script
 
 # Compiler definitions. The -D prefix for the compiler will be automatically added.
-cDefinitions: 
+cDefinitions:
   - USE_HAL_DRIVER
   - STM32F446xx
   - LTC_COUNT=1
@@ -38,20 +39,19 @@ cxxDefinitionsFile:
 asDefinitionsFile:
 
 # Compiler flags
-cFlags: 
+cFlags:
   []
   #- -Wpacked
   #- -Wattributes
   #- -Wpadded
 cxxFlags: []
-linkerFlags: 
+linkerFlags:
   - -specs=nano.specs
   - -u_printf_float
 
-
 # libraries to be included. The -l prefix to the library will be automatically added.
 # Mind that non standard libraries should have a path to their respective directory.
-libraries: 
+libraries:
   - c
   - m
   - nosys
@@ -62,7 +62,7 @@ libraryDirectories: []
 # Glob patterns (https://www.wikiwand.com/en/Glob_(programming)) can be used.
 # Do mind that double stars are reserved in yaml
 # these should be escaped with a: \ or the name should be in double quotes e.g. "**.test.**"
-excludes: 
+excludes:
   - "**/Examples/**"
   - "**/examples/**"
   - "**/Example/**"
@@ -84,7 +84,7 @@ excludes:
 
 # Include directories (directories containing .h or .hpp files)
 # If a CubeMX makefile is present it will automatically include the include directories from that makefile.
-includeDirectories: 
+includeDirectories:
   - Inc/**
   - Core/Inc/**
   - Core/Lib/**
@@ -92,19 +92,16 @@ includeDirectories:
   - Core/Src/**
   - Core/Lib/**
 
-
 # Files that should be included in the compilation.
 # If a CubeMX makefile is present it will automatically include the  c and cpp/cxx files from that makefile.
 # Glob patterns (https://www.wikiwand.com/en/Glob_(programming)) can be used.
 # Do mind that double stars are reserved in yaml
 # these should be escaped with a: \ or the name should be in double quotes e.g. "HARDWARE_DRIVER*.c"
-sourceFiles:  
+sourceFiles:
   - Src/**
   - Core/Src/**
   - Core/Lib/**
 
-
 # When no makefile is present it will show a warning pop-up.
 # However when compilation without the CubeMX Makefile is desired, this can be turned of.
 suppressMakefileWarning: false
-    

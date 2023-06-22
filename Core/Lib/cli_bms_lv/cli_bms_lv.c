@@ -130,16 +130,16 @@ void _cli_health_signals(uint16_t argc, char **argv, char *out) {
     sprintf(
         out,
         "Health signals bitset\r\n"
-        "LVMS_OUT: %d (1 if > %.3f)\r\n"
-        "RELAY_OUT: %d (1 if > %.3f)\r\n"
+        "LVMS_OUT: %d (1 if V_LVMS - V_RELAY > %.3f)\r\n"
+        "RELAY_OUT: %d (1 if V_RELAY - V_BATTERY > %.3f)\r\n"
         "BATTERY_VOLTAGE_OUT: %d (1 if > %.3f)\r\n"
         "CHARGER_CURRENT_OUT: %d (1 if > %.3f)\r\n"
         "BATTERY_CURRENT_OUT: %d (1 if > %.3f)\r\n"
         "SIGN_BATTERY_CURRENT_OUT: %d (1 if positive)\r\n",
         hs.lvms_out,
-        MIN_LVMS_VOLTAGE_mV,
+        MIN_LVMS_VOLTAGE_DIFF_THRESHOLD_mV,
         hs.relay_out,
-        MIN_RELAY_VOLTAGE_mV,
+        MIN_RELAY_VOLTAGE_DIFF_THRESHOLD_mV,
         hs.battery_voltage_out,
         MIN_BATTERY_VOLTAGE_mV,
         hs.charger_current,

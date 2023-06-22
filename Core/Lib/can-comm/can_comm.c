@@ -18,7 +18,6 @@
 #include "error.h"
 #include "fenice-config.h"
 #include "inverters.h"
-#include "main.h"
 #include "monitor_int.h"
 #include "radiator.h"
 #include "thermocouple.h"
@@ -30,6 +29,18 @@ CAN_RxHeaderTypeDef rx_header;
 
 primary_set_radiator_speed_converted_t rads_speed_msg;
 primary_set_pumps_speed_converted_t pumps_speed_msg;
+
+open_blt_status_t open_blt_status;
+
+void open_blt_status_update(health_signals_t *hs, open_blt_status_t *obs) {
+    if (obs->is_flash_requested) {
+        if (hs->lvms_out == 1 && hs->charger_current == 1) {
+            obs->is_flash_available = 0;
+        } else {
+            obs->is_flash_available = 1;
+        }
+    }
+}
 
 void can_tx_header_init() {
     tx_header.ExtId = 0;
@@ -59,6 +70,15 @@ void can_primary_init() {
     HAL_CAN_Start(&CANP);
 
     can_tx_header_init();
+
+    open_blt_status.is_flash_requested              = 0;
+    open_blt_status.is_flash_available              = 0;
+    open_blt_status.is_time_set_pin_on              = 0;
+    open_blt_status.is_time_set_pin_timeout_elapsed = 0;
+    open_blt_status.time_set_initial_time_ms        = 0;
+    open_blt_status.time_set_timeout_ms             = OPEN_BLT_TIME_SET_TIMEOUT_MS;
+    open_blt_status.charging_done                   = 0;
+    open_blt_status.state                           = PRIMARY_LV_CAN_FLASH_ACK_RESPONSE_NO_FLASH_CHOICE;
 }
 void can_secondary_init() {
     CAN_FilterTypeDef filter;
@@ -178,6 +198,21 @@ HAL_StatusTypeDef can_primary_send(uint16_t id, uint8_t optional_offset) {
         car_inverters_conn.status = car_inverters.comm_status;
         primary_inverter_connection_status_pack(
             buffer, &car_inverters_conn, PRIMARY_INVERTER_CONNECTION_STATUS_BYTE_SIZE);
+    } else if (id == PRIMARY_LV_HEALTH_SIGNALS_FRAME_ID) {
+        primary_lv_health_signals_t raw_health;
+        raw_health.health_signals_battery_current      = hs.battery_current;
+        raw_health.health_signals_battery_voltage_out  = hs.battery_voltage_out;
+        raw_health.health_signals_charger_current      = hs.charger_current;
+        raw_health.health_signals_lvms_out             = hs.lvms_out;
+        raw_health.health_signals_relay_out            = hs.relay_out;
+        raw_health.health_signals_sign_battery_current = hs.sign_battery_current;
+        primary_lv_health_signals_pack(buffer, &raw_health, PRIMARY_LV_HEALTH_SIGNALS_BYTE_SIZE);
+        tx_header.DLC = PRIMARY_LV_HEALTH_SIGNALS_BYTE_SIZE;
+    } else if (id == PRIMARY_LV_CAN_FLASH_ACK_FRAME_ID) {
+        primary_lv_can_flash_ack_t raw_ack;
+        raw_ack.response = open_blt_status.state;
+        primary_lv_can_flash_ack_pack(buffer, &raw_ack, PRIMARY_LV_CAN_FLASH_ACK_BYTE_SIZE);
+        tx_header.DLC = PRIMARY_LV_CAN_FLASH_ACK_BYTE_SIZE;
     }
 
     return can_send(&CANP, buffer, &tx_header);
@@ -220,6 +255,10 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
         primary_set_inverter_connection_status_unpack(
             &inverter_msg, rx_data, PRIMARY_SET_INVERTER_CONNECTION_STATUS_BYTE_SIZE);
         set_inverter_status(&car_inverters, inverter_msg.status);
+    } else if (rx_header.StdId == PRIMARY_LV_CAN_FLASH_REQ_FRAME_ID) {
+        open_blt_status.is_flash_requested = 1;
+    } else if (rx_header.StdId == PRIMARY_BMS_LV_JMP_TO_BLT_FRAME_ID) {
+        HAL_NVIC_SystemReset();
     }
 }
 // CAN Secondary Network rx interrupt callback
@@ -228,4 +267,36 @@ void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan) {
     uint8_t rx_data[8] = {'\0'};
     error_toggle_check(HAL_CAN_GetRxMessage(&CANS, CAN_RX_FIFO1, &rx_header, rx_data), ERROR_CAN, 1);
     //uint8_t z = 0;
+}
+
+void update_can_feedbacks() {
+    // From ADC mux
+    primary_lv_feedbacks_converted.feedbacks_bspd_fb = (adcs_converted_values.mux_fb.BSPD_FB > 1600.0f) ? 1 : 0;
+    primary_lv_feedbacks_converted.feedbacks_imd_fb  = (adcs_converted_values.mux_fb.IMD_FB > 1600.0f) ? 1 : 0;
+    primary_lv_feedbacks_converted.feedbacks_lvms_fb = (adcs_converted_values.mux_fb.LVMS_FB > 1600.0f) ? 1 : 0;
+    primary_lv_feedbacks_converted.feedbacks_res_fb  = (adcs_converted_values.mux_fb.RES_FB > 1600.0f) ? 1 : 0;
+    primary_lv_feedbacks_converted.feedbacks_lv_encl = (adcs_converted_values.mux_fb.LV_ENCL_1_FB > 1600.0f) ? 1 : 0;
+    primary_lv_feedbacks_converted.feedbacks_hv_encl_1_fb  = (adcs_converted_values.mux_fb.HV_ENCL_1_FB > 1600.0f) ? 1
+                                                                                                                   : 0;
+    primary_lv_feedbacks_converted.feedbacks_hv_encl_2_fb  = (adcs_converted_values.mux_fb.HV_ENCL_2_FB > 1600.0f) ? 1
+                                                                                                                   : 0;
+    primary_lv_feedbacks_converted.feedbacks_back_plate_fb = (adcs_converted_values.mux_fb.BACK_PLATE_FB > 1600.0f) ? 1
+                                                                                                                    : 0;
+    primary_lv_feedbacks_converted.feedbacks_hvd_fb        = (adcs_converted_values.mux_fb.HVD_FB > 1600.0f) ? 1 : 0;
+    primary_lv_feedbacks_converted.feedbacks_ams_fb        = (adcs_converted_values.mux_fb.AMS_FB > 1600.0f) ? 1 : 0;
+    primary_lv_feedbacks_converted.feedbacks_asms_fb       = (adcs_converted_values.mux_fb.ASMS_FB > 1600.0f) ? 1 : 0;
+    primary_lv_feedbacks_converted.feedbacks_interlock_fb =
+        (adcs_converted_values.mux_fb.INTERLOCK_IMD_FB > 1600.0f) ? 1 : 0;
+    primary_lv_feedbacks_converted.sd_start = adcs_converted_values.mux_fb.SD_START;
+    primary_lv_feedbacks_converted.sd_end   = adcs_converted_values.mux_fb.SD_END;
+
+    // From mcp23017
+    primary_lv_feedbacks_converted.feedbacks_inverters_fb = mcp23017_get_state(&hmcp, MCP23017_PORTA, FB_INVERTERS);
+    primary_lv_feedbacks_converted.feedbacks_pcbs_fb      = mcp23017_get_state(&hmcp, MCP23017_PORTA, FB_PCBS);
+    primary_lv_feedbacks_converted.feedbacks_pumps_fb     = mcp23017_get_state(&hmcp, MCP23017_PORTA, FB_PUMPS);
+    primary_lv_feedbacks_converted.feedbacks_shutdown_fb  = mcp23017_get_state(&hmcp, MCP23017_PORTA, FB_SHUTDOWN);
+    primary_lv_feedbacks_converted.feedbacks_radiators_fb = mcp23017_get_state(&hmcp, MCP23017_PORTA, FB_RADIATORS);
+    primary_lv_feedbacks_converted.feedbacks_fan_fb       = mcp23017_get_state(&hmcp, MCP23017_PORTA, FB_FAN);
+    primary_lv_feedbacks_converted.feedbacks_as_actuation_fb =
+        mcp23017_get_state(&hmcp, MCP23017_PORTA, FB_AS_ACTUATION);
 }

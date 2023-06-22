@@ -13,6 +13,7 @@
 #define primary_NETWORK_IMPLEMENTATION
 #include "../can-lib/lib/primary/primary_network.h"
 #include "can.h"
+#include "health_signals.h"
 
 #define CAN_SLAVE_START_FILTER_BANK 14
 
@@ -24,6 +25,20 @@
                 return HAL_TIMEOUT;                       \
         }                                                 \
     }
+#define OPEN_BLT_TIME_SET_TIMEOUT_MS 3000
+typedef struct {
+    uint8_t is_flash_requested;
+    uint8_t is_flash_available;
+    uint8_t is_time_set_pin_on;
+    uint8_t is_time_set_pin_timeout_elapsed;
+    uint32_t time_set_initial_time_ms;
+    uint32_t time_set_timeout_ms;
+    uint8_t charging_done;
+    uint8_t state;
+} open_blt_status_t;
+
+extern open_blt_status_t open_blt_status;
+
 HAL_StatusTypeDef can_send(CAN_HandleTypeDef *hcan, uint8_t *buffer, CAN_TxHeaderTypeDef *header);
 
 /**
@@ -49,4 +64,11 @@ HAL_StatusTypeDef can_secondary_send(uint16_t id);
 // extern primary_message_SET_PUMPS_SPEED_conversion pumps_speed_msg;
 void can_primary_init();
 void can_secondary_init();
+void open_blt_status_update(health_signals_t *hs, open_blt_status_t *obs);
+/**
+ * @brief Populate the struct with all feedbacks needed for cansend routine 
+ * 
+ */
+
+void update_can_feedbacks();
 #endif
