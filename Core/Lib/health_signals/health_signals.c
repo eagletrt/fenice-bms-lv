@@ -86,19 +86,23 @@ void health_set_charger_current(health_signals_t *hs, float current) {
 void health_set_battery_voltage(health_signals_t *hs, float voltage) {
     voltage < MIN_BATTERY_VOLTAGE_mV ? (hs->battery_voltage_out = 0) : (hs->battery_voltage_out = 1);
 }
-void health_set_relay_out(health_signals_t *hs, float voltage) {
-    voltage < MIN_RELAY_VOLTAGE_mV ? (hs->relay_out = 0) : (hs->relay_out = 1);
+void health_set_relay_out(health_signals_t *hs, float v_relay_mV, float v_batt_mV) {
+    float diff_voltage = v_relay_mV - v_batt_mV;
+    diff_voltage < 0 ? (diff_voltage = -diff_voltage) : (diff_voltage = diff_voltage);
+    diff_voltage > MIN_RELAY_VOLTAGE_DIFF_THRESHOLD_mV ? (hs->relay_out = 0) : (hs->relay_out = 1);
 }
-void health_set_lvms_out(health_signals_t *hs, float voltage) {
-    voltage < MIN_LVMS_VOLTAGE_mV ? (hs->lvms_out = 0) : (hs->lvms_out = 1);
+void health_set_lvms_out(health_signals_t *hs, float lvms_out_mV, float v_relay_mV) {
+    float diff_voltage = v_relay_mV - lvms_out_mV;
+    diff_voltage < 0 ? (diff_voltage = -diff_voltage) : (diff_voltage = diff_voltage);
+    diff_voltage < MIN_LVMS_VOLTAGE_DIFF_THRESHOLD_mV ? (hs->lvms_out = 0) : (hs->lvms_out = 1);
 }
 void health_print(health_signals_t *hs) {
     printf("%u", *(uint8_t *)hs);
 }
 
 void update_health_status(health_signals_t *ptr_hs, ADC_converted *adcs_converted_values) {
-    health_set_lvms_out(ptr_hs, adcs_converted_values->lvms_out);
-    health_set_relay_out(ptr_hs, adcs_converted_values->relay_out);
+    health_set_lvms_out(ptr_hs, adcs_converted_values->lvms_out, adcs_converted_values->relay_out);
+    health_set_relay_out(ptr_hs, adcs_converted_values->relay_out, adcs_converted_values->batt_out);
     health_set_battery_voltage(ptr_hs, adcs_converted_values->batt_out);
     health_set_charger_current(ptr_hs, adcs_converted_values->mux_hall.S_HALL2);
     health_set_battery_current(ptr_hs, adcs_converted_values->mux_hall.S_HALL1);

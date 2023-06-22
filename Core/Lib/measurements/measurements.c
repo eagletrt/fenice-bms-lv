@@ -103,9 +103,32 @@ void measurements_flags_check() {
             printl("Wire Error", NO_HEADER);
 #endif
         }
+        if (open_blt_status.is_flash_requested) {
+            open_blt_status_update(&hs, &open_blt_status);
+            if (open_blt_status.is_flash_available) {
+                if (!open_blt_status.is_time_set_pin_on) {
+                    // Charging the capacitor in order to keep the microcontroller alive after flashing
+                    HAL_GPIO_WritePin(TIME_SET_GPIO_Port, TIME_SET_Pin, GPIO_PIN_SET);
+                    open_blt_status.is_time_set_pin_on       = 1;
+                    open_blt_status.time_set_initial_time_ms = HAL_GetTick();
+                    open_blt_status.state = PRIMARY_LV_CAN_FLASH_ACK_RESPONSE_PREPARING_TO_FLASH_CHOICE;
+                } else {
+                    if (HAL_GetTick() - open_blt_status.time_set_initial_time_ms >
+                        open_blt_status.time_set_timeout_ms) {
+                        open_blt_status.charging_done = 1;
+                        open_blt_status.state         = PRIMARY_LV_CAN_FLASH_ACK_RESPONSE_FLASH_CHOICE;
+                    }
+                }
+            } else {
+                open_blt_status.state = PRIMARY_LV_CAN_FLASH_ACK_RESPONSE_NO_FLASH_CHOICE;
+            }
+            // TODO: test if open wire still works
+            can_primary_send(PRIMARY_LV_CAN_FLASH_ACK_FRAME_ID, 0);
+        }
         flags &= ~MEAS_OPEN_WIRE_FLAG;
         // to here about 5/7 ms
     }
+
     if (flags & MEAS_CELL_TEMPS_FLAG) {
         monitor_read_temp();
         flags &= ~MEAS_CELL_TEMPS_FLAG;
@@ -125,6 +148,7 @@ void measurements_flags_check() {
         can_primary_send(PRIMARY_LV_FEEDBACKS_FRAME_ID, 0);
         can_primary_send(PRIMARY_LV_ERRORS_FRAME_ID, 0);
         can_primary_send(PRIMARY_INVERTER_CONNECTION_STATUS_FRAME_ID, 0);
+        //can_primary_send(PRIMARY_LV_HEALTH_SIGNALS_FRAME_ID, 0);
         // cansend
         flags &= ~MEAS_ALL_ANALOG_SIGNALS_FLAG;
     }

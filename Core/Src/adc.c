@@ -421,38 +421,6 @@ void mux_fb_conversion() {
 #endif
 }
 
-void update_can_feedbacks() {
-    // From ADC mux
-    primary_lv_feedbacks_converted.feedbacks_bspd_fb = (adcs_converted_values.mux_fb.BSPD_FB > 1600.0f) ? 1 : 0;
-    primary_lv_feedbacks_converted.feedbacks_imd_fb  = (adcs_converted_values.mux_fb.IMD_FB > 1600.0f) ? 1 : 0;
-    primary_lv_feedbacks_converted.feedbacks_lvms_fb = (adcs_converted_values.mux_fb.LVMS_FB > 1600.0f) ? 1 : 0;
-    primary_lv_feedbacks_converted.feedbacks_res_fb  = (adcs_converted_values.mux_fb.RES_FB > 1600.0f) ? 1 : 0;
-    primary_lv_feedbacks_converted.feedbacks_lv_encl = (adcs_converted_values.mux_fb.LV_ENCL_1_FB > 1600.0f) ? 1 : 0;
-    primary_lv_feedbacks_converted.feedbacks_hv_encl_1_fb  = (adcs_converted_values.mux_fb.HV_ENCL_1_FB > 1600.0f) ? 1
-                                                                                                                   : 0;
-    primary_lv_feedbacks_converted.feedbacks_hv_encl_2_fb  = (adcs_converted_values.mux_fb.HV_ENCL_2_FB > 1600.0f) ? 1
-                                                                                                                   : 0;
-    primary_lv_feedbacks_converted.feedbacks_back_plate_fb = (adcs_converted_values.mux_fb.BACK_PLATE_FB > 1600.0f) ? 1
-                                                                                                                    : 0;
-    primary_lv_feedbacks_converted.feedbacks_hvd_fb        = (adcs_converted_values.mux_fb.HVD_FB > 1600.0f) ? 1 : 0;
-    primary_lv_feedbacks_converted.feedbacks_ams_fb        = (adcs_converted_values.mux_fb.AMS_FB > 1600.0f) ? 1 : 0;
-    primary_lv_feedbacks_converted.feedbacks_asms_fb       = (adcs_converted_values.mux_fb.ASMS_FB > 1600.0f) ? 1 : 0;
-    primary_lv_feedbacks_converted.feedbacks_interlock_fb =
-        (adcs_converted_values.mux_fb.INTERLOCK_IMD_FB > 1600.0f) ? 1 : 0;
-    primary_lv_feedbacks_converted.sd_start = adcs_converted_values.mux_fb.SD_START;
-    primary_lv_feedbacks_converted.sd_end   = adcs_converted_values.mux_fb.SD_END;
-
-    // From mcp23017
-    primary_lv_feedbacks_converted.feedbacks_inverters_fb = mcp23017_get_state(&hmcp, MCP23017_PORTA, FB_INVERTERS);
-    primary_lv_feedbacks_converted.feedbacks_pcbs_fb      = mcp23017_get_state(&hmcp, MCP23017_PORTA, FB_PCBS);
-    primary_lv_feedbacks_converted.feedbacks_pumps_fb     = mcp23017_get_state(&hmcp, MCP23017_PORTA, FB_PUMPS);
-    primary_lv_feedbacks_converted.feedbacks_shutdown_fb  = mcp23017_get_state(&hmcp, MCP23017_PORTA, FB_SHUTDOWN);
-    primary_lv_feedbacks_converted.feedbacks_radiators_fb = mcp23017_get_state(&hmcp, MCP23017_PORTA, FB_RADIATORS);
-    primary_lv_feedbacks_converted.feedbacks_fan_fb       = mcp23017_get_state(&hmcp, MCP23017_PORTA, FB_FAN);
-    primary_lv_feedbacks_converted.feedbacks_as_actuation_fb =
-        mcp23017_get_state(&hmcp, MCP23017_PORTA, FB_AS_ACTUATION);
-}
-
 void batt_out_conversion() {
     uint32_t result = 0;
 
