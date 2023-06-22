@@ -414,11 +414,16 @@ void check_on_feedbacks() {
  * 
  */
 void bms_error_state() {
+#define ERR_NOISE
     // ERROR stage
     mcp23017_set_gpio(&hmcp, MCP23017_PORTB, LED_R, 0);
     mcp23017_set_gpio(&hmcp, MCP23017_PORTB, LED_G, 1);
     LV_MASTER_RELAY_set_state(GPIO_PIN_RESET);
-
+#ifdef ERR_NOISE
+    pwm_set_period(&BZZR_HTIM, 0.2);
+    pwm_set_duty_cicle(&BZZR_HTIM, BZZR_PWM_TIM_CHNL, 0.9);
+    pwm_start_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
+#endif
     error_state_inverters(&car_inverters);
     printl("ERROR STATE \n", ERR_HEADER);
     while (1) {
