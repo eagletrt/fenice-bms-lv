@@ -5,5 +5,7 @@
 [submodule "Core/Lib/can-lib"]
 	path = Core/Lib/can-lib
 	url = git@github.com:eagletrt/can.git
-	branch = build-evo
-	
+	branch = build-evo	
+[submodule "Core/Lib/bin2srec"]
+	path = Core/Lib/bin2srec
+	url = git@github.com:arkku/srec.git
