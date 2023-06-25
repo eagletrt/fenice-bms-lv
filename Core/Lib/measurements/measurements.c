@@ -140,7 +140,9 @@ void measurements_flags_check() {
         as_computer_fb_conversion();
         mux_fb_conversion();
         mux_hall_conversion();
+#ifndef NON_CRITICAL_SAFETY_CHECKS_BYPASS
         check_overcurrent();
+#endif
         batt_out_conversion();
         update_can_feedbacks();
         update_health_status(&hs, &adcs_converted_values);
@@ -148,7 +150,7 @@ void measurements_flags_check() {
         can_primary_send(PRIMARY_LV_FEEDBACKS_FRAME_ID, 0);
         can_primary_send(PRIMARY_LV_ERRORS_FRAME_ID, 0);
         can_primary_send(PRIMARY_INVERTER_CONNECTION_STATUS_FRAME_ID, 0);
-        //can_primary_send(PRIMARY_LV_HEALTH_SIGNALS_FRAME_ID, 0);
+        can_primary_send(PRIMARY_LV_HEALTH_SIGNALS_FRAME_ID, 0);
         // cansend
         flags &= ~MEAS_ALL_ANALOG_SIGNALS_FLAG;
     }
@@ -158,7 +160,9 @@ void measurements_flags_check() {
         can_primary_send(PRIMARY_LV_CELLS_VOLTAGE_FRAME_ID, 0);
         can_primary_send(PRIMARY_LV_CELLS_VOLTAGE_FRAME_ID, 3);
         can_primary_send(PRIMARY_LV_TOTAL_VOLTAGE_FRAME_ID, 0);
+#ifndef NON_CRITICAL_SAFETY_CHECKS_BYPASS
         monitor_temp_conversion();
+#endif
         can_primary_send(PRIMARY_LV_CELLS_TEMP_FRAME_ID, 0);
         can_primary_send(PRIMARY_LV_CELLS_TEMP_FRAME_ID, 1);
         flags &= ~MEAS_VOLTS_AND_TEMPS_FLAG;

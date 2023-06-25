@@ -41,6 +41,8 @@ extern "C" {
 /* USER CODE BEGIN ET */
 extern bool is_bms_on_fault;
 extern float bms_fan_duty_cycle;
+extern bool is_relay_closed;
+extern bool is_lvms_closed_for_the_first_time;
 typedef struct temperatures_struct {
     uint32_t value;
 
@@ -153,10 +155,13 @@ static inline GPIO_PinState LV_MASTER_RELAY_get_state() {
  *         @arg GPIO_PIN_RESET: to open LVMR
   *        @arg GPIO_PIN_SET: to close LVMR
  */
-static inline void LV_MASTER_RELAY_set_state(GPIO_PinState state) {
+static inline void LV_MASTER_RELAY_set_state(GPIO_PinState state, bool use_delay) {
     //HAL_GPIO_WritePin(RELAY_GPIO_Port, RELAY_Pin, state);
     HAL_GPIO_WritePin(RELAY_GPIO_Port, RELAY_Pin, state);
-    HAL_Delay(50);  // Let the relay close
+    // Let the relay close/open
+    if (use_delay) {
+        HAL_Delay(50);
+    }
 }
 
 /**

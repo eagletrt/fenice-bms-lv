@@ -385,6 +385,9 @@ void mux_hall_conversion() {
         }
         if (i != S_HALL0 && i != S_HALL1 && i != S_HALL2) {
             *(mux_hall_converted + i) = ADC_get_calibrated_mV(&ADC_HALL_AND_FB, result / N_ADC_SAMPLES_MUX_HALL);
+        } else if (i == S_HALL1) {
+            *(mux_hall_converted + i) = CT_get_electric_current_mA(result / N_ADC_SAMPLES_MUX_HALL) -
+                                        S_HALL_1_OFFSET_mA;
         } else if (i == S_HALL2) {
             *(mux_hall_converted + i) = CT_get_electric_current_mA(result / N_ADC_SAMPLES_MUX_HALL) -
                                         S_HALL_2_OFFSET_mA;

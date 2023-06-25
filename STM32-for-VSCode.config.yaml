@@ -81,6 +81,7 @@ excludes:
   - "**/test/**"
   - "**/*.pb.*"
   - "**/peripherals/**"
+  - "**/bin2srec/**"
 
 # Include directories (directories containing .h or .hpp files)
 # If a CubeMX makefile is present it will automatically include the include directories from that makefile.
