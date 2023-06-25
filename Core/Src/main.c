@@ -59,8 +59,9 @@
 
 /*----------------------------------- ERRORS ---------------------------------*/
 
-bool is_bms_on_fault = false;
-
+bool is_bms_on_fault                   = false;
+bool is_relay_closed                   = false;
+bool is_lvms_closed_for_the_first_time = false;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -341,11 +342,12 @@ static inline void check_initial_voltage() {
             printl("Relay on", NORM_HEADER);
             mcp23017_set_gpio(&hmcp, MCP23017_PORTB, LED_R, 1);
             pwm_start_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
-            LV_MASTER_RELAY_set_state(GPIO_PIN_SET);
+            LV_MASTER_RELAY_set_state(GPIO_PIN_SET, true);
             HAL_Delay(BUZZER_ALARM_TIME);
             pwm_stop_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
             i = VOLT_MAX_ATTEMPTS;
             printl("DONE!\r\n", NORM_HEADER);
+            is_relay_closed = true;
         }
         HAL_Delay(200);
     }
@@ -418,7 +420,8 @@ void bms_error_state() {
     // ERROR stage
     mcp23017_set_gpio(&hmcp, MCP23017_PORTB, LED_R, 0);
     mcp23017_set_gpio(&hmcp, MCP23017_PORTB, LED_G, 1);
-    LV_MASTER_RELAY_set_state(GPIO_PIN_RESET);
+    LV_MASTER_RELAY_set_state(GPIO_PIN_RESET, true);
+    is_relay_closed = false;
 #ifdef ERR_NOISE
     pwm_set_period(&BZZR_HTIM, 0.2);
     pwm_set_duty_cicle(&BZZR_HTIM, BZZR_PWM_TIM_CHNL, 0.9);
