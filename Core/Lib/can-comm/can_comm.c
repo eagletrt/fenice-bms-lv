@@ -152,9 +152,9 @@ HAL_StatusTypeDef can_primary_send(uint16_t id, uint8_t optional_offset) {
         primary_lv_cells_voltage_converted_t conv_volts;
         conv_volts.start_index = optional_offset;
 
-        conv_volts.voltage_0 = voltages[0 + optional_offset] / 1000;
-        conv_volts.voltage_1 = voltages[1 + optional_offset] / 1000;
-        conv_volts.voltage_2 = voltages[2 + optional_offset] / 1000;
+        conv_volts.voltage_0 = voltages[0 + optional_offset] / 1000.0;
+        conv_volts.voltage_1 = voltages[1 + optional_offset] / 1000.0;
+        conv_volts.voltage_2 = voltages[2 + optional_offset] / 1000.0;
         primary_lv_cells_voltage_conversion_to_raw_struct(&raw_volts, &conv_volts);
         primary_lv_cells_voltage_raw_to_conversion_struct(&conv_volts, &raw_volts);
         primary_lv_cells_voltage_pack(buffer, &raw_volts, PRIMARY_LV_CELLS_VOLTAGE_BYTE_SIZE);
@@ -170,17 +170,20 @@ HAL_StatusTypeDef can_primary_send(uint16_t id, uint8_t optional_offset) {
     } else if (id == PRIMARY_LV_CURRENTS_FRAME_ID) {
         primary_lv_currents_t raw_msg;
         primary_lv_currents_converted_t conv_msg;
-        //conv_msg.current = CT_get_electric_current_mA() / 1000.0;
+        // mA to A conversion
+        conv_msg.current_as_battery = adcs_converted_values.mux_hall.S_HALL0 / 1000.0;
+        conv_msg.current_lv_battery = adcs_converted_values.mux_hall.S_HALL1 / 1000.0;
+        conv_msg.current_charger    = adcs_converted_values.mux_hall.S_HALL2 / 1000.0;
         primary_lv_currents_conversion_to_raw_struct(&raw_msg, &conv_msg);
         primary_lv_currents_pack(buffer, &raw_msg, PRIMARY_LV_CURRENTS_BYTE_SIZE);
         tx_header.DLC = PRIMARY_LV_CURRENTS_BYTE_SIZE;
     } else if (id == PRIMARY_LV_CELLS_TEMP_FRAME_ID) {
         primary_lv_cells_temp_t raw_temps;
         primary_lv_cells_temp_converted_t conv_temps;
-        raw_temps.start_index = optional_offset;
-        raw_temps.temp0       = cell_temps[0 + optional_offset];
-        raw_temps.temp1       = cell_temps[1 + optional_offset];
-        raw_temps.temp2       = cell_temps[2 + optional_offset];
+        conv_temps.start_index = optional_offset;
+        conv_temps.temp0       = cell_temps[0 + optional_offset];
+        conv_temps.temp1       = cell_temps[1 + optional_offset];
+        conv_temps.temp2       = cell_temps[2 + optional_offset];
         primary_lv_cells_temp_conversion_to_raw_struct(&raw_temps, &conv_temps);
         primary_lv_cells_temp_pack(buffer, &raw_temps, PRIMARY_LV_CELLS_TEMP_BYTE_SIZE);
         //primary_serialize_LV_TEMPERATURE(buffer, ADC_get_t_batt1_val(), ADC_get_t_dcdc12_val());
@@ -287,8 +290,8 @@ void update_can_feedbacks() {
     primary_lv_feedbacks_converted.feedbacks_asms_fb       = (adcs_converted_values.mux_fb.ASMS_FB > 1600.0f) ? 1 : 0;
     primary_lv_feedbacks_converted.feedbacks_interlock_fb =
         (adcs_converted_values.mux_fb.INTERLOCK_IMD_FB > 1600.0f) ? 1 : 0;
-    primary_lv_feedbacks_converted.sd_start = adcs_converted_values.mux_fb.SD_START;
-    primary_lv_feedbacks_converted.sd_end   = adcs_converted_values.mux_fb.SD_END;
+    primary_lv_feedbacks_converted.sd_start = adcs_converted_values.mux_fb.SD_START / 1000.0;  //conversion mV to V
+    primary_lv_feedbacks_converted.sd_end   = adcs_converted_values.mux_fb.SD_END / 1000.0;    //conversion mV to V
 
     // From mcp23017
     primary_lv_feedbacks_converted.feedbacks_inverters_fb = mcp23017_get_state(&hmcp, MCP23017_PORTA, FB_INVERTERS);
