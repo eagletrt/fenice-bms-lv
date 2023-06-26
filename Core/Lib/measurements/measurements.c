@@ -192,7 +192,7 @@ void measurements_flags_check() {
         monitor_temp_conversion();
 
         can_primary_send(PRIMARY_LV_CELLS_TEMP_FRAME_ID, 0);
-        can_primary_send(PRIMARY_LV_CELLS_TEMP_FRAME_ID, 1);
+        can_primary_send(PRIMARY_LV_CELLS_TEMP_FRAME_ID, 3);
         flags &= ~MEAS_VOLTS_AND_TEMPS_FLAG;
     }
 
