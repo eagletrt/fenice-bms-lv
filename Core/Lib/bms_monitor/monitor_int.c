@@ -232,12 +232,14 @@ void monitor_temp_conversion() {
             val += cell_temps_raw[j][i];
         }
         val /= CELL_TEMPS_ARRAY_SIZE;
-        val           = (val / 10.0) * 1.0;
-        float val2    = val * val;
-        float val3    = val2 * val;
-        float val4    = val3 * val;
+        val        = (val / 10.0) * 1.0;
+        float val2 = val * val;
+        float val3 = val2 * val;
+        float val4 = val3 * val;
+#ifndef NON_CRITICAL_SAFETY_CHECKS_BYPASS
         cell_temps[i] = (float)(TEMP_CONST_a + TEMP_CONST_b * val + TEMP_CONST_c * val2 + TEMP_CONST_d * val3 +
                                 TEMP_CONST_e * val4);
+#endif
         if (cell_temps[i] > MAX_CELLS_ALLOWED_TEMP) {
             error_set(ERROR_CELL_OVER_TEMPERATURE, i);
         } else if (cell_temps[i] < MIN_CELLS_ALLOWED_TEMP) {
