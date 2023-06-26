@@ -21,6 +21,7 @@
 #include "health_signals.h"
 #include "i2c.h"
 #include "mcp23017.h"
+#include "measurements.h"
 #include "monitor_int.h"
 #include "notes_buzzer.h"
 #include "radiator.h"
@@ -34,7 +35,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define N_COMMANDS 15
+#define N_COMMANDS 16
 
 cli_command_func_t _cli_volts;
 cli_command_func_t _cli_radiator;
@@ -51,6 +52,7 @@ cli_command_func_t _cli_inv;
 cli_command_func_t _cli_cooling;
 cli_command_func_t _cli_errors;
 cli_command_func_t _cli_health_signals;
+cli_command_func_t _cli_signal_injection;
 
 cli_command_func_t *commands[N_COMMANDS] = {
     &_cli_volts,
@@ -67,6 +69,7 @@ cli_command_func_t *commands[N_COMMANDS] = {
     &_cli_cooling,
     &_cli_errors,
     &_cli_health_signals,
+    &_cli_signal_injection,
     &_cli_help};
 
 char *command_names[N_COMMANDS] = {
@@ -84,6 +87,7 @@ char *command_names[N_COMMANDS] = {
     "cooling",
     "errors",
     "health",
+    "inject",
     "?"};
 
 char *volt_status_name[VOLT_ENUM_SIZE] = {
@@ -157,6 +161,56 @@ void _cli_volts(uint16_t argc, char **argv, char *out) {
         sprintf(out + strlen(out), "Voltage status: %s \r\n", volt_status_name[volt_status]);
     }
 }
+
+void _cli_signal_injection(uint16_t argc, char **argv, char *out) {
+    if (argc < 2) {
+        sprintf(
+            out, "Invalid arguments\r\nUsage: inject {temp|current} {index} {value}\r\ne.g. inject temp 0 25.0\r\n");
+    } else {
+        if (strcmp(argv[1], "temp") == 0) {
+            if (argc < 4) {
+                sprintf(out, "Invalid arguments\r\nUsage: inject temp {index} {value}\r\ne.g. inject temp 0 25.0\r\n");
+            } else {
+                uint8_t index = atoi(argv[2]);
+                float value   = atof(argv[3]);
+                if (index < NTC_COUNT) {
+                    cell_temps[index] = value;
+                    sprintf(out, "Temperature %d set to %0.2f\r\n", index, value);
+                    injection_done = 1;
+                } else {
+                    sprintf(out, "Invalid index\r\n");
+                }
+            }
+        } else if (strcmp(argv[1], "current") == 0) {
+            if (argc < 4) {
+                sprintf(
+                    out,
+                    "Invalid arguments\r\nUsage: inject current {index} {value}\r\ne.g. inject current 0 25.0\r\n");
+            } else {
+                uint8_t index = atoi(argv[2]);
+                float value   = atof(argv[3]);
+                if (index < 3) {
+                    if (index == 0) {
+                        adcs_converted_values.mux_hall.S_HALL0 = value;
+                    } else if (index == 1) {
+                        adcs_converted_values.mux_hall.S_HALL1 = value;
+                    } else if (index == 2) {
+                        adcs_converted_values.mux_hall.S_HALL2 = value;
+                    }
+                    sprintf(out, "Current S_HALL_%d set to %0.2f\r\n", index, value);
+                    injection_done = 1;
+                } else {
+                    sprintf(out, "Invalid index\r\n");
+                }
+            }
+        } else {
+            sprintf(
+                out,
+                "Invalid arguments\r\nUsage: inject {temp|current} {index} {value}\r\ne.g. inject temp 0 25.0\r\n");
+        }
+    }
+}
+
 void _cli_radiator(uint16_t argc, char **argv, char *out) {
     if (argc < 2) {
         sprintf(out, "Invalid arguments \r\nUsage: radiator {L/R/B/info} {duty_cycle_value/off}\r\n");

@@ -29,6 +29,7 @@
 #endif
 
 uint8_t volatile flags;
+uint8_t injection_done = 0;
 
 void measurements_init(TIM_HandleTypeDef *htim) {
     __HAL_TIM_SetCompare(
@@ -61,11 +62,27 @@ void measurements_init(TIM_HandleTypeDef *htim) {
     HAL_TIM_OC_Start_IT(htim, MEAS_CELL_TEMPS_TIMER_CHANNEL);
     HAL_TIM_OC_Start_IT(&OPEN_WIRE_MEASUREMENT_TIMER, OPEN_WIRE_TIMER_CHANNEL);
 
+#ifdef NON_CRITICAL_SAFETY_CHECKS_BYPASS
+    // When testing current and temps values are set to be in the safe range
+    if (!injection_done) {
+        adcs_converted_values.mux_hall.S_HALL0   = 1000.0;
+        adcs_converted_values.mux_hall.S_HALL1   = 1000.0;
+        adcs_converted_values.mux_hall.S_HALL2   = 1000.0;
+        adcs_converted_values.mux_hall.HALL_OCD0 = 3000.0;
+        adcs_converted_values.mux_hall.HALL_OCD1 = 3000.0;
+        adcs_converted_values.mux_hall.HALL_OCD2 = 3000.0;
+        for (int i = 0; i < NTC_COUNT; i++) {
+            cell_temps[i] = 30.0;
+        }
+    }
+#endif
+
     flags = 0;
 }
 
 void check_overcurrent() {
-    if (adcs_converted_values.mux_hall.S_HALL0 > MAX_CURRENT_ALLOWED_mA) {
+    if (adcs_converted_values.mux_hall.S_HALL0 > MAX_CURRENT_ALLOWED_mA ||
+        adcs_converted_values.mux_hall.HALL_OCD0 < MIN_OCD_VALUE_TO_DETECT_OVERCURRENT_mV) {
         error_set(ERROR_OVER_CURRENT, 0);
     } else {
         if (!is_bms_on_fault) {
@@ -73,7 +90,8 @@ void check_overcurrent() {
         }
     }
 
-    if (adcs_converted_values.mux_hall.S_HALL1 > MAX_CURRENT_ALLOWED_mA) {
+    if (adcs_converted_values.mux_hall.S_HALL1 > MAX_CURRENT_ALLOWED_mA ||
+        adcs_converted_values.mux_hall.HALL_OCD1 < MIN_OCD_VALUE_TO_DETECT_OVERCURRENT_mV) {
         error_set(ERROR_OVER_CURRENT, 1);
     } else {
         if (!is_bms_on_fault) {
@@ -81,7 +99,8 @@ void check_overcurrent() {
         }
     }
 
-    if (adcs_converted_values.mux_hall.S_HALL2 > MAX_CURRENT_ALLOWED_mA) {
+    if (adcs_converted_values.mux_hall.S_HALL2 > MAX_CURRENT_ALLOWED_mA ||
+        adcs_converted_values.mux_hall.HALL_OCD2 < MIN_OCD_VALUE_TO_DETECT_OVERCURRENT_mV) {
         error_set(ERROR_OVER_CURRENT, 2);
     } else {
         if (!is_bms_on_fault) {
@@ -130,7 +149,13 @@ void measurements_flags_check() {
     }
 
     if (flags & MEAS_CELL_TEMPS_FLAG) {
+#ifndef NON_CRITICAL_SAFETY_CHECKS_BYPASS
         monitor_read_temp();
+#else
+        if (injection_done) {
+            monitor_read_temp();
+        }
+#endif
         flags &= ~MEAS_CELL_TEMPS_FLAG;
     }
 
@@ -139,9 +164,13 @@ void measurements_flags_check() {
         lvms_out_conversion();
         as_computer_fb_conversion();
         mux_fb_conversion();
-        mux_hall_conversion();
 #ifndef NON_CRITICAL_SAFETY_CHECKS_BYPASS
+        mux_hall_conversion();
         check_overcurrent();
+#else
+        if (injection_done) {
+            check_overcurrent();
+        }
 #endif
         batt_out_conversion();
         update_can_feedbacks();
