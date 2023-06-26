@@ -189,9 +189,8 @@ void measurements_flags_check() {
         can_primary_send(PRIMARY_LV_CELLS_VOLTAGE_FRAME_ID, 0);
         can_primary_send(PRIMARY_LV_CELLS_VOLTAGE_FRAME_ID, 3);
         can_primary_send(PRIMARY_LV_TOTAL_VOLTAGE_FRAME_ID, 0);
-#ifndef NON_CRITICAL_SAFETY_CHECKS_BYPASS
         monitor_temp_conversion();
-#endif
+
         can_primary_send(PRIMARY_LV_CELLS_TEMP_FRAME_ID, 0);
         can_primary_send(PRIMARY_LV_CELLS_TEMP_FRAME_ID, 1);
         flags &= ~MEAS_VOLTS_AND_TEMPS_FLAG;
