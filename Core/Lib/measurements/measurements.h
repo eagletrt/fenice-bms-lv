@@ -30,6 +30,9 @@ enum {
     MEAS_CELL_TEMPS_FLAG             = 16
 };
 
+// Used to debug signals when sensors are not mounted
+extern uint8_t injection_done;
+
 void measurements_init(TIM_HandleTypeDef *htim);
 void measurements_flags_check();
 void measurements_oc_handler(TIM_HandleTypeDef *htim);

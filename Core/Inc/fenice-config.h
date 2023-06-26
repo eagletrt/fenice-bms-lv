@@ -57,6 +57,8 @@
 #define MIN_DCDC24_ALLOWED_TEMP 0.0f
 
 #define MAX_CURRENT_ALLOWED_mA 30000.0f
-
+// OCD (Over Current Detection) is pulled up at 3V3,
+// When OCD is detected the pin goes to ground
+#define MIN_OCD_VALUE_TO_DETECT_OVERCURRENT_mV 500.0f
 #define NON_CRITICAL_SAFETY_CHECKS_BYPASS
 #endif
