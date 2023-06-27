@@ -181,9 +181,9 @@ HAL_StatusTypeDef can_primary_send(uint16_t id, uint8_t optional_offset) {
         primary_lv_cells_temp_t raw_temps;
         primary_lv_cells_temp_converted_t conv_temps;
         conv_temps.start_index = optional_offset;
-        conv_temps.temp0       = cell_temps[0 + optional_offset];
-        conv_temps.temp1       = cell_temps[1 + optional_offset];
-        conv_temps.temp2       = cell_temps[2 + optional_offset];
+        conv_temps.temp_0      = cell_temps[0 + optional_offset];
+        conv_temps.temp_1      = cell_temps[1 + optional_offset];
+        conv_temps.temp_2      = cell_temps[2 + optional_offset];
         primary_lv_cells_temp_conversion_to_raw_struct(&raw_temps, &conv_temps);
         primary_lv_cells_temp_pack(buffer, &raw_temps, PRIMARY_LV_CELLS_TEMP_BYTE_SIZE);
         //primary_serialize_LV_TEMPERATURE(buffer, ADC_get_t_batt1_val(), ADC_get_t_dcdc12_val());
