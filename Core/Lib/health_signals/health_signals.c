@@ -1,6 +1,6 @@
 /**
  * @file health_signals.c
- * @author your name (you@domain.com)
+ * @author Tommaso Canova (tommaso.canova@studenti.unitn.it)
  * @brief 
  * @version 0.1
  * @date 2023-03-14
