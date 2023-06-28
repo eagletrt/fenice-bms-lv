@@ -209,6 +209,7 @@ HAL_StatusTypeDef can_primary_send(uint16_t id, uint8_t optional_offset) {
         raw_health.health_signals_lvms_out             = hs.lvms_out;
         raw_health.health_signals_relay_out            = hs.relay_out;
         raw_health.health_signals_sign_battery_current = hs.sign_battery_current;
+        raw_health.health_code                         = *(uint8_t *)&hs;
         primary_lv_health_signals_pack(buffer, &raw_health, PRIMARY_LV_HEALTH_SIGNALS_BYTE_SIZE);
         tx_header.DLC = PRIMARY_LV_HEALTH_SIGNALS_BYTE_SIZE;
     } else if (id == PRIMARY_LV_CAN_FLASH_ACK_FRAME_ID) {

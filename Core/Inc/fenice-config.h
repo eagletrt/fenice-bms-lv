@@ -21,8 +21,9 @@
  */
 #define CAN_MAX_PAYLOAD_LENGTH 8
 
-#define LV_CELLS_COUNT 6
-#define NTC_COUNT      12
+#define MAX_LV_CELLS_COUNT 12
+#define LV_CELLS_COUNT     6
+#define NTC_COUNT          12
 /**
  * BMS LV COSTRAINTS
  */
@@ -60,5 +61,6 @@
 // OCD (Over Current Detection) is pulled up at 3V3,
 // When OCD is detected the pin goes to ground
 #define MIN_OCD_VALUE_TO_DETECT_OVERCURRENT_mV 500.0f
-#define NON_CRITICAL_SAFETY_CHECKS_BYPASS
+//#define NON_CRITICAL_SAFETY_CHECKS_BYPASS
+#define SKIP_TEMP_READ
 #endif

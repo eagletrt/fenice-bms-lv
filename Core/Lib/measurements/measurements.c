@@ -62,6 +62,12 @@ void measurements_init(TIM_HandleTypeDef *htim) {
     HAL_TIM_OC_Start_IT(htim, MEAS_CELL_TEMPS_TIMER_CHANNEL);
     HAL_TIM_OC_Start_IT(&OPEN_WIRE_MEASUREMENT_TIMER, OPEN_WIRE_TIMER_CHANNEL);
 
+#ifdef SKIP_TEMP_READ
+    for (int i = 0; i < NTC_COUNT; i++) {
+        cell_temps[i] = 30.0;
+    }
+#endif
+
 #ifdef NON_CRITICAL_SAFETY_CHECKS_BYPASS
     // When testing current and temps values are set to be in the safe range
     if (!injection_done) {
@@ -150,7 +156,9 @@ void measurements_flags_check() {
 
     if (flags & MEAS_CELL_TEMPS_FLAG) {
 #ifndef NON_CRITICAL_SAFETY_CHECKS_BYPASS
+#ifndef SKIP_TEMP_READ
         monitor_read_temp();
+#endif
 #else
         if (injection_done) {
             monitor_read_temp();

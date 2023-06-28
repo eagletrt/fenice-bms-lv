@@ -24,7 +24,7 @@
 
 #define CELL_TEMPS_ARRAY_SIZE 5
 
-extern voltage_t voltages[LV_CELLS_COUNT];
+extern voltage_t voltages[MAX_LV_CELLS_COUNT];
 extern uint16_t cell_temps_raw[CELL_TEMPS_ARRAY_SIZE][NTC_COUNT];
 extern float total_voltage_on_board;
 extern uint8_t volt_status;

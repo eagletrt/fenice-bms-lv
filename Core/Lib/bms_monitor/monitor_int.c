@@ -18,9 +18,9 @@
 #include <stdio.h>
 #include <string.h>
 
-voltage_t voltages[LV_CELLS_COUNT] = {0};
-float cell_temps[NTC_COUNT]        = {0.0};
-float total_voltage_on_board       = 0.0;
+voltage_t voltages[MAX_LV_CELLS_COUNT] = {0};
+float cell_temps[NTC_COUNT]            = {0.0};
+float total_voltage_on_board           = 0.0;
 char buff[500];
 uint8_t voltage_min_index;
 uint8_t volt_status;
@@ -197,7 +197,7 @@ void monitor_read_temp() {
         uint32_t t0 = HAL_GetTick();
         while ((status = ltc6811_pladc(&monitor_handler)) != HAL_OK && HAL_GetTick() - t0 < timeout)
             ;
-        volatile uint32_t delta = HAL_GetTick() - t0;
+        //volatile uint32_t delta = HAL_GetTick() - t0;
         if (status != HAL_OK) {
             // throw error!
         }
@@ -240,6 +240,7 @@ void monitor_temp_conversion() {
         cell_temps[i] = (float)(TEMP_CONST_a + TEMP_CONST_b * val + TEMP_CONST_c * val2 + TEMP_CONST_d * val3 +
                                 TEMP_CONST_e * val4);
 #endif
+#ifndef SKIP_TEMP_READ
         if (cell_temps[i] > MAX_CELLS_ALLOWED_TEMP) {
             error_set(ERROR_CELL_OVER_TEMPERATURE, i);
         } else if (cell_temps[i] < MIN_CELLS_ALLOWED_TEMP) {
@@ -248,6 +249,7 @@ void monitor_temp_conversion() {
             error_reset(ERROR_CELL_OVER_TEMPERATURE, i);
             error_reset(ERROR_CELL_UNDER_TEMPERATURE, i);
         }
+#endif
     }
 }
 

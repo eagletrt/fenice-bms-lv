@@ -129,4 +129,12 @@ void bms_error_callback(size_t error_index, size_t instance_index);
 */
 void error_dump(error_t errors[], size_t *error_count);
 
+/**
+ * @brief Set an error in the bitset that is used to send the errors via can 
+ * 
+ * @param type The error type
+ * @param offset The offset of the instance in error
+ */
+void set_error_bitset(error_id type, uint8_t val);
+
 #endif /* ERROR_H_ */
