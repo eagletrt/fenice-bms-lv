@@ -376,7 +376,6 @@ void as_computer_fb_conversion() {
 void mux_hall_conversion() {
     uint32_t result = 0;
     uint16_t *mux_hall_raw;
-    uint8_t hall_sensor       = 0;
     float *mux_hall_converted = (float *)&adcs_converted_values.mux_hall;
     for (uint8_t i = 0; i < MUX_HALL_LEN; i++) {
         for (uint8_t j = 0; j < N_ADC_SAMPLES_MUX_HALL; j++) {
