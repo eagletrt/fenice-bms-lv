@@ -87,6 +87,7 @@ void measurements_init(TIM_HandleTypeDef *htim) {
 }
 
 void check_overcurrent() {
+#ifdef AS_SYSTEM_MOUNTED
     if (adcs_converted_values.mux_hall.S_HALL0 > MAX_CURRENT_ALLOWED_mA ||
         adcs_converted_values.mux_hall.HALL_OCD0 < MIN_OCD_VALUE_TO_DETECT_OVERCURRENT_mV) {
         error_set(ERROR_OVER_CURRENT, 0);
@@ -95,6 +96,7 @@ void check_overcurrent() {
             error_reset(ERROR_OVER_CURRENT, 0);
         }
     }
+#endif
 
     if (adcs_converted_values.mux_hall.S_HALL1 > MAX_CURRENT_ALLOWED_mA ||
         adcs_converted_values.mux_hall.HALL_OCD1 < MIN_OCD_VALUE_TO_DETECT_OVERCURRENT_mV) {
