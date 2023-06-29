@@ -88,6 +88,7 @@ void cooling_routine(uint8_t);
 static inline void check_initial_voltage();
 static inline void check_DCDCs_voltages();
 static inline void fans_radiators_pumps_init();
+void set_flash_pin();
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -206,10 +207,11 @@ int main(void) {
     printl(main_buff, NO_HEADER);
 #endif
     printl("Relay out disabled, waiting 1 seconds before reading voltages\r\n", NO_HEADER);
-    HAL_Delay(1000);
+    //HAL_Delay(1000);
 
     check_initial_voltage();
-    //LV_MASTER_RELAY_set_state(GPIO_PIN_SET);
+    set_flash_pin();
+    //LV_MASTER_RELAY_set_state(GPIO_PIN_SET, true);
 
     //check_DCDCs_voltages();
 
@@ -236,8 +238,11 @@ int main(void) {
         } else {
             ADC_Routine();
             measurements_flags_check();
+            inverters_loop(&car_inverters);
+            // cooling routine
             cli_loop(&cli_bms_lv);
         }
+
         // if (error_utils_get_count(&error_handler) > 0 && errors_timer + 10 > errors_timer) {
         //     can_primary_send(PRIMARY_LV_ERRORS_FRAME_ID, 0);
         //     errors_timer = HAL_GetTick();
@@ -245,7 +250,6 @@ int main(void) {
 
         //TODO: REMOVE measurements_flags_check();  // measure and sends via can
         // check_on_feedbacks();  //check dcdcs and relay fb
-        // inverters_loop(&car_inverters);
 
         // cooling_routine(10);
     }
@@ -501,6 +505,16 @@ void cooling_routine(uint8_t temp) {
 
         dac_pump_store_and_set_value_on_both_channels(&hdac_pump, local_pump_speed, local_pump_speed);
     }*/
+}
+
+void set_flash_pin() {
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+    HAL_GPIO_WritePin(TIME_SET_GPIO_Port, TIME_SET_Pin, GPIO_PIN_RESET);
+    GPIO_InitStruct.Pin   = TIME_SET_Pin;
+    GPIO_InitStruct.Mode  = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull  = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    HAL_GPIO_Init(TIME_SET_GPIO_Port, &GPIO_InitStruct);
 }
 
 /* USER CODE END 4 */

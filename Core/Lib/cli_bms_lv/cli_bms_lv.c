@@ -35,7 +35,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define N_COMMANDS 16
+#define N_COMMANDS 17
 
 cli_command_func_t _cli_volts;
 cli_command_func_t _cli_radiator;
@@ -53,6 +53,7 @@ cli_command_func_t _cli_cooling;
 cli_command_func_t _cli_errors;
 cli_command_func_t _cli_health_signals;
 cli_command_func_t _cli_signal_injection;
+cli_command_func_t _cli_prep_flash;
 
 cli_command_func_t *commands[N_COMMANDS] = {
     &_cli_volts,
@@ -70,6 +71,7 @@ cli_command_func_t *commands[N_COMMANDS] = {
     &_cli_errors,
     &_cli_health_signals,
     &_cli_signal_injection,
+    &_cli_prep_flash,
     &_cli_help};
 
 char *command_names[N_COMMANDS] = {
@@ -88,6 +90,7 @@ char *command_names[N_COMMANDS] = {
     "errors",
     "health",
     "inject",
+    "prepflash",
     "?"};
 
 char *volt_status_name[VOLT_ENUM_SIZE] = {
@@ -316,9 +319,7 @@ void _cli_adc(uint16_t argc, char **argv, char *out) {
                 "IMD_FB: %.2f mV\r\n"
                 "LVMS_FB: %.2f mV\r\n"
                 "RES_FB: %.2f mV\r\n"
-                "TSMS_FB: %.2f mV\r\n"
-                "LV_ENCL_1_FB: %.2f mV\r\n"
-                "LV_ENCL_2_FB: %.2f mV\r\n"
+                "LV_ENCL_FB: %.2f mV\r\n"
                 "HV_ENCL_1_FB: %.2f mV\r\n"
                 "HV_ENCL_2_FB: %.2f mV\r\n"
                 "BACK_PLATE_FB: %.2f mV\r\n"
@@ -332,9 +333,7 @@ void _cli_adc(uint16_t argc, char **argv, char *out) {
                 adcs_converted_values.mux_fb.IMD_FB,
                 adcs_converted_values.mux_fb.LVMS_FB,
                 adcs_converted_values.mux_fb.RES_FB,
-                adcs_converted_values.mux_fb.TSMS_FB,
-                adcs_converted_values.mux_fb.LV_ENCL_1_FB,
-                adcs_converted_values.mux_fb.LV_ENCL_2_FB,
+                adcs_converted_values.mux_fb.LV_ENCL_FB,
                 adcs_converted_values.mux_fb.HV_ENCL_1_FB,
                 adcs_converted_values.mux_fb.HV_ENCL_2_FB,
                 adcs_converted_values.mux_fb.BACK_PLATE_FB,
@@ -355,6 +354,13 @@ void _cli_adc(uint16_t argc, char **argv, char *out) {
                 adcs_converted_values.lvms_out,
                 adcs_converted_values.batt_out);
         }
+    }
+}
+
+void _cli_prep_flash(uint16_t argc, char **argv, char *out) {
+    HAL_GPIO_WritePin(TIME_SET_GPIO_Port, TIME_SET_Pin, GPIO_PIN_SET);
+    if (HAL_GPIO_ReadPin(TIME_SET_GPIO_Port, TIME_SET_Pin) == GPIO_PIN_SET) {
+        sprintf(out, "Time set pin high\r\n");
     }
 }
 
@@ -428,19 +434,16 @@ void _cli_errors(uint16_t argc, char **argv, char *out) {
 
 void _cli_inv(uint16_t argc, char **argv, char *out) {
     if (strcmp(argv[1], "on") == 0) {
-        // HAL_GPIO_WritePin(INV_RFE_GPIO_Port, INV_RFE_Pin, GPIO_PIN_SET);
-        // HAL_Delay(1500);  // works
-        // HAL_GPIO_WritePin(INV_FRG_GPIO_Port, INV_FRG_Pin, GPIO_PIN_SET);
+        mcp23017_set_gpio(&hmcp, MCP23017_PORTB, RFE_EN, GPIO_PIN_SET);
+        HAL_Delay(1500);  // works
+        mcp23017_set_gpio(&hmcp, MCP23017_PORTB, FRG_EN, GPIO_PIN_SET);
     } else if (strcmp(argv[1], "off") == 0) {
-        // HAL_GPIO_WritePin(INV_RFE_GPIO_Port, INV_RFE_Pin, GPIO_PIN_RESET);
-        // HAL_Delay(1500);  // works
-        // HAL_GPIO_WritePin(INV_FRG_GPIO_Port, INV_FRG_Pin, GPIO_PIN_RESET);
+        mcp23017_set_gpio(&hmcp, MCP23017_PORTB, RFE_EN, GPIO_PIN_RESET);
+        HAL_Delay(1500);  // works
+        mcp23017_set_gpio(&hmcp, MCP23017_PORTB, FRG_EN, GPIO_PIN_RESET);
     }
-    // sprintf(
-    //     out,
-    //     "[RFE]: %u\r\n[FRG]: %u\r\n",
-    //     HAL_GPIO_ReadPin(INV_RFE_GPIO_Port, INV_RFE_Pin),
-    //     HAL_GPIO_ReadPin(INV_FRG_GPIO_Port, INV_FRG_Pin));
+
+    mcp23017_print_gpioB(&hmcp, out);
 }
 
 void _cli_cooling(uint16_t argc, char **argv, char *out) {
