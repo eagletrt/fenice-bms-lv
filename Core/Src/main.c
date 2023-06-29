@@ -423,6 +423,7 @@ void bms_error_state() {
     printl("ERROR STATE \n", ERR_HEADER);
     can_primary_send(PRIMARY_LV_ERRORS_FRAME_ID, 0);
     can_primary_send(PRIMARY_LV_HEALTH_SIGNALS_FRAME_ID, 0);
+    HAL_GPIO_WritePin(TIME_SET_GPIO_Port, TIME_SET_Pin, GPIO_PIN_RESET);
     HAL_Delay(1000);
 #define ERR_NOISE
     // ERROR stage
