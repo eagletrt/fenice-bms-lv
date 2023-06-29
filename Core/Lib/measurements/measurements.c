@@ -119,6 +119,7 @@ void check_overcurrent() {
 
 void measurements_flags_check() {
     if (flags & MEAS_OPEN_WIRE_FLAG) {
+#ifndef SKIP_OPEN_WIRE_CHECK
         if (volt_open_wire(&monitor_handler, LTC6811_MD_7KHZ_3KHZ, LTC6811_DCP_DISABLED, 10) != 0) {
             error_set(ERROR_OPEN_WIRE, 0);
 #ifdef NDEBUG_LTC
@@ -130,6 +131,7 @@ void measurements_flags_check() {
             printl("Wire Error", NO_HEADER);
 #endif
         }
+#endif
         if (open_blt_status.is_flash_requested) {
             open_blt_status_update(&hs, &open_blt_status);
             if (open_blt_status.is_flash_available) {
@@ -195,7 +197,9 @@ void measurements_flags_check() {
     }
 
     if (flags & MEAS_VOLTS_AND_TEMPS_FLAG) {
+#ifndef SKIP_VOLTAGES_CHECK
         monitor_read_voltage();
+#endif
         can_primary_send(PRIMARY_LV_CELLS_VOLTAGE_FRAME_ID, 0);
         can_primary_send(PRIMARY_LV_CELLS_VOLTAGE_FRAME_ID, 3);
         can_primary_send(PRIMARY_LV_TOTAL_VOLTAGE_FRAME_ID, 0);

@@ -45,9 +45,11 @@ void monitor_init() {
 
     ltc6811_wrcfg(&monitor_handler);
 
+#ifndef SKIP_VOLTAGES_CHECK
     if (ltc6811_rdcfg(&monitor_handler) != HAL_OK) {
         error_set(ERROR_BMS_MONITOR, 0);
     }
+#endif
 }
 
 uint8_t monitor_get_min_cell() {

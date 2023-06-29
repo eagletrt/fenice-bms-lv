@@ -275,22 +275,30 @@ void HAL_CAN_RxFifo1MsgPendingCallback(CAN_HandleTypeDef *hcan) {
 
 void update_can_feedbacks() {
     // From ADC mux
-    primary_lv_feedbacks_converted.feedbacks_bspd_fb = (adcs_converted_values.mux_fb.BSPD_FB > 1600.0f) ? 1 : 0;
-    primary_lv_feedbacks_converted.feedbacks_imd_fb  = (adcs_converted_values.mux_fb.IMD_FB > 1600.0f) ? 1 : 0;
-    primary_lv_feedbacks_converted.feedbacks_lvms_fb = (adcs_converted_values.mux_fb.LVMS_FB > 1600.0f) ? 1 : 0;
-    primary_lv_feedbacks_converted.feedbacks_res_fb  = (adcs_converted_values.mux_fb.RES_FB > 1600.0f) ? 1 : 0;
-    primary_lv_feedbacks_converted.feedbacks_lv_encl = (adcs_converted_values.mux_fb.LV_ENCL_1_FB > 1600.0f) ? 1 : 0;
-    primary_lv_feedbacks_converted.feedbacks_hv_encl_1_fb  = (adcs_converted_values.mux_fb.HV_ENCL_1_FB > 1600.0f) ? 1
-                                                                                                                   : 0;
-    primary_lv_feedbacks_converted.feedbacks_hv_encl_2_fb  = (adcs_converted_values.mux_fb.HV_ENCL_2_FB > 1600.0f) ? 1
-                                                                                                                   : 0;
-    primary_lv_feedbacks_converted.feedbacks_back_plate_fb = (adcs_converted_values.mux_fb.BACK_PLATE_FB > 1600.0f) ? 1
-                                                                                                                    : 0;
-    primary_lv_feedbacks_converted.feedbacks_hvd_fb        = (adcs_converted_values.mux_fb.HVD_FB > 1600.0f) ? 1 : 0;
-    primary_lv_feedbacks_converted.feedbacks_ams_fb        = (adcs_converted_values.mux_fb.AMS_FB > 1600.0f) ? 1 : 0;
-    primary_lv_feedbacks_converted.feedbacks_asms_fb       = (adcs_converted_values.mux_fb.ASMS_FB > 1600.0f) ? 1 : 0;
+    primary_lv_feedbacks_converted.feedbacks_bspd_fb =
+        (adcs_converted_values.mux_fb.BSPD_FB > HIGH_LEVEL_BITSET_THRESHOLD_SCALED) ? 1 : 0;
+    primary_lv_feedbacks_converted.feedbacks_imd_fb =
+        (adcs_converted_values.mux_fb.IMD_FB > HIGH_LEVEL_BITSET_THRESHOLD_SCALED) ? 1 : 0;
+    primary_lv_feedbacks_converted.feedbacks_lvms_fb =
+        (adcs_converted_values.mux_fb.LVMS_FB > HIGH_LEVEL_BITSET_THRESHOLD_SCALED) ? 1 : 0;
+    primary_lv_feedbacks_converted.feedbacks_res_fb =
+        (adcs_converted_values.mux_fb.RES_FB > HIGH_LEVEL_BITSET_THRESHOLD_SCALED) ? 1 : 0;
+    primary_lv_feedbacks_converted.feedbacks_lv_encl =
+        (adcs_converted_values.mux_fb.LV_ENCL_FB > HIGH_LEVEL_BITSET_THRESHOLD_SCALED) ? 1 : 0;
+    primary_lv_feedbacks_converted.feedbacks_hv_encl_1_fb =
+        (adcs_converted_values.mux_fb.HV_ENCL_1_FB > HIGH_LEVEL_BITSET_THRESHOLD_SCALED) ? 1 : 0;
+    primary_lv_feedbacks_converted.feedbacks_hv_encl_2_fb =
+        (adcs_converted_values.mux_fb.HV_ENCL_2_FB > HIGH_LEVEL_BITSET_THRESHOLD_SCALED) ? 1 : 0;
+    primary_lv_feedbacks_converted.feedbacks_back_plate_fb =
+        (adcs_converted_values.mux_fb.BACK_PLATE_FB > HIGH_LEVEL_BITSET_THRESHOLD_SCALED) ? 1 : 0;
+    primary_lv_feedbacks_converted.feedbacks_hvd_fb =
+        (adcs_converted_values.mux_fb.HVD_FB > HIGH_LEVEL_BITSET_THRESHOLD_SCALED) ? 1 : 0;
+    primary_lv_feedbacks_converted.feedbacks_ams_fb =
+        (adcs_converted_values.mux_fb.AMS_FB > HIGH_LEVEL_BITSET_THRESHOLD_SCALED) ? 1 : 0;
+    primary_lv_feedbacks_converted.feedbacks_asms_fb =
+        (adcs_converted_values.mux_fb.ASMS_FB > HIGH_LEVEL_BITSET_THRESHOLD_SCALED) ? 1 : 0;
     primary_lv_feedbacks_converted.feedbacks_interlock_fb =
-        (adcs_converted_values.mux_fb.INTERLOCK_IMD_FB > 1600.0f) ? 1 : 0;
+        (adcs_converted_values.mux_fb.INTERLOCK_IMD_FB > HIGH_LEVEL_BITSET_THRESHOLD_SCALED) ? 1 : 0;
     primary_lv_feedbacks_converted.sd_start = adcs_converted_values.mux_fb.SD_START / 1000.0;  //conversion mV to V
     primary_lv_feedbacks_converted.sd_end   = adcs_converted_values.mux_fb.SD_END / 1000.0;    //conversion mV to V
 

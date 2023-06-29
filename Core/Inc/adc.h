@@ -27,6 +27,7 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+
 /* USER CODE BEGIN Includes */
 #include "../can-lib/lib/primary/primary_network.h"
 /* USER CODE END Includes */
@@ -72,9 +73,9 @@ typedef enum {
     IMD_FB,
     LVMS_FB,
     RES_FB,
-    TSMS_FB,
-    LV_ENCL_1_FB,
-    LV_ENCL_2_FB,
+    N_CONNECTED_1,
+    LV_ENCL_FB,
+    N_CONNECTED_2,
     HV_ENCL_1_FB,
     HV_ENCL_2_FB,
     BACK_PLATE_FB,
@@ -103,9 +104,9 @@ typedef struct __attribute__((packed)) {
     uint16_t IMD_FB;
     uint16_t LVMS_FB;
     uint16_t RES_FB;
-    uint16_t TSMS_FB;
-    uint16_t LV_ENCL_1_FB;
-    uint16_t LV_ENCL_2_FB;
+    uint16_t N_CONNECTED_1;
+    uint16_t LV_ENCL_FB;
+    uint16_t N_CONNECTED_2;
     uint16_t HV_ENCL_1_FB;
     uint16_t HV_ENCL_2_FB;
     uint16_t BACK_PLATE_FB;
@@ -156,9 +157,9 @@ typedef struct {
     float IMD_FB;
     float LVMS_FB;
     float RES_FB;
-    float TSMS_FB;
-    float LV_ENCL_1_FB;
-    float LV_ENCL_2_FB;
+    float N_CONNECTED_1;
+    float LV_ENCL_FB;
+    float N_CONNECTED_2;
     float HV_ENCL_1_FB;
     float HV_ENCL_2_FB;
     float BACK_PLATE_FB;
@@ -193,6 +194,10 @@ typedef struct {
 #define ADC2_VOLTAGE_DIVIDER_MULTIPLIER 9.0f
 #define S_HALL_1_OFFSET_mA              300.0f
 #define S_HALL_2_OFFSET_mA              1500.0f
+
+#define HIGH_LEVEL_BITSET_THRESHOLD        1000.0f
+#define HIGH_LEVEL_BITSET_THRESHOLD_SCALED (HIGH_LEVEL_BITSET_THRESHOLD * ADC2_VOLTAGE_DIVIDER_MULTIPLIER)
+
 typedef struct {
     MUX_HALL_VALUES adcs_raw_hall[N_ADC_SAMPLES_MUX_HALL];      // Multiplexed values
     MUX_FB_VALUES adcs_raw_fb[N_ADC_SAMPLES_MUX_FB];            // Multiplexed values
@@ -335,3 +340,4 @@ void batt_out_conversion();
 #endif
 
 #endif /* __ADC_H__ */
+

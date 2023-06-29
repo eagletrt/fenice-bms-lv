@@ -57,7 +57,7 @@ void MX_GPIO_Init(void)
                           |MUX_A0_Pin|MUX_A1_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, NC_MCU0_Pin|LTC_CS_Pin|TIME_SET_Pin|NC_NC_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, NC_MCU0_Pin|LTC_CS_Pin|NC_NC_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, MUX_A2_Pin|MUX_A3_Pin, GPIO_PIN_RESET);
@@ -77,12 +77,18 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(CENTER_FB_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PBPin PBPin PBPin PBPin */
-  GPIO_InitStruct.Pin = NC_MCU0_Pin|LTC_CS_Pin|TIME_SET_Pin|NC_NC_Pin;
+  /*Configure GPIO pins : PBPin PBPin PBPin */
+  GPIO_InitStruct.Pin = NC_MCU0_Pin|LTC_CS_Pin|NC_NC_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PtPin */
+  GPIO_InitStruct.Pin = TIME_SET_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(TIME_SET_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PAPin PAPin */
   GPIO_InitStruct.Pin = MUX_A2_Pin|MUX_A3_Pin;
