@@ -358,9 +358,19 @@ void _cli_adc(uint16_t argc, char **argv, char *out) {
 }
 
 void _cli_prep_flash(uint16_t argc, char **argv, char *out) {
-    HAL_GPIO_WritePin(TIME_SET_GPIO_Port, TIME_SET_Pin, GPIO_PIN_SET);
-    if (HAL_GPIO_ReadPin(TIME_SET_GPIO_Port, TIME_SET_Pin) == GPIO_PIN_SET) {
-        sprintf(out, "Time set pin high\r\n");
+    if (argc < 2) {
+        sprintf(
+            out,
+            "Invalid arguments! This command allows to turn on/off the TIME_SET pin!\r\nUsage: prep_flash {0/1}}\r\n");
+    } else {
+        atoi(argv[1]) ? HAL_GPIO_WritePin(TIME_SET_GPIO_Port, TIME_SET_Pin, GPIO_PIN_SET)
+                      : HAL_GPIO_WritePin(TIME_SET_GPIO_Port, TIME_SET_Pin, GPIO_PIN_RESET);
+
+        if (HAL_GPIO_ReadPin(TIME_SET_GPIO_Port, TIME_SET_Pin) == GPIO_PIN_SET) {
+            sprintf(out, "Time set pin high\r\n");
+        } else {
+            sprintf(out, "Time set pin low\r\n");
+        }
     }
 }
 
