@@ -316,28 +316,28 @@ void _cli_adc(uint16_t argc, char **argv, char *out) {
                 out,
                 "SD_END: %.2f mV\r\n"
                 "BSPD_FB: %.2f mV\r\n"
-                "IMD_FB: %.2f mV\r\n"
+                "HVD_FB: %.2f mV\r\n"
                 "LVMS_FB: %.2f mV\r\n"
                 "RES_FB: %.2f mV\r\n"
                 "LV_ENCL_FB: %.2f mV\r\n"
-                "HV_ENCL_1_FB: %.2f mV\r\n"
+                "INVC_LID_FB: %.2f mV\r\n"
                 "HV_ENCL_2_FB: %.2f mV\r\n"
                 "BACK_PLATE_FB: %.2f mV\r\n"
-                "HVD_FB: %.2f mV\r\n"
+                "INVC_LID_FB: %.2f mV\r\n"
                 "AMS_FB: %.2f mV\r\n"
                 "ASMS_FB: %.2f mV\r\n"
                 "INTERLOCK_IMD_FB: %.2f mV\r\n"
                 "SD_START: %.2f mV\r\n",
                 adcs_converted_values.mux_fb.SD_END,
                 adcs_converted_values.mux_fb.BSPD_FB,
-                adcs_converted_values.mux_fb.IMD_FB,
+                adcs_converted_values.mux_fb.HVD_FB,
                 adcs_converted_values.mux_fb.LVMS_FB,
                 adcs_converted_values.mux_fb.RES_FB,
                 adcs_converted_values.mux_fb.LV_ENCL_FB,
-                adcs_converted_values.mux_fb.HV_ENCL_1_FB,
+                adcs_converted_values.mux_fb.INVC_LID_FB,
                 adcs_converted_values.mux_fb.HV_ENCL_2_FB,
                 adcs_converted_values.mux_fb.BACK_PLATE_FB,
-                adcs_converted_values.mux_fb.HVD_FB,
+                adcs_converted_values.mux_fb.INVC_LID_FB,
                 adcs_converted_values.mux_fb.AMS_FB,
                 adcs_converted_values.mux_fb.ASMS_FB,
                 adcs_converted_values.mux_fb.INTERLOCK_IMD_FB,
