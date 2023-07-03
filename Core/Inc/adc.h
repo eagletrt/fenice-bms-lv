@@ -70,16 +70,16 @@ typedef enum {
 typedef enum {
     SD_END = 0,
     BSPD_FB,
-    IMD_FB,
+    HVD_FB,
     LVMS_FB,
     RES_FB,
     N_CONNECTED_1,
     LV_ENCL_FB,
     N_CONNECTED_2,
-    HV_ENCL_1_FB,
+    INVC_LID_FB,
     HV_ENCL_2_FB,
     BACK_PLATE_FB,
-    HVD_FB,
+    INVC_INTERLOCK_FB,
     AMS_FB,
     ASMS_FB,
     INTERLOCK_IMD_FB,
@@ -101,16 +101,16 @@ typedef struct __attribute__((packed)) {
 typedef struct __attribute__((packed)) {
     uint16_t SD_END;
     uint16_t BSPD_FB;
-    uint16_t IMD_FB;
+    uint16_t HVD_FB;
     uint16_t LVMS_FB;
     uint16_t RES_FB;
     uint16_t N_CONNECTED_1;
     uint16_t LV_ENCL_FB;
     uint16_t N_CONNECTED_2;
-    uint16_t HV_ENCL_1_FB;
+    uint16_t INVC_LID_FB;
     uint16_t HV_ENCL_2_FB;
     uint16_t BACK_PLATE_FB;
-    uint16_t HVD_FB;
+    uint16_t INVC_INTERLOCK_FB;
     uint16_t AMS_FB;
     uint16_t ASMS_FB;
     uint16_t INTERLOCK_IMD_FB;
@@ -154,16 +154,16 @@ typedef struct {
 typedef struct {
     float SD_END;
     float BSPD_FB;
-    float IMD_FB;
+    float HVD_FB;
     float LVMS_FB;
     float RES_FB;
     float N_CONNECTED_1;
     float LV_ENCL_FB;
     float N_CONNECTED_2;
-    float HV_ENCL_1_FB;
+    float INVC_LID_FB;
     float HV_ENCL_2_FB;
     float BACK_PLATE_FB;
-    float HVD_FB;
+    float INVC_INTERLOCK_FB;
     float AMS_FB;
     float ASMS_FB;
     float INTERLOCK_IMD_FB;
@@ -233,11 +233,6 @@ void ADC_start_ADC2_readings();
 * @brief Calibrate the vref used to convert raw adc values to mV
 */
 void ADC_Vref_Calibration();
-
-/**
-* @brief Get sensor voltage at current 0 to have a vref for current measurement
-*/
-void ADC_hall_sensor_calibration();
 
 /**
  * @brief Init mux address pins to 0x0
@@ -340,4 +335,3 @@ void batt_out_conversion();
 #endif
 
 #endif /* __ADC_H__ */
-
