@@ -23,6 +23,9 @@ typedef enum { INV_OFF, INV_RFE_ON, INV_ON } INV_STATUS;
  */
 typedef struct {
     uint8_t comm_status;
+    uint8_t rfe_pin;
+    uint8_t frg_pin;
+    uint8_t discharge_pin;
     INV_STATUS inv_status;
     uint32_t last_cmd_timestamp;
     uint32_t rfe_on_timestamp;
@@ -71,6 +74,13 @@ static inline void inverters_loop(Inverters_struct *inv) {
             mcp23017_set_gpio(&hmcp, MCP23017_PORTB, FRG_EN, GPIO_PIN_SET);
             inv->inv_status = INV_ON;
         }
+
+        if (inv->discharge_pin) {
+            mcp23017_set_gpio(&hmcp, MCP23017_PORTB, DISCHARGE, GPIO_PIN_SET);
+        } else {
+            mcp23017_set_gpio(&hmcp, MCP23017_PORTB, DISCHARGE, GPIO_PIN_RESET);
+        }
+
     } else if (
         inv->comm_status == PRIMARY_SET_INVERTER_CONNECTION_STATUS_STATUS_OFF_CHOICE && inv->inv_status != INV_OFF) {
         mcp23017_set_gpio(&hmcp, MCP23017_PORTB, RFE_EN, GPIO_PIN_RESET);

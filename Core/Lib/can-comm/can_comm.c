@@ -263,6 +263,19 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
         open_blt_status.is_flash_requested = 1;
     } else if (rx_header.StdId == PRIMARY_BMS_LV_JMP_TO_BLT_FRAME_ID) {
         HAL_NVIC_SystemReset();
+    } else if (rx_header.StdId == PRIMARY_TS_STATUS_FRAME_ID) {
+        primary_ts_status_t raw_ts;
+        primary_ts_status_converted_t ts_status;
+        primary_ts_status_unpack(&raw_ts, rx_data, PRIMARY_TS_STATUS_BYTE_SIZE);
+        primary_ts_status_raw_to_conversion_struct(&ts_status, &raw_ts);
+
+        if (ts_status.ts_status == primary_ts_status_ts_status_PRECHARGE) {
+            car_inverters.discharge_pin = 1;
+        } else if (
+            ts_status.ts_status == primary_ts_status_ts_status_OFF ||
+            ts_status.ts_status == primary_ts_status_ts_status_FATAL) {
+            car_inverters.discharge_pin = 0;
+        }
     }
 }
 // CAN Secondary Network rx interrupt callback
