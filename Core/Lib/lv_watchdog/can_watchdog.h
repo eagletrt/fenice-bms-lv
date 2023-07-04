@@ -12,6 +12,10 @@
 #ifndef CAN_WATCHDOG_H
 #define CAN_WATCHDOG_H
 
+#include <inttypes.h>
+
+#define primary_WATCHDOG_IMPLEMENTATION
+
 void wdg_init();
 void wdg_update_and_check_timestamps();
 void wdg_update_message_timestamp(uint32_t id);

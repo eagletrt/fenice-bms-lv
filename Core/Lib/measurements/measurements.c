@@ -92,7 +92,7 @@ void check_overcurrent() {
         adcs_converted_values.mux_hall.HALL_OCD0 < MIN_OCD_VALUE_TO_DETECT_OVERCURRENT_mV) {
         error_set(ERROR_OVER_CURRENT, 0);
     } else {
-        if (!is_bms_on_fault) {
+        if (lv_status.status != PRIMARY_LV_STATUS_STATUS_ERROR_CHOICE) {
             error_reset(ERROR_OVER_CURRENT, 0);
         }
     }
@@ -102,7 +102,7 @@ void check_overcurrent() {
         adcs_converted_values.mux_hall.HALL_OCD1 < MIN_OCD_VALUE_TO_DETECT_OVERCURRENT_mV) {
         error_set(ERROR_OVER_CURRENT, 1);
     } else {
-        if (!is_bms_on_fault) {
+        if (lv_status.status != PRIMARY_LV_STATUS_STATUS_ERROR_CHOICE) {
             error_reset(ERROR_OVER_CURRENT, 1);
         }
     }
@@ -111,7 +111,7 @@ void check_overcurrent() {
         adcs_converted_values.mux_hall.HALL_OCD2 < MIN_OCD_VALUE_TO_DETECT_OVERCURRENT_mV) {
         error_set(ERROR_OVER_CURRENT, 2);
     } else {
-        if (!is_bms_on_fault) {
+        if (lv_status.status != PRIMARY_LV_STATUS_STATUS_ERROR_CHOICE) {
             error_reset(ERROR_OVER_CURRENT, 2);
         }
     }
@@ -207,6 +207,7 @@ void measurements_flags_check() {
 
         can_primary_send(PRIMARY_LV_CELLS_TEMP_FRAME_ID, 0);
         can_primary_send(PRIMARY_LV_CELLS_TEMP_FRAME_ID, 3);
+        can_primary_send(PRIMARY_LV_STATUS_FRAME_ID, 0);
         flags &= ~MEAS_VOLTS_AND_TEMPS_FLAG;
     }
 

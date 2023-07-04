@@ -11,6 +11,7 @@
 
 #include "health_signals.h"
 
+#include "can_comm.h"
 #include "usart.h"
 
 #include <stdio.h>
@@ -159,38 +160,42 @@ void update_health_status(health_signals_t *ptr_hs, ADC_converted *adcs_converte
     health_set_charger_current(ptr_hs, adcs_converted_values->mux_hall.S_HALL2);
     health_set_battery_current(ptr_hs, adcs_converted_values->mux_hall.S_HALL1);
     health_set_sign_battery_current(ptr_hs, adcs_converted_values->mux_hall.S_HALL1);
-    is_bms_on_fault = health_check_fault(ptr_hs);
-    if (is_bms_on_fault) {
+    if (health_check_fault(ptr_hs)) {
+        lv_status.status = PRIMARY_LV_STATUS_STATUS_ERROR_CHOICE;
+    }
+    if (lv_status.status == PRIMARY_LV_STATUS_STATUS_ERROR_CHOICE) {
         printl("Error in Health condition!\r\nBMS is on fault\n", ERR_HEADER);
         char buf[50];
-        char out[5000];
         sprintf(buf, "Error code %u\n", *(uint8_t *)ptr_hs);
         printl(buf, ERR_HEADER);
-        // sprintf(
-        //     out,
-        //     "Health signals bitset\r\n"
-        //     "LVMS_OUT: %d (1 if V_LVMS - V_RELAY < %.3f)\r\n"
-        //     "RELAY_OUT: %d (1 if V_RELAY - V_BATTERY < %.3f)\r\n"
-        //     "BATTERY_VOLTAGE_OUT: %d (1 if > %.3f)\r\n"
-        //     "CHARGER_CURRENT_OUT: %d (1 if > %.3f)\r\n"
-        //     "BATTERY_CURRENT_OUT: %d (1 if > %.3f)\r\n"
-        //     "SIGN_BATTERY_CURRENT_OUT: %d (1 if positive)\r\n",
-        //     hs.lvms_out,
-        //     MIN_LVMS_VOLTAGE_DIFF_THRESHOLD_mV,
-        //     hs.relay_out,
-        //     MIN_RELAY_VOLTAGE_DIFF_THRESHOLD_mV,
-        //     hs.battery_voltage_out,
-        //     MIN_BATTERY_VOLTAGE_mV,
-        //     hs.charger_current,
-        //     MIN_BATTERY_CURRENT_THRESHOLD_mA,
-        //     hs.battery_current,
-        //     MIN_CHARGER_CURRENT_THRESHOLD_mA,
-        //     hs.sign_battery_current);
-        //printl(out, NO_HEADER);
+#ifdef DEBUG
+        char out[5000];
+        sprintf(
+            out,
+            "Health signals bitset\r\n"
+            "LVMS_OUT: %d (1 if V_LVMS - V_RELAY < %.3f)\r\n"
+            "RELAY_OUT: %d (1 if V_RELAY - V_BATTERY < %.3f)\r\n"
+            "BATTERY_VOLTAGE_OUT: %d (1 if > %.3f)\r\n"
+            "CHARGER_CURRENT_OUT: %d (1 if > %.3f)\r\n"
+            "BATTERY_CURRENT_OUT: %d (1 if > %.3f)\r\n"
+            "SIGN_BATTERY_CURRENT_OUT: %d (1 if positive)\r\n",
+            hs.lvms_out,
+            MIN_LVMS_VOLTAGE_DIFF_THRESHOLD_mV,
+            hs.relay_out,
+            MIN_RELAY_VOLTAGE_DIFF_THRESHOLD_mV,
+            hs.battery_voltage_out,
+            MIN_BATTERY_VOLTAGE_mV,
+            hs.charger_current,
+            MIN_BATTERY_CURRENT_THRESHOLD_mA,
+            hs.battery_current,
+            MIN_CHARGER_CURRENT_THRESHOLD_mA,
+            hs.sign_battery_current);
+        printl(out, NO_HEADER);
         volatile uint8_t x = 0;
+#endif
     }
 #ifdef DEBUG
-    if (is_bms_on_fault) {
+    if (lv_status.status == PRIMARY_LV_STATUS_STATUS_ERROR_CHOICE) {
         printl("BMS is on fault\n", ERR_HEADER);
     }
 #endif

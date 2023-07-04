@@ -11,6 +11,7 @@
 #define ERROR_H
 
 #include "../can-lib/lib/primary/primary_network.h"
+#include "can_comm.h"
 #include "error-utils.h"
 
 #include <inttypes.h>

@@ -154,7 +154,12 @@ void ADC_Vref_Calibration() {
     uint32_t vref_int                                                       = 0;
     uint16_t *factory_calibration                                           = (uint16_t *)0x1FFF7A2A;
     HAL_TIM_PWM_Start(&TIMER_ADC_CALIBRATION, TIMER_ADC_CALIBRATION_CHANNEL);
-    HAL_ADC_Start_DMA(&CALIBRATION_ADC, (uint32_t *)&buffer, N_ADC_CALIBRATION_CHANNELS * N_ADC_CALIBRATION_SAMPLES);
+    if (HAL_ADC_Start_DMA(
+            &CALIBRATION_ADC, (uint32_t *)&buffer, N_ADC_CALIBRATION_CHANNELS * N_ADC_CALIBRATION_SAMPLES) != HAL_OK) {
+        error_set(ERROR_ADC_INIT, 0);
+    } else {
+        error_reset(ERROR_ADC_INIT, 0);
+    }
 
     //Wait until 500 samples has been reached
     while (vref_calibration) {

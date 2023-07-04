@@ -9,6 +9,7 @@
 
 #include "monitor_int.h"
 
+#include "can_comm.h"
 #include "error.h"
 #include "fenice-config.h"
 #include "main.h"
@@ -80,7 +81,7 @@ uint8_t monitor_read_voltage() {
                 error_set(ERROR_CELL_OVERVOLTAGE, i);
             } else {
                 //cli_bms_debug("SAMPLE AND READ, REMOVED UNDERVOLTAGE", 37);
-                if (!is_bms_on_fault) {
+                if (lv_status.status != PRIMARY_LV_STATUS_STATUS_ERROR_CHOICE) {
                     error_reset(ERROR_CELL_UNDERVOLTAGE, i);
                     error_reset(ERROR_CELL_OVERVOLTAGE, i);
                 }
@@ -127,7 +128,7 @@ uint8_t monitor_print_volt() {
             } else {
                 sprintf(buff, "Cell %u: %.3fV", i, (float)voltages[i] / 1000);
                 //cli_bms_debug("READ AND PRINT, REMOVED UNDERVOLTAGE", 36);
-                if (!is_bms_on_fault) {
+                if (lv_status.status != PRIMARY_LV_STATUS_STATUS_ERROR_CHOICE) {
                     error_reset(ERROR_CELL_UNDERVOLTAGE, i);
                     error_reset(ERROR_CELL_OVERVOLTAGE, i);
                 }
@@ -169,7 +170,7 @@ uint8_t monitor_print_volt_cli(char *buf) {
             } else {
                 sprintf(buff, "Cell %u: %.3fV \r\n", i, (float)voltages[i] / 1000);
                 //cli_bms_debug("READ AND STORE, REMOVED UNDERVOLTAGE", 36);
-                if (!is_bms_on_fault) {
+                if (lv_status.status != PRIMARY_LV_STATUS_STATUS_ERROR_CHOICE) {
                     error_reset(ERROR_CELL_UNDERVOLTAGE, i);
                     error_reset(ERROR_CELL_OVERVOLTAGE, i);
                 }

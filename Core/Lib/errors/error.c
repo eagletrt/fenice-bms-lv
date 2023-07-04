@@ -156,7 +156,7 @@ void bms_error_callback(size_t error_index, size_t instance_index) {
     // if (!fatal_error[error_index])
     set_error_bitset(error_index, 1);
     fatal_error[error_index] = instance_index + 1;
-    is_bms_on_fault          = true;
+    lv_status.status         = PRIMARY_LV_STATUS_STATUS_ERROR_CHOICE;
 }
 
 void set_warning_bitset(error_id type, uint8_t val) {

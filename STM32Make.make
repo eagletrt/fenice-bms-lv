@@ -49,6 +49,7 @@ Core/Lib/errors/error.c \
 Core/Lib/errors/error_list_ref.c \
 Core/Lib/health_signals/health_signals.c \
 Core/Lib/inverters/inverters.c \
+Core/Lib/lv_watchdog/can_watchdog.c \
 Core/Lib/mcp23017/mcp23017.c \
 Core/Lib/measurements/measurements.c \
 Core/Lib/micro-libs/blink/blink.c \
@@ -164,6 +165,7 @@ AS_DEFS =
 
 # C defines
 C_DEFS =  \
+-DERROR_LIB_IMPLEMENTATION \
 -DLTC_COUNT=1 \
 -DNOLOGGER \
 -DSTM32F446xx \
@@ -198,6 +200,7 @@ C_INCLUDES =  \
 -ICore/Lib/errors \
 -ICore/Lib/health_signals \
 -ICore/Lib/inverters \
+-ICore/Lib/lv_watchdog \
 -ICore/Lib/mcp23017 \
 -ICore/Lib/measurements \
 -ICore/Lib/micro-libs/blink \

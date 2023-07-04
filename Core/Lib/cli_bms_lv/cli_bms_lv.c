@@ -20,6 +20,7 @@
 #include "error.h"
 #include "health_signals.h"
 #include "i2c.h"
+#include "inverters.h"
 #include "mcp23017.h"
 #include "measurements.h"
 #include "monitor_int.h"
@@ -443,14 +444,34 @@ void _cli_errors(uint16_t argc, char **argv, char *out) {
 }
 
 void _cli_inv(uint16_t argc, char **argv, char *out) {
-    if (strcmp(argv[1], "on") == 0) {
-        mcp23017_set_gpio(&hmcp, MCP23017_PORTB, RFE_EN, GPIO_PIN_SET);
-        HAL_Delay(1500);  // works
-        mcp23017_set_gpio(&hmcp, MCP23017_PORTB, FRG_EN, GPIO_PIN_SET);
-    } else if (strcmp(argv[1], "off") == 0) {
-        mcp23017_set_gpio(&hmcp, MCP23017_PORTB, RFE_EN, GPIO_PIN_RESET);
-        HAL_Delay(1500);  // works
-        mcp23017_set_gpio(&hmcp, MCP23017_PORTB, FRG_EN, GPIO_PIN_RESET);
+    volatile HAL_StatusTypeDef stat = HAL_ERROR;
+    if (argc == 4) {
+        if (strcmp(argv[1], "on") == 0) {
+            mcp23017_set_gpio(&hmcp, MCP23017_PORTB, RFE_EN, GPIO_PIN_SET);
+            HAL_Delay(1500);  // works
+            mcp23017_set_gpio(&hmcp, MCP23017_PORTB, FRG_EN, GPIO_PIN_SET);
+            mcp23017_set_gpio(&hmcp, MCP23017_PORTB, DISCHARGE, GPIO_PIN_SET);
+            car_inverters.rfe_pin = 1;
+            car_inverters.frg_pin = 1;
+        } else if (strcmp(argv[1], "off") == 0) {
+            mcp23017_set_gpio(&hmcp, MCP23017_PORTB, RFE_EN, GPIO_PIN_RESET);
+            HAL_Delay(1500);  // works
+            mcp23017_set_gpio(&hmcp, MCP23017_PORTB, FRG_EN, GPIO_PIN_RESET);
+            mcp23017_set_gpio(&hmcp, MCP23017_PORTB, DISCHARGE, GPIO_PIN_RESET);
+            car_inverters.rfe_pin = 0;
+            car_inverters.frg_pin = 0;
+        }
+        if (strcmp(argv[2], "discharge") == 0) {
+            if (atoi(argv[3]) == 1) {
+                car_inverters.discharge_pin = 1;
+                stat                        = mcp23017_set_gpio(&hmcp, MCP23017_PORTB, DISCHARGE, GPIO_PIN_SET);
+            } else {
+                car_inverters.discharge_pin = 0;
+                stat                        = mcp23017_set_gpio(&hmcp, MCP23017_PORTB, DISCHARGE, GPIO_PIN_RESET);
+            }
+        }
+    } else {
+        sprintf(out, "Invalid arguments\r\nUsage: inv {on|off} discharge {0|1}\r\n");
     }
 
     mcp23017_print_gpioB(&hmcp, out);

@@ -85,6 +85,7 @@ static inline void inverters_loop(Inverters_struct *inv) {
         inv->comm_status == PRIMARY_SET_INVERTER_CONNECTION_STATUS_STATUS_OFF_CHOICE && inv->inv_status != INV_OFF) {
         mcp23017_set_gpio(&hmcp, MCP23017_PORTB, RFE_EN, GPIO_PIN_RESET);
         mcp23017_set_gpio(&hmcp, MCP23017_PORTB, FRG_EN, GPIO_PIN_RESET);
+        mcp23017_set_gpio(&hmcp, MCP23017_PORTB, DISCHARGE, GPIO_PIN_RESET);
         inv->inv_status = INV_OFF;
     }
 }
