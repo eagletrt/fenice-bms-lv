@@ -32,6 +32,7 @@ primary_set_radiator_speed_converted_t rads_speed_msg;
 primary_set_pumps_speed_converted_t pumps_speed_msg;
 
 open_blt_status_t open_blt_status;
+primary_lv_status_t lv_status;
 
 void open_blt_status_update(health_signals_t *hs, open_blt_status_t *obs) {
     if (obs->is_flash_requested) {
@@ -218,6 +219,9 @@ HAL_StatusTypeDef can_primary_send(uint16_t id, uint8_t optional_offset) {
         raw_ack.response = open_blt_status.state;
         primary_lv_can_flash_ack_pack(buffer, &raw_ack, PRIMARY_LV_CAN_FLASH_ACK_BYTE_SIZE);
         tx_header.DLC = PRIMARY_LV_CAN_FLASH_ACK_BYTE_SIZE;
+    } else if (id == PRIMARY_LV_STATUS_FRAME_ID) {
+        primary_lv_status_pack(buffer, &lv_status, PRIMARY_LV_STATUS_BYTE_SIZE);
+        tx_header.DLC = PRIMARY_LV_STATUS_BYTE_SIZE;
     }
 
     return can_send(&CANP, buffer, &tx_header);
@@ -270,12 +274,11 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
         primary_ts_status_unpack(&raw_ts, rx_data, PRIMARY_TS_STATUS_BYTE_SIZE);
         primary_ts_status_raw_to_conversion_struct(&ts_status, &raw_ts);
         wdg_update_message_timestamp(rx_header.StdId);
-        if (ts_status.ts_status == primary_ts_status_ts_status_PRECHARGE) {
-            car_inverters.discharge_pin = 1;
-        } else if (
-            ts_status.ts_status == primary_ts_status_ts_status_OFF ||
+        if (ts_status.ts_status == primary_ts_status_ts_status_OFF ||
             ts_status.ts_status == primary_ts_status_ts_status_FATAL) {
             car_inverters.discharge_pin = 0;
+        } else {
+            car_inverters.discharge_pin = 1;
         }
     }
 }

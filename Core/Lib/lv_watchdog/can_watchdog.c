@@ -15,10 +15,8 @@
 #include "../can-lib/lib/primary/primary_watchdog.h"
 #include "inverters.h"
 
-#define primary_WATCHDOG_IMPLEMENTATION
-
-primary_watchdog *watchdog;
-uint32_t ids_to_watch[] = {
+primary_watchdog watchdog = {0};
+uint32_t ids_to_watch[]   = {
     PRIMARY_TS_STATUS_FRAME_ID,
 };
 
@@ -27,24 +25,22 @@ uint32_t ids_to_watch[] = {
 uint32_t timestamps[WATCHLIST_SIZE];
 
 void wdg_init() {
-    watchdog = primary_watchdog_new();
-
     for (size_t i = 0; i < WATCHLIST_SIZE; i++) {
-        CANLIB_BITSET_ARRAY(watchdog->activated, primary_watchdog_index_from_id(ids_to_watch[i]));
+        CANLIB_BITSET_ARRAY(watchdog.activated, primary_watchdog_index_from_id(ids_to_watch[i]));
     }
 }
 
 void wdg_update_and_check_timestamps() {
     /* Update timestamps */
     for (size_t i = 0; i < WATCHLIST_SIZE; i++) {
-        primary_watchdog_reset(watchdog, ids_to_watch[i], timestamps[i]);
+        primary_watchdog_reset(&watchdog, ids_to_watch[i], timestamps[i]);
     }
 
-    primary_watchdog_timeout(watchdog, HAL_GetTick());
+    primary_watchdog_timeout(&watchdog, HAL_GetTick());
 
     /* Check timings */
     for (size_t i = 0; i < WATCHLIST_SIZE; i++) {
-        bool timed_out = CANLIB_BITTEST_ARRAY(watchdog->timeout, primary_watchdog_index_from_id(ids_to_watch[i]));
+        bool timed_out = CANLIB_BITTEST_ARRAY(watchdog.timeout, primary_watchdog_index_from_id(ids_to_watch[i]));
 
         if (!timed_out)
             continue;
@@ -59,7 +55,7 @@ void wdg_update_and_check_timestamps() {
     }
 }
 
-void update_message_timestamp(uint32_t id) {
+void wdg_update_message_timestamp(uint32_t id) {
     for (size_t i = 0; i < WATCHLIST_SIZE; i++) {
         if (primary_watchdog_index_from_id(ids_to_watch[i]) == id) {
             timestamps[i] = HAL_GetTick();

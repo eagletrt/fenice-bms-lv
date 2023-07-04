@@ -26,6 +26,7 @@ cDefinitions:
   - STM32F446xx
   - LTC_COUNT=1
   - NOLOGGER
+  - ERROR_LIB_IMPLEMENTATION
 
 cxxDefinitions: []
 asDefinitions: []

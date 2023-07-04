@@ -83,10 +83,8 @@ Inverters_struct car_inverters;
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 void bms_error_state();
-void check_on_feedbacks();
 void cooling_routine(uint8_t);
 static inline void check_initial_voltage();
-static inline void check_DCDCs_voltages();
 static inline void fans_radiators_pumps_init();
 void set_flash_pin();
 /* USER CODE END PFP */
@@ -162,10 +160,9 @@ int main(void) {
 #endif
 
     // START OF WARM UP STAGE
-
+    lv_status.status = PRIMARY_LV_STATUS_STATUS_INIT_CHOICE;
     // Turn on startup button
     // TODO: change button pin
-    //HAL_GPIO_WritePin(L_ERR_GPIO_Port, L_ERR_Pin, GPIO_PIN_SET);
 
     // Blink to signal correct MX_XXX_init processes (usuefull for CAN transciever)
     cli_bms_lv_init();
@@ -176,7 +173,6 @@ int main(void) {
     ADC_init_status_flags();
     ADC_init_mux();
     ADC_Vref_Calibration();
-    // ADC_hall_sensor_calibration();
     ADC_start_ADC2_readings();
 
     monitor_init();
@@ -206,14 +202,11 @@ int main(void) {
     sprintf(main_buff, "LTC ID %s", ltc6810_return_serial_id());
     printl(main_buff, NO_HEADER);
 #endif
-    printl("Relay out disabled, waiting 1 seconds before reading voltages\r\n", NO_HEADER);
-    //HAL_Delay(1000);
+    printl("Relay out disabled, waiting 0.5 seconds before reading voltages\r\n", NO_HEADER);
+    HAL_Delay(500);
 
     check_initial_voltage();
     set_flash_pin();
-    //LV_MASTER_RELAY_set_state(GPIO_PIN_SET, true);
-
-    //check_DCDCs_voltages();
 
     //fans_radiators_pumps_init();
 
@@ -230,28 +223,23 @@ int main(void) {
     /* USER CODE BEGIN WHILE */
     errors_timer = HAL_GetTick();
     mcp23017_set_gpio(&hmcp, MCP23017_PORTB, LED_R, 1);
+    mcp23017_set_gpio(&hmcp, MCP23017_PORTB, DISCHARGE, GPIO_PIN_SET);
+    if (lv_status.status == PRIMARY_LV_STATUS_STATUS_INIT_CHOICE) {
+        lv_status.status = PRIMARY_LV_STATUS_STATUS_RUN_CHOICE;
+    }
     //static bool first = true;
     while (1) {
         // Running stage
-        if (is_bms_on_fault) {
+        if (lv_status.status == PRIMARY_LV_STATUS_STATUS_ERROR_CHOICE) {
             bms_error_state();
         } else {
             ADC_Routine();
             measurements_flags_check();
             inverters_loop(&car_inverters);
-            // cooling routine
+            // Cooling routine
+            // cooling_routine(10);
             cli_loop(&cli_bms_lv);
         }
-
-        // if (error_utils_get_count(&error_handler) > 0 && errors_timer + 10 > errors_timer) {
-        //     can_primary_send(PRIMARY_LV_ERRORS_FRAME_ID, 0);
-        //     errors_timer = HAL_GetTick();
-        // }
-
-        //TODO: REMOVE measurements_flags_check();  // measure and sends via can
-        // check_on_feedbacks();  //check dcdcs and relay fb
-
-        // cooling_routine(10);
     }
     // ADC_Routine();
     //cooling_routine(10);
@@ -397,25 +385,6 @@ static inline void fans_radiators_pumps_init() {
 }
 
 /**
- * @brief Set/unset errors for the DCDC converters on board
- * 
- */
-static inline void check_DCDCs_voltages() {
-    // !FDBK_DCDC_12V_get_state() ? error_set(ERROR_DCDC12, 0, HAL_GetTick()) : error_reset(ERROR_DCDC12, 0);
-    // !FDBK_DCDC_24V_get_state() ? error_set(ERROR_DCDC24, 0, HAL_GetTick()) : error_reset(ERROR_DCDC24, 0);
-}
-
-/**
- * @brief Check feedbacks given by the MCP23017 and set the relative errors
- * 
- */
-void check_on_feedbacks() {
-    mcp23017_read_both(&hmcp);
-    check_DCDCs_voltages();
-    !FDBK_RELAY_get_state() ? error_set(ERROR_RELAY, 0) : error_reset(ERROR_RELAY, 0);
-}
-
-/**
  * @brief Error routine executed when the bms is on fault
  * 
  */
@@ -423,6 +392,7 @@ void bms_error_state() {
     printl("ERROR STATE \n", ERR_HEADER);
     can_primary_send(PRIMARY_LV_ERRORS_FRAME_ID, 0);
     can_primary_send(PRIMARY_LV_HEALTH_SIGNALS_FRAME_ID, 0);
+    can_primary_send(PRIMARY_LV_STATUS_FRAME_ID, 0);
     HAL_GPIO_WritePin(TIME_SET_GPIO_Port, TIME_SET_Pin, GPIO_PIN_RESET);
     HAL_Delay(1000);
 #define ERR_NOISE
@@ -432,7 +402,7 @@ void bms_error_state() {
     LV_MASTER_RELAY_set_state(GPIO_PIN_RESET, true);
     is_relay_closed = false;
 #ifdef ERR_NOISE
-    pwm_set_period(&BZZR_HTIM, 0.2);
+    pwm_set_period(&BZZR_HTIM, 0.8);
     pwm_set_duty_cicle(&BZZR_HTIM, BZZR_PWM_TIM_CHNL, 0.9);
     pwm_start_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
 #endif
