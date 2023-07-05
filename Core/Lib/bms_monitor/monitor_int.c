@@ -266,17 +266,32 @@ void monitor_temp_conversion() {
 #endif
         //cell_temps[i] = -25;
 #ifndef SKIP_TEMP_READ
+        uint8_t over_temps_counter  = 0;
+        uint8_t under_temps_counter = 0;
         if (cell_temps[i] > MAX_CELLS_ALLOWED_TEMP) {
-            error_set(ERROR_CELL_OVER_TEMPERATURE, i);
+            over_temps_counter++;
         } else if (cell_temps[i] < MIN_CELLS_ALLOWED_TEMP) {
-            error_set(ERROR_CELL_UNDER_TEMPERATURE, i);
+            under_temps_counter++;
             //printl("Set error", NO_HEADER);
-        } else {
-            // char dbg[50];
-            // sprintf(dbg, "Unset error %d", i);
-            //printl(dbg, NO_HEADER);
-            error_reset(ERROR_CELL_OVER_TEMPERATURE, i);
-            error_reset(ERROR_CELL_UNDER_TEMPERATURE, i);
+        }
+        // else {
+        //     // char dbg[50];
+        //     // sprintf(dbg, "Unset error %d", i);
+        //     //printl(dbg, NO_HEADER);
+        //     error_reset(ERROR_CELL_OVER_TEMPERATURE, i);
+        //     error_reset(ERROR_CELL_UNDER_TEMPERATURE, i);
+        // }
+        if (over_temps_counter + under_temps_counter >= NTC_COUNT - COUNT_MINIMUM_WORKING_NTCS) {
+            if (over_temps_counter > 0) {
+                error_set(ERROR_CELL_OVER_TEMPERATURE, 0);
+            } else {
+                error_reset(ERROR_CELL_OVER_TEMPERATURE, 0);
+            }
+            if (under_temps_counter > 0) {
+                error_set(ERROR_CELL_UNDER_TEMPERATURE, 0);
+            } else {
+                error_reset(ERROR_CELL_UNDER_TEMPERATURE, 0);
+            }
         }
 #endif
     }
@@ -284,10 +299,25 @@ void monitor_temp_conversion() {
 
 void monitor_print_temps(char *buf) {
     memset(buff, 0, sizeof(buff));
+    uint8_t under_temp_counter = 0;
+    uint8_t over_temp_counter  = 0;
     for (uint8_t i = 0; i < NTC_COUNT; i++) {
+        if (cell_temps[i] < MIN_CELLS_ALLOWED_TEMP) {
+            under_temp_counter++;
+        } else if (cell_temps[i] > MAX_CELLS_ALLOWED_TEMP) {
+            over_temp_counter++;
+        }
         sprintf(buff, "Cell %u: %.4f[°C]\r\n", i, cell_temps[i]);
         sprintf(buf + strlen(buf), "%s", buff);
     }
+    sprintf(
+        buf + strlen(buf),
+        "%s\r\nUnder voltages detected: %u\r\nOver voltages detected: %u\r\nMax number of sensor allowed to be broken: "
+        "%u\r\n",
+        buff,
+        under_temp_counter,
+        over_temp_counter,
+        NTC_COUNT - COUNT_MINIMUM_WORKING_NTCS);
     //sprintf(buf + strlen(buf), "%s", buff);
 }
 

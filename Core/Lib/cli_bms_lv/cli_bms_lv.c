@@ -447,7 +447,7 @@ void _cli_errors(uint16_t argc, char **argv, char *out) {
 }
 
 void _cli_inv(uint16_t argc, char **argv, char *out) {
-    volatile HAL_StatusTypeDef stat = HAL_ERROR;
+    HAL_StatusTypeDef stat = HAL_ERROR;
     if (argc == 4) {
         if (strcmp(argv[1], "on") == 0) {
             mcp23017_set_gpio(&hmcp, MCP23017_PORTB, RFE_EN, GPIO_PIN_SET);
@@ -500,10 +500,10 @@ void _cli_cooling(uint16_t argc, char **argv, char *out) {
 }
 
 void _cli_nsfw(uint16_t argc, char **argv, char *out) {
-    // nsfw charger {on|off}
+    // nsfw {charger|info} {on|off}
     // if on ignores the undervoltage protection during charging
     if (argc < 2) {
-        sprintf(out, "Invalid arguments\r\nUsage: nsfw {charger} {on|off}\r\n");
+        sprintf(out, "Invalid arguments\r\nUsage: nsfw {charger|info} {on|off}\r\n");
     } else {
         if (strcmp(argv[1], "charger") == 0) {
             if (argc < 3) {
@@ -519,6 +519,10 @@ void _cli_nsfw(uint16_t argc, char **argv, char *out) {
                     sprintf(out, "Invalid arguments\r\nUsage: nsfw {charger} {on|off}\r\n");
                 }
             }
+        } else if (strcmp(argv[1], "info") == 0) {
+            sprintf(out, "Undervoltage and overvoltage check is: %s\r\n", nsfw_charger ? "disabled" : "enabled");
+        } else {
+            sprintf(out, "Invalid arguments\r\nUsage: nsfw {charger|info} {on|off}\r\n");
         }
     }
 }
