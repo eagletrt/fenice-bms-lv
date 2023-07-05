@@ -62,6 +62,8 @@
 // OCD (Over Current Detection) is pulled up at 3V3,
 // When OCD is detected the pin goes to ground
 #define MIN_OCD_VALUE_TO_DETECT_OVERCURRENT_mV 500.0f
-// #define NON_CRITICAL_SAFETY_CHECKS_BYPASS
+//#define NON_CRITICAL_SAFETY_CHECKS_BYPASS
 //#define SKIP_TEMP_READ
+// Minimum number of temperature sensors with correct value for which the battery system can work properly
+#define COUNT_MINIMUM_WORKING_NTCS 5
 #endif
