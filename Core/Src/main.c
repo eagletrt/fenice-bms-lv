@@ -403,6 +403,30 @@ static inline void fans_radiators_pumps_init() {
  */
 void bms_error_state() {
     printl("ERROR STATE \n", ERR_HEADER);
+
+    char out[4000];
+    size_t count = 0;
+    error_t errors[ERROR_NUM_ERRORS];
+    error_dump(errors, &count);
+
+    uint32_t now = HAL_GetTick();
+    sprintf(out, "total %u\r\n", count);
+    for (uint16_t i = 0; i < count; i++) {
+        sprintf(
+            out + strlen(out),
+            "\r\nid..........%i (%s)\r\n"
+            "timestamp...T+%lu (%lums ago)\r\n"
+            "offset......%u\r\n"
+            "state.......%s\r\n",
+            errors[i].id,
+            error_names[errors[i].id],
+            errors[i].timestamp,
+            now - errors[i].timestamp,
+            errors[i].offset,
+            errors[i].state == STATE_WARNING ? "warning" : "fatal");
+    }
+    printl(out, ERR_HEADER);
+
     can_primary_send(PRIMARY_LV_ERRORS_FRAME_ID, 0);
     can_primary_send(PRIMARY_LV_HEALTH_SIGNALS_FRAME_ID, 0);
     can_primary_send(PRIMARY_LV_STATUS_FRAME_ID, 0);

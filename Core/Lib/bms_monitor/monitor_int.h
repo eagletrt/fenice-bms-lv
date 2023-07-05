@@ -33,7 +33,7 @@ extern uint8_t cell_row_index;
 extern uint8_t cell_col_index;
 extern uint8_t voltage_warning_flag;
 extern float cell_temps[NTC_COUNT];
-
+extern uint8_t nsfw_charger;
 typedef enum { VOLT_OK = 0U, VOLT_UNDER_VOLTAGE, VOLT_OVER_VOLTAGE, VOLT_ERR, VOLT_ENUM_SIZE } voltage_meas_status;
 
 /**

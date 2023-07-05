@@ -274,10 +274,11 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
         primary_ts_status_unpack(&raw_ts, rx_data, PRIMARY_TS_STATUS_BYTE_SIZE);
         primary_ts_status_raw_to_conversion_struct(&ts_status, &raw_ts);
         wdg_update_message_timestamp(rx_header.StdId);
-        if (ts_status.ts_status == primary_ts_status_ts_status_OFF ||
-            ts_status.ts_status == primary_ts_status_ts_status_FATAL) {
+        if (ts_status.ts_status == primary_ts_status_ts_status_IDLE ||
+            ts_status.ts_status == primary_ts_status_ts_status_FATAL_ERROR) {
             car_inverters.discharge_pin = 0;
-        } else {
+        } else if (ts_status.ts_status == primary_ts_status_ts_status_PRECHARGE ||
+        ts_status.ts_status == primary_ts_status_ts_status_AIRN_CLOSE ) {
             car_inverters.discharge_pin = 1;
         }
     }
