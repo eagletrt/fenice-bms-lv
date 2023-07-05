@@ -243,8 +243,10 @@ void monitor_read_temp() {
     } else {
         cell_col_index = 0;
     }
-    monitor_handler.config->GPIO = (cell_col_index & 1) << 4 | (cell_col_index & 2) << 2 | (cell_col_index & 4) |
-                                   (cell_col_index & 8) >> 2 | 1;
+#define MONITOR_MUX_OFFSET 2
+    uint8_t monitor_mux_index    = cell_col_index + MONITOR_MUX_OFFSET;
+    monitor_handler.config->GPIO = (monitor_mux_index & 1) << 4 | (monitor_mux_index & 2) << 2 |
+                                   (monitor_mux_index & 4) | (monitor_mux_index & 8) >> 2 | 1;
     ltc6811_wrcfg(&monitor_handler);
     ltc6811_adax(&monitor_handler, LTC6811_MD_7KHZ_3KHZ, LTC6811_CHG_GPIO_1);
 }
@@ -270,9 +272,14 @@ void monitor_temp_conversion() {
         uint8_t under_temps_counter = 0;
         if (cell_temps[i] > MAX_CELLS_ALLOWED_TEMP) {
             over_temps_counter++;
+            error_set(ERROR_CELL_OVER_TEMPERATURE, 0);
         } else if (cell_temps[i] < MIN_CELLS_ALLOWED_TEMP) {
             under_temps_counter++;
+            error_set(ERROR_CELL_UNDER_TEMPERATURE, 0);
             //printl("Set error", NO_HEADER);
+        } else {
+            error_reset(ERROR_CELL_OVER_TEMPERATURE, 0);
+            error_reset(ERROR_CELL_UNDER_TEMPERATURE, 0);
         }
         // else {
         //     // char dbg[50];
@@ -281,18 +288,7 @@ void monitor_temp_conversion() {
         //     error_reset(ERROR_CELL_OVER_TEMPERATURE, i);
         //     error_reset(ERROR_CELL_UNDER_TEMPERATURE, i);
         // }
-        if (over_temps_counter + under_temps_counter >= NTC_COUNT - COUNT_MINIMUM_WORKING_NTCS) {
-            if (over_temps_counter > 0) {
-                error_set(ERROR_CELL_OVER_TEMPERATURE, 0);
-            } else {
-                error_reset(ERROR_CELL_OVER_TEMPERATURE, 0);
-            }
-            if (under_temps_counter > 0) {
-                error_set(ERROR_CELL_UNDER_TEMPERATURE, 0);
-            } else {
-                error_reset(ERROR_CELL_UNDER_TEMPERATURE, 0);
-            }
-        }
+
 #endif
     }
 }
@@ -312,13 +308,11 @@ void monitor_print_temps(char *buf) {
     }
     sprintf(
         buf + strlen(buf),
-        "%s\r\nUnder voltages detected: %u\r\nOver voltages detected: %u\r\nMax number of sensor allowed to be broken: "
+        "Under voltages detected: %u\r\nOver voltages detected: %u\r\nMax number of sensor allowed to be broken: "
         "%u\r\n",
-        buff,
         under_temp_counter,
         over_temp_counter,
         NTC_COUNT - COUNT_MINIMUM_WORKING_NTCS);
-    //sprintf(buf + strlen(buf), "%s", buff);
 }
 
 // #ifdef CELL_0_IS_ALIVE
