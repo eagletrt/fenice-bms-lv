@@ -36,7 +36,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define N_COMMANDS 18
+#define N_COMMANDS 19
 
 cli_command_func_t _cli_volts;
 cli_command_func_t _cli_radiator;
@@ -56,6 +56,7 @@ cli_command_func_t _cli_health_signals;
 cli_command_func_t _cli_signal_injection;
 cli_command_func_t _cli_prep_flash;
 cli_command_func_t _cli_nsfw;
+cli_command_func_t _cli_autokill;
 
 cli_command_func_t *commands[N_COMMANDS] = {
     &_cli_volts,
@@ -75,6 +76,7 @@ cli_command_func_t *commands[N_COMMANDS] = {
     &_cli_signal_injection,
     &_cli_prep_flash,
     &_cli_nsfw,
+    &_cli_autokill,
     &_cli_help};
 
 char *command_names[N_COMMANDS] = {
@@ -95,6 +97,7 @@ char *command_names[N_COMMANDS] = {
     "inject",
     "prepflash",
     "nsfw",
+    "autokill",
     "?"};
 
 char *volt_status_name[VOLT_ENUM_SIZE] = {
@@ -524,5 +527,12 @@ void _cli_nsfw(uint16_t argc, char **argv, char *out) {
         } else {
             sprintf(out, "Invalid arguments\r\nUsage: nsfw {charger|info} {on|off}\r\n");
         }
+    }
+}
+
+void _cli_autokill(uint16_t argc, char **argv, char *out) {
+    if (strcmp(argv[0], "autokill") == 0) {
+        LV_MASTER_RELAY_set_state(GPIO_PIN_RESET, true);
+        HAL_GPIO_WritePin(TIME_SET_GPIO_Port, TIME_SET_Pin, GPIO_PIN_RESET);
     }
 }
