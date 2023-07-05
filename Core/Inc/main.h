@@ -278,7 +278,7 @@ static inline uint8_t get_feedback_state(uint8_t feedback) {
 }
 
 #define MAX_RADIATOR_DUTY_CYCLE          0.90  // 1.0
-#define MIN_RADIATOR_DUTY_CYCLE          0.5
+#define MIN_RADIATOR_DUTY_CYCLE          0.15
 #define MAX_INTERNAL_FAN_DUTY_CYCLE      1.0
 #define MIN_INTERNAL_FAN_DUTY_CYCLE      0.1
 #define INTERNAL_FAN_M_FACTOR            (MAX_INTERNAL_FAN_DUTY_CYCLE - MIN_INTERNAL_FAN_DUTY_CYCLE) / (60 - 20)

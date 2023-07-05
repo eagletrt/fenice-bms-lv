@@ -40,6 +40,7 @@
 /** BASED ON LIPO STANDARD */
 #define VOLT_MAX_ALLOWED_VOLTAGE 4.2f
 #define VOLT_MIN_ALLOWED_VOLTAGE 3.3f
+#define VOLT_WARNING_LEVEL       3.5f
 
 /** Total number of attempts to read initial voltage needed to decide whether to close the relay */
 #define VOLT_MAX_ATTEMPTS 5
@@ -61,6 +62,6 @@
 // OCD (Over Current Detection) is pulled up at 3V3,
 // When OCD is detected the pin goes to ground
 #define MIN_OCD_VALUE_TO_DETECT_OVERCURRENT_mV 500.0f
-//#define NON_CRITICAL_SAFETY_CHECKS_BYPASS
-#define SKIP_TEMP_READ
+// #define NON_CRITICAL_SAFETY_CHECKS_BYPASS
+//#define SKIP_TEMP_READ
 #endif
