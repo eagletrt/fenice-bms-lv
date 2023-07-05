@@ -39,6 +39,8 @@ typedef struct {
 
 extern open_blt_status_t open_blt_status;
 extern primary_lv_status_t lv_status;
+extern primary_set_radiator_speed_converted_t rads_speed_msg;
+extern primary_set_pumps_speed_converted_t pumps_speed_msg;
 HAL_StatusTypeDef can_send(CAN_HandleTypeDef *hcan, uint8_t *buffer, CAN_TxHeaderTypeDef *header);
 
 /**

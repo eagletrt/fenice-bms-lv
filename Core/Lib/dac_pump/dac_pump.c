@@ -34,8 +34,8 @@ void dac_pump_handle_init(DAC_Pump_Handle *hdp, float pump_l_volt, float pump_r_
     hdp->automatic_mode      = true;
     // Wheter automatic mode is false tue pumps will be controlled by the steer,
     // otherwise the pumps will be under the bms_lv_control as are designed to be
-    PIDInit(&pid, 1.0, 1.0, 0.0, 1.0, 0, 4.95, PID_MODE_AUTOMATIC, PID_CONTROL_ACTION_REVERSE);
-    pid.setpoint = 40;
+    // PIDInit(&pid, 1.0, 1.0, 0.0, 1.0, 0, 4.95, PID_MODE_AUTOMATIC, PID_CONTROL_ACTION_REVERSE);
+    // pid.setpoint = 40;
 }
 
 /**
@@ -298,7 +298,8 @@ void dac_pump_sample_test(DAC_Pump_Handle *hdp) {
  */
 float dac_pump_get_voltage(float temp) {
     //return (temp * PUMP_M_FACTOR) + PUMP_Q_FACTOR;
-    pid.input = temp;
-    PIDCompute(&pid);
-    return pid.output;
+    // pid.input = temp;
+    // PIDCompute(&pid);
+    // return pid.output;
+    return 0;
 }

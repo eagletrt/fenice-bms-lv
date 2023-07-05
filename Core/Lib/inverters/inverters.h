@@ -38,6 +38,9 @@ static inline void init_inverter_struct(Inverters_struct *inv) {
     inv->inv_status         = INV_OFF;
     inv->last_cmd_timestamp = 0;
     inv->rfe_on_timestamp   = 0;
+    inv->discharge_pin      = 0;
+    inv->rfe_pin            = 0;
+    inv->frg_pin            = 0;
 }
 
 /**
@@ -84,6 +87,7 @@ static inline void inverters_loop(Inverters_struct *inv) {
     } else if (
         inv->comm_status == PRIMARY_SET_INVERTER_CONNECTION_STATUS_STATUS_OFF_CHOICE && inv->inv_status != INV_OFF) {
         mcp23017_set_gpio(&hmcp, MCP23017_PORTB, RFE_EN, GPIO_PIN_RESET);
+        HAL_Delay(500);
         mcp23017_set_gpio(&hmcp, MCP23017_PORTB, FRG_EN, GPIO_PIN_RESET);
         mcp23017_set_gpio(&hmcp, MCP23017_PORTB, DISCHARGE, GPIO_PIN_RESET);
         inv->inv_status = INV_OFF;

@@ -31,28 +31,28 @@
     the name of the peripheral/device error list reference is defined as follows:
     node_t* error_list_ref_<insert the relative data name in data.c>;
 */
-llist_node error_list_ref_relay[1]                        = {NULL};
-llist_node error_list_ref_ltc6810[1]                      = {NULL};
-llist_node error_list_ref_spi[1]                          = {NULL};
-llist_node error_list_ref_voltages_not_ready[1]           = {NULL};
-llist_node error_list_ref_open_wire[1]                    = {NULL};
-llist_node error_list_ref_low_voltages[LV_CELLS_COUNT]    = {NULL};
-llist_node error_list_ref_high_voltages[LV_CELLS_COUNT]   = {NULL};
-llist_node error_list_ref_mcp23017[1]                     = {NULL};
-llist_node error_list_ref_can[TOTAL_CAN_PHERIPERALS]      = {NULL};
-llist_node error_list_ref_radiators[2]                    = {NULL};
-llist_node error_list_ref_fan[1]                          = {NULL};
-llist_node error_list_ref_pumps[2]                        = {NULL};
-llist_node error_list_ref_adc_init[1]                     = {NULL};
-llist_node error_list_ref_dcdc12_low_temp[1]              = {NULL};
-llist_node error_list_ref_dcdc12_high_temp[1]             = {NULL};
-llist_node error_list_ref_dcdc24_low_temp[1]              = {NULL};
-llist_node error_list_ref_dcdc24_high_temp[1]             = {NULL};
-llist_node error_list_ref_cells_low_temp[LV_CELLS_COUNT]  = {NULL};
-llist_node error_list_ref_cells_high_temp[LV_CELLS_COUNT] = {NULL};
-llist_node error_list_ref_over_current[1]                 = {NULL};
-llist_node error_list_ref_dcdc12[1]                       = {NULL};
-llist_node error_list_ref_dcdc24[1]                       = {NULL};
+llist_node error_list_ref_relay[1]                      = {NULL};
+llist_node error_list_ref_ltc6810[1]                    = {NULL};
+llist_node error_list_ref_spi[1]                        = {NULL};
+llist_node error_list_ref_voltages_not_ready[1]         = {NULL};
+llist_node error_list_ref_open_wire[1]                  = {NULL};
+llist_node error_list_ref_low_voltages[LV_CELLS_COUNT]  = {NULL};
+llist_node error_list_ref_high_voltages[LV_CELLS_COUNT] = {NULL};
+llist_node error_list_ref_mcp23017[1]                   = {NULL};
+llist_node error_list_ref_can[TOTAL_CAN_PHERIPERALS]    = {NULL};
+llist_node error_list_ref_radiators[2]                  = {NULL};
+llist_node error_list_ref_fan[1]                        = {NULL};
+llist_node error_list_ref_pumps[2]                      = {NULL};
+llist_node error_list_ref_adc_init[1]                   = {NULL};
+llist_node error_list_ref_dcdc12_low_temp[1]            = {NULL};
+llist_node error_list_ref_dcdc12_high_temp[1]           = {NULL};
+llist_node error_list_ref_dcdc24_low_temp[1]            = {NULL};
+llist_node error_list_ref_dcdc24_high_temp[1]           = {NULL};
+llist_node error_list_ref_cells_low_temp[NTC_COUNT]     = {NULL};
+llist_node error_list_ref_cells_high_temp[NTC_COUNT]    = {NULL};
+llist_node error_list_ref_over_current[1]               = {NULL};
+llist_node error_list_ref_dcdc12[1]                     = {NULL};
+llist_node error_list_ref_dcdc24[1]                     = {NULL};
 
 llist_node *const error_list_ref_array[ERROR_NUM_ERRORS] = {
     [ERROR_CELL_UNDERVOLTAGE]      = error_list_ref_low_voltages,

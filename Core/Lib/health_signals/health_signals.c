@@ -17,6 +17,8 @@
 #include <stdio.h>
 
 health_signals_t hs;
+uint32_t first_fault_timestamp = 0;
+bool has_fault_detected        = false;
 void health_test() {
     health_signals_t hss;
     hss.battery_voltage_out = 1;
@@ -115,6 +117,16 @@ bool health_check_fault(health_signals_t *hs) {
     if (!is_lvms_closed_for_the_first_time) {
         is_fault = false;
     }
+
+    if (is_fault) {
+        if (!has_fault_detected) {
+            has_fault_detected    = true;
+            first_fault_timestamp = HAL_GetTick();
+        }
+    } else {
+        has_fault_detected = false;
+    }
+
     return is_fault;
 }
 
@@ -160,9 +172,11 @@ void update_health_status(health_signals_t *ptr_hs, ADC_converted *adcs_converte
     health_set_charger_current(ptr_hs, adcs_converted_values->mux_hall.S_HALL2);
     health_set_battery_current(ptr_hs, adcs_converted_values->mux_hall.S_HALL1);
     health_set_sign_battery_current(ptr_hs, adcs_converted_values->mux_hall.S_HALL1);
-    if (health_check_fault(ptr_hs)) {
+
+    if (health_check_fault(ptr_hs) && has_fault_detected && HAL_GetTick() - first_fault_timestamp > 500) {
         lv_status.status = PRIMARY_LV_STATUS_STATUS_ERROR_CHOICE;
     }
+
     if (lv_status.status == PRIMARY_LV_STATUS_STATUS_ERROR_CHOICE) {
         printl("Error in Health condition!\r\nBMS is on fault\n", ERR_HEADER);
         char buf[50];

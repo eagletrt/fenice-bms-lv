@@ -86,6 +86,7 @@ void bms_error_state();
 void cooling_routine(uint8_t);
 static inline void check_initial_voltage();
 static inline void fans_radiators_pumps_init();
+static inline void voltage_warning_buzzer();
 void set_flash_pin();
 /* USER CODE END PFP */
 
@@ -223,7 +224,7 @@ int main(void) {
     /* USER CODE BEGIN WHILE */
     errors_timer = HAL_GetTick();
     mcp23017_set_gpio(&hmcp, MCP23017_PORTB, LED_R, 1);
-    mcp23017_set_gpio(&hmcp, MCP23017_PORTB, DISCHARGE, GPIO_PIN_SET);
+    //mcp23017_set_gpio(&hmcp, MCP23017_PORTB, DISCHARGE, GPIO_PIN_SET);
     if (lv_status.status == PRIMARY_LV_STATUS_STATUS_INIT_CHOICE) {
         lv_status.status = PRIMARY_LV_STATUS_STATUS_RUN_CHOICE;
     }
@@ -238,6 +239,9 @@ int main(void) {
             inverters_loop(&car_inverters);
             // Cooling routine
             // cooling_routine(10);
+            if (voltage_warning_flag) {
+            }
+
             cli_loop(&cli_bms_lv);
         }
     }
@@ -319,6 +323,15 @@ void HAL_RCC_CSSCallback(void) {
     }
 }
 /* Private functions =--------------------------------------------------------*/
+
+static inline void voltage_warning_buzzer() {
+    pwm_start_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
+    HAL_Delay(100);
+    pwm_stop_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
+    pwm_start_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
+    HAL_Delay(100);
+    pwm_stop_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
+}
 
 /**
  * @brief Checks if total voltage is above MIN_POWER_ON_VOLTAGE within VOLT_MAX_ATTEMPTS times
@@ -422,8 +435,8 @@ void bms_error_state() {
  * @param temp Average temperature of the two inverters
  */
 void cooling_routine(uint8_t temp) {
-    /*float local_rad_speed, local_pump_speed;
-    THC_get_temperature_C(&hTHC_BATT1);
+    float local_rad_speed, local_pump_speed;
+    /*THC_get_temperature_C(&hTHC_BATT1);
     THC_get_temperature_C(&hTHC_BATT2);
     float max_dcdc_temp = (THC_get_temperature_C(&hTHC_DCDC12V) >= THC_get_temperature_C(&hTHC_DCDC24V))
                               ? THC_get_temperature_C(&hTHC_DCDC12V)
@@ -432,18 +445,15 @@ void cooling_routine(uint8_t temp) {
     //bms_fan_duty_cycle = (INTERNAL_FAN_Q_FACTOR + (max_dcdc_temp * INTERNAL_FAN_M_FACTOR));
 #endif
     //pwm_set_duty_cicle(&INTERNAL_FAN_HTIM, INTERNAL_FAN_PWM_TIM_CHNL, 1 - bms_fan_duty_cycle);
-    pwm_set_duty_cicle(&INTERNAL_FAN_HTIM, INTERNAL_FAN_PWM_TIM_CHNL, 0.5);
-    pwm_start_channel(&INTERNAL_FAN_HTIM, INTERNAL_FAN_PWM_TIM_CHNL);
-    set_radiator_dt(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, 0.5);
-    set_radiator_dt(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, 0.5);
-    dac_pump_store_and_set_value_on_both_channels(&hdac_pump, 2.5, 2.5);
+    // pwm_set_duty_cicle(&INTERNAL_FAN_HTIM, INTERNAL_FAN_PWM_TIM_CHNL, 0.5);
+    // pwm_start_channel(&INTERNAL_FAN_HTIM, INTERNAL_FAN_PWM_TIM_CHNL);
     /* 
         When automatic mode == true the values are controlled by the BMS
         When automatic mode == false the values are controlled by the Steering Wheel
     */
-    /*if (radiator_handle.automatic_mode) {
-        set_radiator_dt(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, get_radiator_dt(temp));
-        set_radiator_dt(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, get_radiator_dt(temp));
+    if (radiator_handle.automatic_mode) {
+        set_radiator_dt(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, 0.35);  //get_radiator_dt(temp));
+        set_radiator_dt(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, 0.35);  //get_radiator_dt(temp));
     } else {
         local_rad_speed = rads_speed_msg.radiators_speed * (MAX_RADIATOR_DUTY_CYCLE - MIN_RADIATOR_DUTY_CYCLE) +
                           MIN_RADIATOR_DUTY_CYCLE;
@@ -460,8 +470,8 @@ void cooling_routine(uint8_t temp) {
         set_radiator_dt(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, local_rad_speed);
     }
     if (hdac_pump.automatic_mode) {
-        dac_pump_store_and_set_value_on_both_channels(
-            &hdac_pump, dac_pump_get_voltage(temp), dac_pump_get_voltage(temp));
+        float pump_speed = 0.55 * (MAX_OPAMP_OUT - MIN_OPAMP_OUT) + MIN_OPAMP_OUT;
+        dac_pump_store_and_set_value_on_both_channels(&hdac_pump, pump_speed, pump_speed);
     } else {
         local_pump_speed = pumps_speed_msg.pumps_speed * (MAX_OPAMP_OUT - MIN_OPAMP_OUT) + MIN_OPAMP_OUT;
 
@@ -475,7 +485,7 @@ void cooling_routine(uint8_t temp) {
         }
 
         dac_pump_store_and_set_value_on_both_channels(&hdac_pump, local_pump_speed, local_pump_speed);
-    }*/
+    }
 }
 
 void set_flash_pin() {

@@ -27,7 +27,7 @@ enum {
     TIMEOUT_OPEN_WIRE              = 400,
     TIMEOUT_OVER_CURRENT           = 400,
     TIMEOUT_CELL_UNDER_TEMPERATURE = 1000,
-    TIMEOUT_CELL_OVER_TEMPERATURE  = 1000,
+    TIMEOUT_CELL_OVER_TEMPERATURE  = 200,
     TIMEOUT_RELAY                  = SOFT,
     TIMEOUT_BMS_MONITOR            = 500,
     TIMEOUT_VOLTAGES_NOT_READY     = 500,
@@ -126,7 +126,7 @@ ERROR_UTILS_ErrorTypeDef lv_errors[] = {
 
     {.expiry_delay_ms  = TIMEOUT_RADIATOR,
      .instances        = radiator_error,
-     .instances_length = RADIATOR_ERROR_INSTANCES},  //ERROR_RADIATOR
+     .instances_length = RADIATOR_ERROR_INSTANCES},                                                     //ERROR_RADIATOR
 
     {.expiry_delay_ms = TIMEOUT_FAN, .instances = fan_error, .instances_length = FAN_ERROR_INSTANCES},  //ERROR_FAN
 

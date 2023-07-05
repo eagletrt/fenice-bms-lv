@@ -30,6 +30,7 @@ LTC6811_HandleTypeDef monitor_handler;
 uint8_t cell_col_index                                    = 255;
 uint8_t cell_row_index                                    = 0;
 uint16_t cell_temps_raw[CELL_TEMPS_ARRAY_SIZE][NTC_COUNT] = {0};
+uint8_t voltage_warning_flag                              = 0;
 VOLT_CHANNEL cells                                        = VOLT_CHANNEL_ALL;
 
 void monitor_init() {
@@ -81,6 +82,12 @@ uint8_t monitor_read_voltage() {
                 error_set(ERROR_CELL_OVERVOLTAGE, i);
             } else {
                 //cli_bms_debug("SAMPLE AND READ, REMOVED UNDERVOLTAGE", 37);
+                if (!voltage_warning_flag) {
+                    if (voltages[i] <= VOLT_WARNING_LEVEL) {
+                        voltage_warning_flag = true;
+                    }
+                }
+
                 if (lv_status.status != PRIMARY_LV_STATUS_STATUS_ERROR_CHOICE) {
                     error_reset(ERROR_CELL_UNDERVOLTAGE, i);
                     error_reset(ERROR_CELL_OVERVOLTAGE, i);
@@ -243,12 +250,17 @@ void monitor_temp_conversion() {
         cell_temps[i] = (float)(TEMP_CONST_a + TEMP_CONST_b * val + TEMP_CONST_c * val2 + TEMP_CONST_d * val3 +
                                 TEMP_CONST_e * val4);
 #endif
+        //cell_temps[i] = -25;
 #ifndef SKIP_TEMP_READ
         if (cell_temps[i] > MAX_CELLS_ALLOWED_TEMP) {
             error_set(ERROR_CELL_OVER_TEMPERATURE, i);
         } else if (cell_temps[i] < MIN_CELLS_ALLOWED_TEMP) {
             error_set(ERROR_CELL_UNDER_TEMPERATURE, i);
+            //printl("Set error", NO_HEADER);
         } else {
+            // char dbg[50];
+            // sprintf(dbg, "Unset error %d", i);
+            //printl(dbg, NO_HEADER);
             error_reset(ERROR_CELL_OVER_TEMPERATURE, i);
             error_reset(ERROR_CELL_UNDER_TEMPERATURE, i);
         }
