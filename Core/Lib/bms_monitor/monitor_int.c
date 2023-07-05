@@ -32,7 +32,7 @@ uint8_t cell_row_index                                    = 0;
 uint16_t cell_temps_raw[CELL_TEMPS_ARRAY_SIZE][NTC_COUNT] = {0};
 uint8_t voltage_warning_flag                              = 0;
 VOLT_CHANNEL cells                                        = VOLT_CHANNEL_ALL;
-
+uint8_t nsfw_charger                                      = 0;
 void monitor_init() {
     LTC6811_CFGR config;
     config.ADCOPT             = 0;
@@ -75,11 +75,15 @@ uint8_t monitor_read_voltage() {
         for (uint8_t i = 0; i < LV_CELLS_COUNT; i++) {
             // Check whether a cell is undervoltage or overvoltage and set/reset its specific error
             if ((float)voltages[i] / 1000 <= VOLT_MIN_ALLOWED_VOLTAGE) {
-                volt_status = VOLT_UNDER_VOLTAGE;
-                error_set(ERROR_CELL_UNDERVOLTAGE, i);
+                if (nsfw_charger == 0) {
+                    volt_status = VOLT_UNDER_VOLTAGE;
+                    error_set(ERROR_CELL_UNDERVOLTAGE, i);
+                }
             } else if ((float)voltages[i] / 1000 >= VOLT_MAX_ALLOWED_VOLTAGE) {
-                volt_status = VOLT_OVER_VOLTAGE;
-                error_set(ERROR_CELL_OVERVOLTAGE, i);
+                if (nsfw_charger == 0) {
+                    volt_status = VOLT_OVER_VOLTAGE;
+                    error_set(ERROR_CELL_OVERVOLTAGE, i);
+                }
             } else {
                 //cli_bms_debug("SAMPLE AND READ, REMOVED UNDERVOLTAGE", 37);
                 if (!voltage_warning_flag) {
@@ -124,14 +128,18 @@ uint8_t monitor_print_volt() {
         } else {
             if ((float)voltages[i] / 1000 >= VOLT_MAX_ALLOWED_VOLTAGE) {
                 sprintf(buff, "Error! Max allowed voltage exceeded (Cell %u: %.3fV)", i, (float)voltages[i] / 1000);
-                error_set(ERROR_CELL_OVERVOLTAGE, i);
-                volt_status = VOLT_OVER_VOLTAGE;
-                voltages[i] = 0xff;
+                if (nsfw_charger == 0) {
+                    error_set(ERROR_CELL_OVERVOLTAGE, i);
+                    volt_status = VOLT_OVER_VOLTAGE;
+                    voltages[i] = 0xff;
+                }
             } else if ((float)voltages[i] / 1000 <= VOLT_MIN_ALLOWED_VOLTAGE) {
                 sprintf(buff, "Error! Min allowed voltage exceeded (Cell %u: %.3fV)", i, (float)voltages[i] / 1000);
-                error_set(ERROR_CELL_UNDERVOLTAGE, i);
-                volt_status = VOLT_UNDER_VOLTAGE;
-                voltages[i] = 0x00;
+                if (nsfw_charger == 0) {
+                    error_set(ERROR_CELL_UNDERVOLTAGE, i);
+                    volt_status = VOLT_UNDER_VOLTAGE;
+                    voltages[i] = 0x00;
+                }
             } else {
                 sprintf(buff, "Cell %u: %.3fV", i, (float)voltages[i] / 1000);
                 //cli_bms_debug("READ AND PRINT, REMOVED UNDERVOLTAGE", 36);
@@ -166,13 +174,19 @@ uint8_t monitor_print_volt_cli(char *buf) {
             if ((float)voltages[i] / 1000 >= VOLT_MAX_ALLOWED_VOLTAGE) {
                 sprintf(
                     buff, "Error! Max allowed voltage exceeded (Cell %u: %.3fV) \r\n", i, (float)voltages[i] / 1000);
-                volt_status = VOLT_OVER_VOLTAGE;
+                if (nsfw_charger == 0) {
+                    error_set(ERROR_CELL_OVERVOLTAGE, i);
+                    volt_status = VOLT_OVER_VOLTAGE;
+                }
                 //voltages[i] = 0xff;
             } else if ((float)voltages[i] / 1000 <= VOLT_MIN_ALLOWED_VOLTAGE) {
                 sprintf(
                     buff, "Error! Min allowed voltage exceeded (Cell %u: %.3fV) \r\n", i, (float)voltages[i] / 1000);
-                error_set(ERROR_CELL_UNDERVOLTAGE, i);
-                volt_status = VOLT_UNDER_VOLTAGE;
+                if (nsfw_charger == 0) {
+                    error_set(ERROR_CELL_UNDERVOLTAGE, i);
+                    volt_status = VOLT_UNDER_VOLTAGE;
+                }
+
                 //voltages[i] = 0x00;
             } else {
                 sprintf(buff, "Cell %u: %.3fV \r\n", i, (float)voltages[i] / 1000);
@@ -198,8 +212,8 @@ uint8_t monitor_print_volt_cli(char *buf) {
 }
 
 void monitor_read_temp() {
-    uint16_t raw_temp[3] = {0};
-    uint32_t timeout     = 2;
+    volatile uint16_t raw_temp[3] = {0};
+    uint32_t timeout              = 2;
     HAL_StatusTypeDef status;
     if (cell_col_index != 255) {
         ltc6811_adax(&monitor_handler, LTC6811_MD_27KHZ_14KHZ, LTC6811_CHG_GPIO_1);

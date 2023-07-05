@@ -36,7 +36,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define N_COMMANDS 17
+#define N_COMMANDS 18
 
 cli_command_func_t _cli_volts;
 cli_command_func_t _cli_radiator;
@@ -55,6 +55,7 @@ cli_command_func_t _cli_errors;
 cli_command_func_t _cli_health_signals;
 cli_command_func_t _cli_signal_injection;
 cli_command_func_t _cli_prep_flash;
+cli_command_func_t _cli_nsfw;
 
 cli_command_func_t *commands[N_COMMANDS] = {
     &_cli_volts,
@@ -73,6 +74,7 @@ cli_command_func_t *commands[N_COMMANDS] = {
     &_cli_health_signals,
     &_cli_signal_injection,
     &_cli_prep_flash,
+    &_cli_nsfw,
     &_cli_help};
 
 char *command_names[N_COMMANDS] = {
@@ -92,6 +94,7 @@ char *command_names[N_COMMANDS] = {
     "health",
     "inject",
     "prepflash",
+    "nsfw",
     "?"};
 
 char *volt_status_name[VOLT_ENUM_SIZE] = {
@@ -494,4 +497,28 @@ void _cli_cooling(uint16_t argc, char **argv, char *out) {
         (hdac_pump.last_analog_value_R > 0) ? (float)(hdac_pump.last_analog_value_R) / MAX_DAC_OUT : 0.0,
         dac_pump_analog_to_digital(hdac_pump.last_analog_value_R),
         hdac_pump.automatic_mode ? "true" : "false");
+}
+
+void _cli_nsfw(uint16_t argc, char **argv, char *out) {
+    // nsfw charger {on|off}
+    // if on ignores the undervoltage protection during charging
+    if (argc < 2) {
+        sprintf(out, "Invalid arguments\r\nUsage: nsfw {charger} {on|off}\r\n");
+    } else {
+        if (strcmp(argv[1], "charger") == 0) {
+            if (argc < 3) {
+                sprintf(out, "Invalid arguments\r\nUsage: nsfw {charger} {on|off}\r\n");
+            } else {
+                if (strcmp(argv[2], "on") == 0) {
+                    nsfw_charger = 1;
+                    sprintf(out, "Undervoltage and overvoltage check is now disabled! \r\n");
+                } else if (strcmp(argv[2], "off") == 0) {
+                    nsfw_charger = 0;
+                    sprintf(out, "Undervoltage and overvoltage check is now enabled! \r\n");
+                } else {
+                    sprintf(out, "Invalid arguments\r\nUsage: nsfw {charger} {on|off}\r\n");
+                }
+            }
+        }
+    }
 }
