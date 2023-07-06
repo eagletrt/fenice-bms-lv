@@ -24,6 +24,10 @@
 
 #define CELL_TEMPS_ARRAY_SIZE 5
 
+#define LV_TRESHOLD_WARNGING_1_V 3.5f
+#define LV_TRESHOLD_WARNGING_2_V 3.4f
+#define MAX_BZR_LV_ALERTS        10
+
 extern voltage_t voltages[MAX_LV_CELLS_COUNT];
 extern uint16_t cell_temps_raw[CELL_TEMPS_ARRAY_SIZE][NTC_COUNT];
 extern float total_voltage_on_board;
@@ -34,6 +38,18 @@ extern uint8_t cell_col_index;
 extern uint8_t voltage_warning_flag;
 extern float cell_temps[NTC_COUNT];
 extern uint8_t nsfw_charger;
+
+typedef struct {
+    uint8_t first_threshold_reached;
+    uint32_t first_ths_timestamp;
+    uint8_t first_ths_buzzer_toggles;
+    uint8_t second_threshold_reached;
+    uint32_t second_ths_timestamp;
+    uint8_t second_ths_buzzer_toggles;
+} lv_thresholds_t;
+
+extern lv_thresholds_t lv_thresholds_handler;
+
 typedef enum { VOLT_OK = 0U, VOLT_UNDER_VOLTAGE, VOLT_OVER_VOLTAGE, VOLT_ERR, VOLT_ENUM_SIZE } voltage_meas_status;
 
 /**
@@ -83,4 +99,5 @@ void monitor_read_temp();
 
 void monitor_print_temps(char *buf);
 
+void monitor_tresholds_check(float volts);
 #endif  // MONITOR_INT_H

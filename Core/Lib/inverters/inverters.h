@@ -65,10 +65,10 @@ static inline uint8_t get_inverter_status(Inverters_struct *inv) {
  */
 static inline void inverters_loop(Inverters_struct *inv) {
     if (HAL_GetTick() - inv->last_cmd_timestamp > 450) {
-        inv->comm_status = PRIMARY_SET_INVERTER_CONNECTION_STATUS_STATUS_OFF_CHOICE;
+        inv->comm_status = primary_set_inverter_connection_status_status_OFF;
     }
 
-    if (inv->comm_status == PRIMARY_SET_INVERTER_CONNECTION_STATUS_STATUS_ON_CHOICE) {
+    if (inv->comm_status == primary_set_inverter_connection_status_status_ON) {
         if (inv->inv_status == INV_OFF) {
             mcp23017_set_gpio(&hmcp, MCP23017_PORTB, RFE_EN, GPIO_PIN_SET);
             inv->inv_status       = INV_RFE_ON;
@@ -78,24 +78,22 @@ static inline void inverters_loop(Inverters_struct *inv) {
             inv->inv_status = INV_ON;
         }
 
-        if (inv->discharge_pin) {
-            mcp23017_set_gpio(&hmcp, MCP23017_PORTB, DISCHARGE, GPIO_PIN_SET);
-        } else {
-            mcp23017_set_gpio(&hmcp, MCP23017_PORTB, DISCHARGE, GPIO_PIN_RESET);
-        }
-
-    } else if (
-        inv->comm_status == PRIMARY_SET_INVERTER_CONNECTION_STATUS_STATUS_OFF_CHOICE && inv->inv_status != INV_OFF) {
+    } else if (inv->comm_status == primary_set_inverter_connection_status_status_OFF && inv->inv_status != INV_OFF) {
         mcp23017_set_gpio(&hmcp, MCP23017_PORTB, RFE_EN, GPIO_PIN_RESET);
         HAL_Delay(500);
         mcp23017_set_gpio(&hmcp, MCP23017_PORTB, FRG_EN, GPIO_PIN_RESET);
         mcp23017_set_gpio(&hmcp, MCP23017_PORTB, DISCHARGE, GPIO_PIN_RESET);
         inv->inv_status = INV_OFF;
     }
+    if (inv->discharge_pin) {
+        mcp23017_set_gpio(&hmcp, MCP23017_PORTB, DISCHARGE, GPIO_PIN_SET);
+    } else {
+        mcp23017_set_gpio(&hmcp, MCP23017_PORTB, DISCHARGE, GPIO_PIN_RESET);
+    }
 }
 
 static inline void error_state_inverters(Inverters_struct *inv) {
-    set_inverter_status(inv, PRIMARY_SET_INVERTER_CONNECTION_STATUS_STATUS_OFF_CHOICE);
+    set_inverter_status(inv, primary_set_inverter_connection_status_status_OFF);
     inverters_loop(inv);
 }
 

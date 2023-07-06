@@ -395,7 +395,14 @@ void mux_hall_conversion() {
         } else if (i == S_HALL2) {
             *(mux_hall_converted + i) = CT_get_electric_current_mA(result / N_ADC_SAMPLES_MUX_HALL) -
                                         S_HALL_2_OFFSET_mA;
-        } else {
+        }
+#ifndef AS_SYSTEM_MOUNTED
+        else if (i == S_HALL0) {
+            *(mux_hall_converted + i) = 0.0;
+        }
+#endif
+
+        else {
             *(mux_hall_converted + i) = CT_get_electric_current_mA(result / N_ADC_SAMPLES_MUX_HALL);
         }
         result = 0;
