@@ -31,7 +31,7 @@ void dac_pump_handle_init(DAC_Pump_Handle *hdp, float pump_l_volt, float pump_r_
     hdp->last_analog_value_R = pump_r_volt;
     hdp->is_L_on             = 0;
     hdp->is_R_on             = 0;
-    hdp->automatic_mode      = true;
+    hdp->automatic_mode      = false;
     // Wheter automatic mode is false tue pumps will be controlled by the steer,
     // otherwise the pumps will be under the bms_lv_control as are designed to be
     // PIDInit(&pid, 1.0, 1.0, 0.0, 1.0, 0, 4.95, PID_MODE_AUTOMATIC, PID_CONTROL_ACTION_REVERSE);

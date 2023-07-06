@@ -47,7 +47,7 @@ void wdg_update_and_check_timestamps() {
 
         switch (ids_to_watch[i]) {
             case PRIMARY_TS_STATUS_FRAME_ID:
-                car_inverters.discharge_pin = 0;
+                //car_inverters.discharge_pin = 0;
                 break;
             default:
                 break;

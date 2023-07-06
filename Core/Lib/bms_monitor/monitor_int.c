@@ -33,6 +33,8 @@ uint16_t cell_temps_raw[CELL_TEMPS_ARRAY_SIZE][NTC_COUNT] = {0};
 uint8_t voltage_warning_flag                              = 0;
 VOLT_CHANNEL cells                                        = VOLT_CHANNEL_ALL;
 uint8_t nsfw_charger                                      = 0;
+lv_thresholds_t lv_thresholds_handler                     = {0};
+
 void monitor_init() {
     LTC6811_CFGR config;
     config.ADCOPT             = 0;
@@ -73,6 +75,7 @@ uint8_t monitor_read_voltage() {
     } else {
         error_reset(ERROR_BMS_MONITOR, 0);
         for (uint8_t i = 0; i < LV_CELLS_COUNT; i++) {
+            monitor_tresholds_check((float)voltages[i] / 1000);
             // Check whether a cell is undervoltage or overvoltage and set/reset its specific error
             if ((float)voltages[i] / 1000 <= VOLT_MIN_ALLOWED_VOLTAGE) {
                 if (nsfw_charger == 0) {
@@ -121,6 +124,7 @@ uint8_t monitor_print_volt() {
     memset(buff, 0, sizeof(buff));
     for (uint8_t i = 0; i < LV_CELLS_COUNT; i++) {
         total_voltage_on_board += (float)voltages[i] / 1000;
+        monitor_tresholds_check((float)voltages[i] / 1000);
         if (i == voltage_min_index && voltage_min_index != -1 &&
             (float)voltages[i] / 1000 <= VOLT_MAX_ALLOWED_VOLTAGE &&
             (float)voltages[i] / 1000 >= VOLT_MIN_ALLOWED_VOLTAGE) {
@@ -166,6 +170,7 @@ uint8_t monitor_print_volt_cli(char *buf) {
     voltage_min_index = monitor_get_min_cell();
     memset(buff, 0, sizeof(buff));
     for (uint8_t i = 0; i < LV_CELLS_COUNT; i++) {
+        monitor_tresholds_check((float)voltages[i] / 1000);
         if (i == voltage_min_index && voltage_min_index != -1 &&
             (float)voltages[i] / 1000 <= VOLT_MAX_ALLOWED_VOLTAGE &&
             (float)voltages[i] / 1000 >= VOLT_MIN_ALLOWED_VOLTAGE) {
@@ -315,6 +320,19 @@ void monitor_print_temps(char *buf) {
         NTC_COUNT - COUNT_MINIMUM_WORKING_NTCS);
 }
 
+void monitor_tresholds_check(float volts) {
+    if (!lv_thresholds_handler.first_threshold_reached && volts < LV_TRESHOLD_WARNGING_1_V) {
+        lv_thresholds_handler.first_threshold_reached  = 1;
+        lv_thresholds_handler.first_ths_timestamp      = HAL_GetTick();
+        lv_thresholds_handler.first_ths_buzzer_toggles = 0;
+    } else if (
+        lv_thresholds_handler.first_threshold_reached && !lv_thresholds_handler.second_threshold_reached &&
+        volts < LV_TRESHOLD_WARNGING_2_V) {
+        lv_thresholds_handler.second_threshold_reached  = 1;
+        lv_thresholds_handler.second_ths_timestamp      = HAL_GetTick();
+        lv_thresholds_handler.second_ths_buzzer_toggles = 0;
+    }
+}
 // #ifdef CELL_0_IS_ALIVE
 //     if (voltages_pup[0] == 0) {
 //         error_set(ERROR_OPEN_WIRE, 0, HAL_GetTick());

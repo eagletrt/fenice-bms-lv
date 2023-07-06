@@ -84,6 +84,7 @@ void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 void bms_error_state();
 void cooling_routine(uint8_t);
+void lv_under_v_alert();
 static inline void check_initial_voltage();
 static inline void fans_radiators_pumps_init();
 static inline void voltage_warning_buzzer();
@@ -237,8 +238,11 @@ int main(void) {
             ADC_Routine();
             measurements_flags_check();
             inverters_loop(&car_inverters);
+            if (lv_thresholds_handler.first_threshold_reached || lv_thresholds_handler.second_threshold_reached) {
+                lv_under_v_alert();
+            }
             // Cooling routine
-            // cooling_routine(10);
+            //cooling_routine(10);
             if (voltage_warning_flag) {
             }
 
@@ -402,6 +406,12 @@ static inline void fans_radiators_pumps_init() {
  * 
  */
 void bms_error_state() {
+#define ERR_NOISE
+#ifdef ERR_NOISE
+    pwm_set_period(&BZZR_HTIM, 0.8);
+    pwm_set_duty_cicle(&BZZR_HTIM, BZZR_PWM_TIM_CHNL, 0.9);
+    pwm_start_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
+#endif
     printl("ERROR STATE \n", ERR_HEADER);
 
     char out[4000];
@@ -432,23 +442,48 @@ void bms_error_state() {
     can_primary_send(PRIMARY_LV_STATUS_FRAME_ID, 0);
     HAL_GPIO_WritePin(TIME_SET_GPIO_Port, TIME_SET_Pin, GPIO_PIN_RESET);
     HAL_Delay(1000);
-#define ERR_NOISE
+
     // ERROR stage
     mcp23017_set_gpio(&hmcp, MCP23017_PORTB, LED_R, 0);
     mcp23017_set_gpio(&hmcp, MCP23017_PORTB, LED_G, 1);
     LV_MASTER_RELAY_set_state(GPIO_PIN_RESET, true);
     is_relay_closed = false;
-#ifdef ERR_NOISE
-    pwm_set_period(&BZZR_HTIM, 0.8);
-    pwm_set_duty_cicle(&BZZR_HTIM, BZZR_PWM_TIM_CHNL, 0.9);
-    pwm_start_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
-#endif
     error_state_inverters(&car_inverters);
     while (1) {
         ADC_Routine();
         // measure and sends via can
         measurements_flags_check();
         cli_loop(&cli_bms_lv);
+    }
+}
+
+void lv_under_v_alert() {
+    uint32_t current_time = HAL_GetTick();
+    pwm_set_period(&BZZR_HTIM, 0.4);
+    pwm_set_duty_cicle(&BZZR_HTIM, BZZR_PWM_TIM_CHNL, 0.8);
+    if (!lv_thresholds_handler.second_threshold_reached && lv_thresholds_handler.first_threshold_reached &&
+        lv_thresholds_handler.first_ths_buzzer_toggles < MAX_BZR_LV_ALERTS) {
+        if (lv_thresholds_handler.first_ths_buzzer_toggles % 2 == 0) {
+            pwm_start_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
+        } else {
+            pwm_stop_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
+        }
+        if (current_time - lv_thresholds_handler.first_ths_timestamp > 1000) {
+            lv_thresholds_handler.first_ths_timestamp = current_time;
+            lv_thresholds_handler.first_ths_buzzer_toggles++;
+        }
+    }
+    if (lv_thresholds_handler.second_threshold_reached &&
+        lv_thresholds_handler.second_ths_buzzer_toggles < MAX_BZR_LV_ALERTS) {
+        if (lv_thresholds_handler.second_ths_buzzer_toggles % 2 == 0) {
+            pwm_start_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
+        } else {
+            pwm_stop_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
+        }
+        if (current_time - lv_thresholds_handler.second_ths_timestamp > 1000) {
+            lv_thresholds_handler.second_ths_timestamp = current_time;
+            lv_thresholds_handler.second_ths_buzzer_toggles++;
+        }
     }
 }
 
