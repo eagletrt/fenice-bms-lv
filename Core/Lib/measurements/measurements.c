@@ -207,6 +207,8 @@ void measurements_flags_check() {
 
         can_primary_send(PRIMARY_LV_CELLS_TEMP_FRAME_ID, 0);
         can_primary_send(PRIMARY_LV_CELLS_TEMP_FRAME_ID, 3);
+        can_primary_send(PRIMARY_LV_CELLS_TEMP_FRAME_ID, 6);
+        can_primary_send(PRIMARY_LV_CELLS_TEMP_FRAME_ID, 9);
         can_primary_send(PRIMARY_LV_STATUS_FRAME_ID, 0);
         flags &= ~MEAS_VOLTS_AND_TEMPS_FLAG;
     }
