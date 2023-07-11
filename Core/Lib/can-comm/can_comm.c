@@ -44,6 +44,13 @@ void open_blt_status_update(health_signals_t *hs, open_blt_status_t *obs) {
     }
 }
 
+void inv_mt_temps_conversion(uint16_t inv_temp, uint16_t motor_temp, uint8_t inv_index) {
+    float inv_mt_temp[2];
+    inv_mt_temp[0] = inv_temp * 0.005 - 38.0f;
+    inv_mt_temp[1] = (motor_temp - 9393.9f / 55.1f);
+    set_inv_mt_temps(&car_inverters, inv_mt_temp, inv_index);
+}
+
 void can_tx_header_init() {
     tx_header.ExtId = 0;
     tx_header.IDE   = CAN_ID_STD;
@@ -277,10 +284,23 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
         if (ts_status.ts_status == primary_ts_status_ts_status_IDLE ||
             ts_status.ts_status == primary_ts_status_ts_status_FATAL_ERROR) {
             car_inverters.discharge_pin = 0;
-        } else if (ts_status.ts_status == primary_ts_status_ts_status_PRECHARGE ||
-        ts_status.ts_status == primary_ts_status_ts_status_AIRN_CLOSE ) {
+        } else if (
+            ts_status.ts_status == primary_ts_status_ts_status_PRECHARGE ||
+            ts_status.ts_status == primary_ts_status_ts_status_AIRN_CLOSE) {
             car_inverters.discharge_pin = 1;
         }
+    } else if (rx_header.StdId == INVERTERS_INV_L_RCV_FRAME_ID) {
+        inverters_inv_l_rcv_t raw_inv;
+        inverters_inv_l_rcv_converted_t inv_l;
+        inverters_inv_l_rcv_unpack(&raw_inv, rx_data, INVERTERS_INV_L_RCV_BYTE_SIZE);
+        inverters_inv_l_rcv_raw_to_conversion_struct(&inv_l, &raw_inv);
+        inv_mt_temps_conversion(inv_l.t_igbt, inv_l.t_motor, 0);
+    } else if (rx_header.StdId == INVERTERS_INV_R_RCV_FRAME_ID) {
+        inverters_inv_r_rcv_t raw_inv;
+        inverters_inv_r_rcv_converted_t inv_r;
+        inverters_inv_r_rcv_unpack(&raw_inv, rx_data, INVERTERS_INV_R_RCV_BYTE_SIZE);
+        inverters_inv_r_rcv_raw_to_conversion_struct(&inv_r, &raw_inv);
+        inv_mt_temps_conversion(inv_r.t_igbt, inv_r.t_motor, 1);
     }
 }
 // CAN Secondary Network rx interrupt callback

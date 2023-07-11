@@ -8,12 +8,18 @@
  * @copyright Copyright (c) 2022
  * 
  */
-
+#define PID_RAD
 #include "radiator.h"
 
 #ifdef PID_RAD
 #include "pid.h"
+
+#include <math.h>
+#define RAD_KP 1.0f
+#define RAD_KI ((1.0 / sqrt(2)) * RAD_KP)
+#define RAD_KD 0.0f
 #endif
+
 #include "pwm.h"
 #include "tim.h"
 #define RADIATOR_M_FACTOR                                        \
@@ -23,7 +29,7 @@
 
 radiator_t radiator_handle;
 #ifdef PID_RAD
-PIDControl pid;
+PIDControl rad_pid;
 #endif
 
 void set_radiator_struct_channel_on(uint8_t channel) {
@@ -67,8 +73,8 @@ void radiator_init() {
     radiator_handle.duty_cycle_r   = 0.0;
     radiator_handle.automatic_mode = false;
 #ifdef PID_RAD
-    PIDInit(&pid, 1.0, 1.0, 0.0, 1.0, 0.0, 0.9, PID_MODE_AUTOMATIC, PID_CONTROL_ACTION_REVERSE);
-    pid.setpoint = 40;
+    PIDInit(&rad_pid, RAD_KP, RAD_KI, RAD_KD, 1.0, 0.15, 1, PID_MODE_AUTOMATIC, PID_CONTROL_ACTION_REVERSE);
+    rad_pid.setpoint = 55;
 #endif
 }
 
@@ -128,11 +134,11 @@ void set_radiator_dt(TIM_HandleTypeDef *rad_tim, uint8_t channel, float duty_cyc
  * @return float Optimal PWM Duty Cycle 
  */
 float get_radiator_dt(float temp) {
-//return (temp * RADIATOR_M_FACTOR) + RADIATOR_Q_FACTOR;
 #ifdef PID_RAD
-    pid.input = temp;
-    PIDCompute(&pid);
-    return pid.output;
+    rad_pid.input = temp;
+    PIDCompute(&rad_pid);
+    return rad_pid.output;
+#else
+    return (temp * RADIATOR_M_FACTOR) + RADIATOR_Q_FACTOR;
 #endif
-    return 0.0;
 }
