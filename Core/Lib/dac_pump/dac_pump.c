@@ -8,16 +8,29 @@
  * @copyright Copyright (c) 2022
  * 
  */
+#define PUMP_PID
 #include "dac_pump.h"
 
 #include "error.h"
+
+#ifdef PUMP_PID
 #include "pid.h"
+
+#include <math.h>
+#define PUMP_KP 1.5f
+#define PUMP_KI ((1.0 / sqrt(2)) * PUMP_KP)
+#define PUMP_KD 0.0f
+#endif
+
 #define PUMP_M_FACTOR \
     (float)(MAX_OPAMP_OUT - MIN_OPAMP_OUT) / (MAX_INVERTER_TEMP_PUMPS_ONLY - MIN_INVERTER_TEMP_PUMPS_ONLY)
 #define PUMP_Q_FACTOR (float)(MIN_OPAMP_OUT) - (MIN_INVERTER_TEMP_PUMPS_ONLY * PUMP_M_FACTOR)
 
 DAC_Pump_Handle hdac_pump;
-PIDControl pid;
+
+#ifdef PUMP_PID
+PIDControl pump_pid;
+#endif
 /**
  * @brief             Initialize the handle with given values
  * 
@@ -32,10 +45,12 @@ void dac_pump_handle_init(DAC_Pump_Handle *hdp, float pump_l_volt, float pump_r_
     hdp->is_L_on             = 0;
     hdp->is_R_on             = 0;
     hdp->automatic_mode      = false;
-    // Wheter automatic mode is false tue pumps will be controlled by the steer,
-    // otherwise the pumps will be under the bms_lv_control as are designed to be
-    // PIDInit(&pid, 1.0, 1.0, 0.0, 1.0, 0, 4.95, PID_MODE_AUTOMATIC, PID_CONTROL_ACTION_REVERSE);
-    // pid.setpoint = 40;
+// Wheter automatic mode is false tue pumps will be controlled by the steer,
+// otherwise the pumps will be under the bms_lv_control as are designed to be
+#ifdef PUMP_PID
+    PIDInit(&pump_pid, PUMP_KP, PUMP_KI, PUMP_KD, 1.0, 1.47, 4.95, PID_MODE_AUTOMATIC, PID_CONTROL_ACTION_REVERSE);
+    pump_pid.setpoint = 40;
+#endif
 }
 
 /**
@@ -297,9 +312,11 @@ void dac_pump_sample_test(DAC_Pump_Handle *hdp) {
  * @return float Voltage level
  */
 float dac_pump_get_voltage(float temp) {
-    //return (temp * PUMP_M_FACTOR) + PUMP_Q_FACTOR;
-    // pid.input = temp;
-    // PIDCompute(&pid);
-    // return pid.output;
-    return 0;
+#ifdef PUMP_PID
+    pump_pid.input = temp;
+    PIDCompute(&pump_pid);
+    return pump_pid.output;
+#else
+    return (temp * PUMP_M_FACTOR) + PUMP_Q_FACTOR;
+#endif
 }

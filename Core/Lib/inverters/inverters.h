@@ -29,6 +29,8 @@ typedef struct {
     INV_STATUS inv_status;
     uint32_t last_cmd_timestamp;
     uint32_t rfe_on_timestamp;
+    float temp[2];
+    float motor_temp[2];
 } Inverters_struct;
 
 extern Inverters_struct car_inverters;
@@ -95,6 +97,11 @@ static inline void inverters_loop(Inverters_struct *inv) {
 static inline void error_state_inverters(Inverters_struct *inv) {
     set_inverter_status(inv, primary_set_inverter_connection_status_status_OFF);
     inverters_loop(inv);
+}
+
+static inline void set_inv_mt_temps(Inverters_struct *inv, float temp[2], uint8_t inv_index) {
+    inv->temp[inv_index]       = temp[0];
+    inv->motor_temp[inv_index] = temp[1];
 }
 
 #endif

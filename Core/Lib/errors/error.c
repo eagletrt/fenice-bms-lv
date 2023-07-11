@@ -305,6 +305,7 @@ void error_dump(error_t errors[], size_t *error_count) {
                 error_t error_d = {
                     .id        = i,
                     .state     = STATE_WARNING,
+                    .offset    = j,
                     .timestamp = instance->expected_expiry_ms - error->expiry_delay_ms};
                 if (fatal_error[i]) {
                     error_d.state = STATE_FATAL;

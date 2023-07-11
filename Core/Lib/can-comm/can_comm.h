@@ -11,6 +11,7 @@
 #ifndef CAN_COMM_H__
 #define CAN_COMM_H__
 #define primary_NETWORK_IMPLEMENTATION
+#include "../can-lib/lib/inverters/inverters_network.h"
 #include "../can-lib/lib/primary/primary_network.h"
 #include "can.h"
 #include "health_signals.h"
