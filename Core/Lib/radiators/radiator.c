@@ -72,6 +72,7 @@ void radiator_init() {
     radiator_handle.duty_cycle_l   = 0.0;
     radiator_handle.duty_cycle_r   = 0.0;
     radiator_handle.automatic_mode = false;
+    radiator_handle.update_value   = false;
 #ifdef PID_RAD
     PIDInit(&rad_pid, RAD_KP, RAD_KI, RAD_KD, 1.0, 0.15, 1, PID_MODE_AUTOMATIC, PID_CONTROL_ACTION_REVERSE);
     rad_pid.setpoint = 55;

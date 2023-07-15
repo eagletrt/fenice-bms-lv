@@ -275,7 +275,7 @@ void monitor_temp_conversion() {
 #ifndef SKIP_TEMP_READ
         uint8_t over_temps_counter  = 0;
         uint8_t under_temps_counter = 0;
-        if (cell_temps[i] > MAX_CELLS_ALLOWED_TEMP) {
+        if (cell_temps[i] > MAX_CELLS_ALLOWED_TEMP && cell_temps[i] < 120.0f) {
             over_temps_counter++;
             error_set(ERROR_CELL_OVER_TEMPERATURE, 0);
         } else if (cell_temps[i] < MIN_CELLS_ALLOWED_TEMP) {

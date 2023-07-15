@@ -36,7 +36,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define N_COMMANDS 19
+#define N_COMMANDS 20
 
 cli_command_func_t _cli_volts;
 cli_command_func_t _cli_radiator;
@@ -57,48 +57,17 @@ cli_command_func_t _cli_signal_injection;
 cli_command_func_t _cli_prep_flash;
 cli_command_func_t _cli_nsfw;
 cli_command_func_t _cli_autokill;
+cli_command_func_t _cli_inv_temp;
 
 cli_command_func_t *commands[N_COMMANDS] = {
-    &_cli_volts,
-    &_cli_radiator,
-    &_cli_pumps,
-    &_cli_temps,
-    &_cli_adc,
-    &_cli_feedbacks,
-    &_cli_dmesg,
-    &_cli_reset,
-    &_cli_wizard,
-    &_cli_can_send,
-    &_cli_inv,
-    &_cli_cooling,
-    &_cli_errors,
-    &_cli_health_signals,
-    &_cli_signal_injection,
-    &_cli_prep_flash,
-    &_cli_nsfw,
-    &_cli_autokill,
-    &_cli_help};
+    &_cli_volts,      &_cli_radiator, &_cli_pumps,    &_cli_temps,          &_cli_adc,
+    &_cli_feedbacks,  &_cli_dmesg,    &_cli_reset,    &_cli_wizard,         &_cli_can_send,
+    &_cli_inv,        &_cli_cooling,  &_cli_errors,   &_cli_health_signals, &_cli_signal_injection,
+    &_cli_prep_flash, &_cli_nsfw,     &_cli_autokill, &_cli_inv_temp,       &_cli_help};
 
-char *command_names[N_COMMANDS] = {
-    "volts",
-    "radiator",
-    "pumps",
-    "temps",
-    "adc",
-    "feedbacks",
-    "dmesg",
-    "reset",
-    "wizard",
-    "can",
-    "inv",
-    "cooling",
-    "errors",
-    "health",
-    "inject",
-    "prepflash",
-    "nsfw",
-    "autokill",
-    "?"};
+char *command_names[N_COMMANDS] = {"volts",  "radiator",  "pumps", "temps",    "adc",     "feedbacks", "dmesg",
+                                   "reset",  "wizard",    "can",   "inv",      "cooling", "errors",    "health",
+                                   "inject", "prepflash", "nsfw",  "autokill", "invtemp", "?"};
 
 char *volt_status_name[VOLT_ENUM_SIZE] = {
     [VOLT_OK]            = "VOLT OK",
@@ -296,6 +265,17 @@ void _cli_pumps(uint16_t argc, char **argv, char *out) {
 void _cli_temps(uint16_t argc, char **argv, char *out) {
     out[0] = '\0';
     monitor_print_temps(out);
+}
+
+void _cli_inv_temp(uint16_t argc, char **argv, char *out) {
+    out[0] = '\0';
+    sprintf(
+        out,
+        "INV L %.2f C° MOTOR L %.2f C°\r\nINV R %.2f C° MOTOR R %.2f C°\r\n",
+        car_inverters.inv_temps[0],
+        car_inverters.motor_temps[0],
+        car_inverters.inv_temps[1],
+        car_inverters.motor_temps[1]);
 }
 
 void _cli_adc(uint16_t argc, char **argv, char *out) {
