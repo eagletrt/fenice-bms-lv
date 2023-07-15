@@ -38,6 +38,7 @@ typedef struct {
     uint32_t last_analog_value_R;
     uint8_t is_R_on;
     bool automatic_mode;
+    bool update_value;
 } DAC_Pump_Handle;
 
 extern DAC_Pump_Handle hdac_pump;

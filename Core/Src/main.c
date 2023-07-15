@@ -212,7 +212,7 @@ int main(void) {
     set_flash_pin();
     check_lvms();
 
-    fans_radiators_pumps_init();
+    //fans_radiators_pumps_init();
 
     //init for both can
     can_primary_init();
@@ -238,7 +238,7 @@ int main(void) {
             bms_error_state();
         } else {
             ADC_Routine();
-            if (HAL_GetTick() - init_timer > 1000) {
+            if (HAL_GetTick() - init_timer > 2000) {
                 measurements_flags_check();
             }
             inverters_loop(&car_inverters);
@@ -360,18 +360,18 @@ static inline void fans_radiators_pumps_init() {
     //     error_set(ERROR_FAN, 0);
     // }
 
-    if (FDBK_12V_RADIATORS_get_state()) {
-        start_both_radiator(&RAD_R_HTIM, RAD_L_PWM_TIM_CHNL, RAD_R_PWM_TIM_CHNL);
-        error_reset(ERROR_RADIATOR, 0);
-    } else {
-        error_set(ERROR_RADIATOR, 0);
-    }
-    if (FDBK_24V_PUMPS_get_state()) {
-        dac_pump_handle_init(&hdac_pump, 0.0, 0.0);
-        error_reset(ERROR_PUMP, 0);
-    } else {
-        error_set(ERROR_PUMP, 0);
-    }
+    // if (FDBK_12V_RADIATORS_get_state()) {
+    //     start_both_radiator(&RAD_R_HTIM, RAD_L_PWM_TIM_CHNL, RAD_R_PWM_TIM_CHNL);
+    //     error_reset(ERROR_RADIATOR, 0);
+    // } else {
+    //     error_set(ERROR_RADIATOR, 0);
+    // }
+    // if (FDBK_24V_PUMPS_get_state()) {
+    //     dac_pump_handle_init(&hdac_pump, 0.0, 0.0);
+    //     error_reset(ERROR_PUMP, 0);
+    // } else {
+    //     error_set(ERROR_PUMP, 0);
+    // }
 #ifdef PUMP_SAMPLE_TEST
     if (FDBK_24V_PUMPS_get_state()) {
         dac_pump_sample_test(&hdac_pump);
@@ -492,10 +492,11 @@ void cooling_routine() {
     float local_rad_speed, local_pump_speed;
     float temp = 0;
     float max_inv_temp =
-        (car_inverters.temp[0] > car_inverters.temp[1] ? car_inverters.temp[0] : car_inverters.temp[1]);
+        (car_inverters.inv_temps[0] > car_inverters.inv_temps[1] ? car_inverters.inv_temps[0]
+                                                                 : car_inverters.inv_temps[1]);
     float max_motor_temp =
-        (car_inverters.motor_temp[0] > car_inverters.motor_temp[1] ? car_inverters.motor_temp[0]
-                                                                   : car_inverters.motor_temp[1]);
+        (car_inverters.motor_temps[0] > car_inverters.motor_temps[1] ? car_inverters.motor_temps[0]
+                                                                     : car_inverters.motor_temps[1]);
 
     temp = (max_inv_temp > max_motor_temp ? max_inv_temp : max_motor_temp);
 #ifndef INTERNAL_FAN_DEBUG
@@ -512,36 +513,42 @@ void cooling_routine() {
         set_radiator_dt(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, get_radiator_dt(temp));
         set_radiator_dt(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, get_radiator_dt(temp));
     } else {
-        local_rad_speed = rads_speed_msg.radiators_speed * (MAX_RADIATOR_DUTY_CYCLE - MIN_RADIATOR_DUTY_CYCLE) +
-                          MIN_RADIATOR_DUTY_CYCLE;
-        // Clipping to max duty cycle allowed to avoid overcurrent (when in combo with pumps)
-        if (local_rad_speed > MAX_RADIATOR_DUTY_CYCLE) {
-            local_rad_speed = MAX_RADIATOR_DUTY_CYCLE;
-        }
-        // Clipping to minimum duty cycle allowed to spin the radiator
-        else if (local_rad_speed < MIN_RADIATOR_DUTY_CYCLE) {
-            local_rad_speed = MIN_RADIATOR_DUTY_CYCLE;
-        }
+        if (radiator_handle.update_value) {
+            local_rad_speed = rads_speed_msg.radiators_speed * (MAX_RADIATOR_DUTY_CYCLE - MIN_RADIATOR_DUTY_CYCLE) +
+                              MIN_RADIATOR_DUTY_CYCLE;
+            // Clipping to max duty cycle allowed to avoid overcurrent (when in combo with pumps)
+            if (local_rad_speed > MAX_RADIATOR_DUTY_CYCLE) {
+                local_rad_speed = MAX_RADIATOR_DUTY_CYCLE;
+            }
+            // Clipping to minimum duty cycle allowed to spin the radiator
+            else if (local_rad_speed < MIN_RADIATOR_DUTY_CYCLE) {
+                local_rad_speed = MIN_RADIATOR_DUTY_CYCLE;
+            }
 
-        set_radiator_dt(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, local_rad_speed);
-        set_radiator_dt(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, local_rad_speed);
+            set_radiator_dt(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, local_rad_speed);
+            set_radiator_dt(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, local_rad_speed);
+            radiator_handle.update_value = false;
+        }
     }
     if (hdac_pump.automatic_mode) {
         dac_pump_store_and_set_value_on_both_channels(
             &hdac_pump, dac_pump_get_voltage(temp), dac_pump_get_voltage(temp));
     } else {
-        local_pump_speed = pumps_speed_msg.pumps_speed * (MAX_OPAMP_OUT - MIN_OPAMP_OUT) + MIN_OPAMP_OUT;
+        if (hdac_pump.update_value) {
+            local_pump_speed = pumps_speed_msg.pumps_speed * (MAX_OPAMP_OUT - MIN_OPAMP_OUT) + MIN_OPAMP_OUT;
 
-        // Clipping to max duty cycle allowed to avoid overcurrent (when in combo with pumps)
-        if (local_pump_speed > MAX_OPAMP_OUT) {
-            local_pump_speed = MAX_OPAMP_OUT;
-        }
-        // Clipping to minimum duty cycle allowed to spin the radiator
-        else if (local_pump_speed < MIN_OPAMP_OUT) {
-            local_pump_speed = MIN_OPAMP_OUT;
-        }
+            // Clipping to max duty cycle allowed to avoid overcurrent (when in combo with pumps)
+            if (local_pump_speed > MAX_OPAMP_OUT) {
+                local_pump_speed = MAX_OPAMP_OUT;
+            }
+            // Clipping to minimum duty cycle allowed to spin the radiator
+            else if (local_pump_speed < MIN_OPAMP_OUT) {
+                local_pump_speed = MIN_OPAMP_OUT;
+            }
 
-        dac_pump_store_and_set_value_on_both_channels(&hdac_pump, local_pump_speed, local_pump_speed);
+            dac_pump_store_and_set_value_on_both_channels(&hdac_pump, local_pump_speed, local_pump_speed);
+            hdac_pump.update_value = false;
+        }
     }
 }
 

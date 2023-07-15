@@ -31,6 +31,7 @@ typedef struct {
     uint8_t left_is_on;
     uint8_t right_is_on;
     bool automatic_mode;
+    bool update_value;
     // Wheter automatic mode is false tue radiators will be controlled by the steer,
     // otherwise the radiators will be under the bms_lv_control as are designed to be
 } radiator_t;

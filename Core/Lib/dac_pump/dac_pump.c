@@ -8,12 +8,12 @@
  * @copyright Copyright (c) 2022
  * 
  */
-#define PUMP_PID
+#define PID_PUMP
 #include "dac_pump.h"
 
 #include "error.h"
 
-#ifdef PUMP_PID
+#ifdef PID_PUMP
 #include "pid.h"
 
 #include <math.h>
@@ -28,7 +28,7 @@
 
 DAC_Pump_Handle hdac_pump;
 
-#ifdef PUMP_PID
+#ifdef PID_PUMP
 PIDControl pump_pid;
 #endif
 /**
@@ -45,9 +45,10 @@ void dac_pump_handle_init(DAC_Pump_Handle *hdp, float pump_l_volt, float pump_r_
     hdp->is_L_on             = 0;
     hdp->is_R_on             = 0;
     hdp->automatic_mode      = false;
-// Wheter automatic mode is false tue pumps will be controlled by the steer,
+    hdp->update_value        = false;
+    // Wheter automatic mode is false tue pumps will be controlled by the steer,
 // otherwise the pumps will be under the bms_lv_control as are designed to be
-#ifdef PUMP_PID
+#ifdef PID_PUMP
     PIDInit(&pump_pid, PUMP_KP, PUMP_KI, PUMP_KD, 1.0, 1.47, 4.95, PID_MODE_AUTOMATIC, PID_CONTROL_ACTION_REVERSE);
     pump_pid.setpoint = 40;
 #endif
@@ -312,7 +313,7 @@ void dac_pump_sample_test(DAC_Pump_Handle *hdp) {
  * @return float Voltage level
  */
 float dac_pump_get_voltage(float temp) {
-#ifdef PUMP_PID
+#ifdef PID_PUMP
     pump_pid.input = temp;
     PIDCompute(&pump_pid);
     return pump_pid.output;
