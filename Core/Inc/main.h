@@ -43,6 +43,7 @@ extern bool is_bms_on_fault;
 extern float bms_fan_duty_cycle;
 extern bool is_relay_closed;
 extern bool is_lvms_closed_for_the_first_time;
+extern bool cooling_update;
 
 typedef struct temperatures_struct {
     uint32_t value;
@@ -69,6 +70,7 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
 void bms_error_state();
+void cooling_routine();
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
@@ -277,7 +279,7 @@ static inline uint8_t get_feedback_state(uint8_t feedback) {
     return mcp23017_get_state(&hmcp, port, feedback);
 }
 
-#define MAX_RADIATOR_DUTY_CYCLE          0.90  // 1.0
+#define MAX_RADIATOR_DUTY_CYCLE          1.0  // 0.9
 #define MIN_RADIATOR_DUTY_CYCLE          0.15
 #define MAX_INTERNAL_FAN_DUTY_CYCLE      1.0
 #define MIN_INTERNAL_FAN_DUTY_CYCLE      0.1

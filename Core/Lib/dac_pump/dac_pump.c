@@ -17,7 +17,7 @@
 #include "pid.h"
 
 #include <math.h>
-#define PUMP_KP 1.5f
+#define PUMP_KP 0.075f
 #define PUMP_KI ((1.0 / sqrt(2)) * PUMP_KP)
 #define PUMP_KD 0.0f
 #endif
@@ -49,7 +49,7 @@ void dac_pump_handle_init(DAC_Pump_Handle *hdp, float pump_l_volt, float pump_r_
     // Wheter automatic mode is false tue pumps will be controlled by the steer,
 // otherwise the pumps will be under the bms_lv_control as are designed to be
 #ifdef PID_PUMP
-    PIDInit(&pump_pid, PUMP_KP, PUMP_KI, PUMP_KD, 1.0, 1.47, 4.95, PID_MODE_AUTOMATIC, PID_CONTROL_ACTION_REVERSE);
+    PIDInit(&pump_pid, PUMP_KP, PUMP_KI, PUMP_KD, 0.1, 1.47, 3.96, PID_MODE_AUTOMATIC, PID_CONTROL_ACTION_REVERSE);
     pump_pid.setpoint = 40;
 #endif
 }
