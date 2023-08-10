@@ -19,6 +19,7 @@
 #include "error.h"
 #include "fenice-config.h"
 #include "inverters.h"
+#include "math.h"
 #include "monitor_int.h"
 #include "radiator.h"
 #include "thermocouple.h"
@@ -193,7 +194,14 @@ HAL_StatusTypeDef can_primary_send(uint16_t id, uint8_t optional_offset) {
     } else if (id == PRIMARY_COOLING_STATUS_FRAME_ID) {
         primary_cooling_status_t raw_cooling;
         primary_cooling_status_converted_t conv_cooling;
-        conv_cooling.radiators_speed = radiator_handle.duty_cycle_l;
+        if (!radiator_handle.automatic_mode) {
+            conv_cooling.radiators_speed = radiator_handle.duty_cycle_l > 0
+                                               ? (radiator_handle.duty_cycle_l - MIN_RADIATOR_DUTY_CYCLE) /
+                                                     (MAX_RADIATOR_DUTY_CYCLE - MIN_RADIATOR_DUTY_CYCLE)
+                                               : 0;
+        } else {
+            conv_cooling.radiators_speed = radiator_handle.duty_cycle_l;
+        }
         conv_cooling.pumps_speed = hdac_pump.last_analog_value_L > 0 ? hdac_pump.last_analog_value_L / MAX_DAC_OUT : 0;
         primary_cooling_status_conversion_to_raw_struct(&raw_cooling, &conv_cooling);
         primary_cooling_status_pack(buffer, &raw_cooling, PRIMARY_COOLING_STATUS_BYTE_SIZE);
@@ -245,7 +253,8 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
         primary_set_radiator_speed_t raw;
         primary_set_radiator_speed_unpack(&raw, rx_data, PRIMARY_SET_RADIATOR_SPEED_BYTE_SIZE);
         primary_set_radiator_speed_raw_to_conversion_struct(&rads_speed_msg, &raw);
-        radiator_handle.update_value = true;
+        rads_speed_msg.radiators_speed = round(rads_speed_msg.radiators_speed * 10) / 10;
+        radiator_handle.update_value   = true;
         if (rads_speed_msg.radiators_speed >= 0) {
             radiator_handle.automatic_mode = false;
         } else if (rads_speed_msg.radiators_speed < 0) {
@@ -255,7 +264,8 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
         primary_set_pumps_speed_t raw;
         primary_set_pumps_speed_unpack(&raw, rx_data, PRIMARY_SET_PUMPS_SPEED_BYTE_SIZE);
         primary_set_pumps_speed_raw_to_conversion_struct(&pumps_speed_msg, &raw);
-        hdac_pump.update_value = true;
+        pumps_speed_msg.pumps_speed = round(pumps_speed_msg.pumps_speed * 10) / 10;
+        hdac_pump.update_value      = true;
         if (pumps_speed_msg.pumps_speed >= 0) {
             hdac_pump.automatic_mode = false;
         } else if (pumps_speed_msg.pumps_speed < 0) {

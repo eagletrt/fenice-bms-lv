@@ -99,6 +99,7 @@ int m_sec_timer = 0;
 HAL_StatusTypeDef status;
 char main_buff[500];
 float bms_fan_duty_cycle = 0.8;
+bool cooling_update      = false;
 uint32_t init_timer;
 /* USER CODE END 0 */
 
@@ -184,6 +185,7 @@ int main(void) {
     mcp23017_basic_config_init(&hmcp, &hi2c3);
     radiator_init();
     dac_pump_handle_init(&hdac_pump, 0.0, 0.0);
+    dac_pump_store_and_set_value_on_both_channels(&hdac_pump, 0.0, 0.0);
 
     // Buzzer congiguration
     pwm_set_period(&BZZR_HTIM, 1);
@@ -194,9 +196,6 @@ int main(void) {
     // pwm_set_duty_cicle(&INTERNAL_FAN_HTIM, INTERNAL_FAN_PWM_TIM_CHNL, 0.9);
     // pwm_start_channel(&INTERNAL_FAN_HTIM, INTERNAL_FAN_PWM_TIM_CHNL);
     // pwm_start_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
-    //LV_MASTER_RELAY_set_state(GPIO_PIN_SET);
-    // HAL_Delay(BUZZER_ALARM_TIME);
-    // pwm_stop_channel(&BZZR_HTIM, BZZR_PWM_TIM_CHNL);
 
     // Keeps SPI CS high
     // ltc6810_disable_cs(&SPI);
@@ -227,10 +226,12 @@ int main(void) {
     /* USER CODE BEGIN WHILE */
     init_timer = HAL_GetTick();
     mcp23017_set_gpio(&hmcp, MCP23017_PORTB, LED_R, 1);
-    //mcp23017_set_gpio(&hmcp, MCP23017_PORTB, DISCHARGE, GPIO_PIN_SET);
     if (lv_status.status == PRIMARY_LV_STATUS_STATUS_INIT_CHOICE) {
         lv_status.status = PRIMARY_LV_STATUS_STATUS_RUN_CHOICE;
     }
+
+    //start timer for cooling routine
+    HAL_TIM_Base_Start_IT(&htim7);
     //static bool first = true;
     while (1) {
         // Running stage
@@ -241,12 +242,15 @@ int main(void) {
             if (HAL_GetTick() - init_timer > 2000) {
                 measurements_flags_check();
             }
+
             inverters_loop(&car_inverters);
             if (lv_thresholds_handler.first_threshold_reached || lv_thresholds_handler.second_threshold_reached) {
                 lv_under_v_alert();
             }
-
-            cooling_routine();
+            if (cooling_update) {
+                cooling_routine();
+                cooling_update = false;
+            }
             cli_loop(&cli_bms_lv);
         }
     }
@@ -395,6 +399,7 @@ void bms_error_state() {
     char out[4000];
     size_t count = 0;
     error_t errors[ERROR_NUM_ERRORS];
+    bool lvms_reset = false;
     error_dump(errors, &count);
 
     uint32_t now = HAL_GetTick();
@@ -419,7 +424,19 @@ void bms_error_state() {
     can_primary_send(PRIMARY_LV_HEALTH_SIGNALS_FRAME_ID, 0);
     can_primary_send(PRIMARY_LV_STATUS_FRAME_ID, 0);
     HAL_GPIO_WritePin(TIME_SET_GPIO_Port, TIME_SET_Pin, GPIO_PIN_RESET);
-    HAL_Delay(5000);
+    while (HAL_GetTick() - now < 5000) {
+        ADC_Routine();
+        measurements_flags_check();
+        if (!lvms_reset && adcs_converted_values.lvms_out < HIGH_LEVEL_BITSET_THRESHOLD_SCALED) {
+            lvms_reset = true;
+        }
+
+        if (lvms_reset && adcs_converted_values.lvms_out > HIGH_LEVEL_BITSET_THRESHOLD_SCALED) {
+            HAL_GPIO_WritePin(TIME_SET_GPIO_Port, TIME_SET_Pin, GPIO_PIN_SET);
+            HAL_Delay(500);
+            HAL_NVIC_SystemReset();
+        }
+    }
 
     // ERROR stage
     mcp23017_set_gpio(&hmcp, MCP23017_PORTB, LED_R, 0);
@@ -516,20 +533,24 @@ void cooling_routine() {
         if (radiator_handle.update_value) {
             local_rad_speed = rads_speed_msg.radiators_speed * (MAX_RADIATOR_DUTY_CYCLE - MIN_RADIATOR_DUTY_CYCLE) +
                               MIN_RADIATOR_DUTY_CYCLE;
-            // Clipping to max duty cycle allowed to avoid overcurrent (when in combo with pumps)
-            if (local_rad_speed > MAX_RADIATOR_DUTY_CYCLE) {
-                local_rad_speed = MAX_RADIATOR_DUTY_CYCLE;
+            if (rads_speed_msg.radiators_speed == 0) {
+                local_rad_speed = 0;
             }
-            // Clipping to minimum duty cycle allowed to spin the radiator
-            else if (local_rad_speed < MIN_RADIATOR_DUTY_CYCLE) {
-                local_rad_speed = MIN_RADIATOR_DUTY_CYCLE;
-            }
+            // // Clipping to max duty cycle allowed to avoid overcurrent (when in combo with pumps)
+            // if (local_rad_speed > MAX_RADIATOR_DUTY_CYCLE) {
+            //     local_rad_speed = MAX_RADIATOR_DUTY_CYCLE;
+            // }
+            // // Clipping to minimum duty cycle allowed to spin the radiator
+            // else if (local_rad_speed < MIN_RADIATOR_DUTY_CYCLE) {
+            //     local_rad_speed = MIN_RADIATOR_DUTY_CYCLE;
+            // }
 
             set_radiator_dt(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, local_rad_speed);
             set_radiator_dt(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, local_rad_speed);
             radiator_handle.update_value = false;
         }
     }
+
     if (hdac_pump.automatic_mode) {
         dac_pump_store_and_set_value_on_both_channels(
             &hdac_pump, dac_pump_get_voltage(temp), dac_pump_get_voltage(temp));
@@ -537,16 +558,20 @@ void cooling_routine() {
         if (hdac_pump.update_value) {
             local_pump_speed = pumps_speed_msg.pumps_speed * (MAX_OPAMP_OUT - MIN_OPAMP_OUT) + MIN_OPAMP_OUT;
 
+            if (pumps_speed_msg.pumps_speed == 0) {
+                local_pump_speed = 0;
+            }
             // Clipping to max duty cycle allowed to avoid overcurrent (when in combo with pumps)
-            if (local_pump_speed > MAX_OPAMP_OUT) {
-                local_pump_speed = MAX_OPAMP_OUT;
-            }
-            // Clipping to minimum duty cycle allowed to spin the radiator
-            else if (local_pump_speed < MIN_OPAMP_OUT) {
-                local_pump_speed = MIN_OPAMP_OUT;
-            }
-
+            // if (local_pump_speed > MAX_OPAMP_OUT) {
+            //     local_pump_speed = MAX_OPAMP_OUT;
+            // }
+            // // Clipping to minimum duty cycle allowed to spin the radiator
+            // else if (local_pump_speed < MIN_OPAMP_OUT) {
+            //     local_pump_speed = MIN_OPAMP_OUT;
+            // }
+            //dac_pump_store_and_set_value_on_both_channels(&hdac_pump, local_pump_speed, local_pump_speed);
             dac_pump_store_and_set_value_on_both_channels(&hdac_pump, local_pump_speed, local_pump_speed);
+
             hdac_pump.update_value = false;
         }
     }

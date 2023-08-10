@@ -15,7 +15,7 @@
 #include "pid.h"
 
 #include <math.h>
-#define RAD_KP 1.0f
+#define RAD_KP 0.1f
 #define RAD_KI ((1.0 / sqrt(2)) * RAD_KP)
 #define RAD_KD 0.0f
 #endif
@@ -74,8 +74,8 @@ void radiator_init() {
     radiator_handle.automatic_mode = false;
     radiator_handle.update_value   = false;
 #ifdef PID_RAD
-    PIDInit(&rad_pid, RAD_KP, RAD_KI, RAD_KD, 1.0, 0.15, 1, PID_MODE_AUTOMATIC, PID_CONTROL_ACTION_REVERSE);
-    rad_pid.setpoint = 55;
+    PIDInit(&rad_pid, RAD_KP, RAD_KI, RAD_KD, 0.1, 0.15, 0.6, PID_MODE_AUTOMATIC, PID_CONTROL_ACTION_REVERSE);
+    rad_pid.setpoint = 45;
 #endif
 }
 
