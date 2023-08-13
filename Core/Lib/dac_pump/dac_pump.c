@@ -8,7 +8,7 @@
  * @copyright Copyright (c) 2022
  * 
  */
-#define PID_PUMP
+//#define PID_PUMP
 #include "dac_pump.h"
 
 #include "error.h"
@@ -318,6 +318,12 @@ float dac_pump_get_voltage(float temp) {
     PIDCompute(&pump_pid);
     return pump_pid.output;
 #else
-    return (temp * PUMP_M_FACTOR) + PUMP_Q_FACTOR;
+    float dac_voltage = (temp * PUMP_M_FACTOR) + PUMP_Q_FACTOR;
+    if (dac_voltage < MIN_OPAMP_OUT) {
+        dac_voltage = 0;
+    } else if (dac_voltage > MAX_OPAMP_OUT) {
+        dac_voltage = MAX_OPAMP_OUT;
+    }
+    return dac_voltage;
 #endif
 }

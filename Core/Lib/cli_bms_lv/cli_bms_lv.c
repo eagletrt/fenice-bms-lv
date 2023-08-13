@@ -197,10 +197,10 @@ void _cli_radiator(uint16_t argc, char **argv, char *out) {
         if (atof(argv[2]) <= 1.0) {
             // atof("off") == 0
             if (strcmp(argv[1], "L") == 0) {
-                set_radiator_dt(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, atof(argv[2]));
+                set_radiator_duty_cycle(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, atof(argv[2]));
                 sprintf(out, "Left radiator set at %0.2f%%\r\n", atof(argv[2]) * 100);
             } else if (strcmp(argv[1], "R") == 0) {
-                set_radiator_dt(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, atof(argv[2]));
+                set_radiator_duty_cycle(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, atof(argv[2]));
                 sprintf(out, "Right radiator set at %0.2f%%\r\n", atof(argv[2]) * 100);
             } else if (strcmp(argv[1], "internal") == 0) {
                 bms_fan_duty_cycle = atof(argv[2]);
@@ -217,8 +217,8 @@ void _cli_radiator(uint16_t argc, char **argv, char *out) {
                     radiator_handle.automatic_mode ? "true" : "false",
                     bms_fan_duty_cycle * 100);
             } else {
-                set_radiator_dt(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, atof(argv[2]));
-                set_radiator_dt(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, atof(argv[2]));
+                set_radiator_duty_cycle(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, atof(argv[2]));
+                set_radiator_duty_cycle(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, atof(argv[2]));
                 sprintf(out, "Both radiator set at %0.2f%%\r\n", atof(argv[2]) * 100);
             }
         } else {

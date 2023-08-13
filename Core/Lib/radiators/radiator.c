@@ -8,7 +8,7 @@
  * @copyright Copyright (c) 2022
  * 
  */
-#define PID_RAD
+//#define PID_RAD
 #include "radiator.h"
 
 #ifdef PID_RAD
@@ -118,13 +118,13 @@ void start_both_radiator(TIM_HandleTypeDef *rad_tim, uint8_t channel1, uint8_t c
 }
 
 /**
- * @brief Set the radiator dt object
+ * @brief Set the radiator duty cycle object
  * 
  * @param rad_tim TIM_HandleTypeDef
  * @param channel Radiator pwm channel
  * @param duty_cycle Duty cycle expressed as float (eg: 0.5 equals 50%)
  */
-void set_radiator_dt(TIM_HandleTypeDef *rad_tim, uint8_t channel, float duty_cycle) {
+void set_radiator_duty_cycle(TIM_HandleTypeDef *rad_tim, uint8_t channel, float duty_cycle) {
     pwm_set_duty_cicle(rad_tim, channel, duty_cycle_to_fan_duty_cycle(duty_cycle));
     set_radiator_struct_dt(channel, duty_cycle);
 }
@@ -134,12 +134,18 @@ void set_radiator_dt(TIM_HandleTypeDef *rad_tim, uint8_t channel, float duty_cyc
  * @param temp Motor temperature
  * @return float Optimal PWM Duty Cycle 
  */
-float get_radiator_dt(float temp) {
+float get_radiator_duty_cycle(float temp) {
 #ifdef PID_RAD
     rad_pid.input = temp;
     PIDCompute(&rad_pid);
     return rad_pid.output;
 #else
-    return (temp * RADIATOR_M_FACTOR) + RADIATOR_Q_FACTOR;
+    float duty_cycle = (temp * RADIATOR_M_FACTOR) + RADIATOR_Q_FACTOR;
+    if (duty_cycle < MIN_RADIATOR_DUTY_CYCLE) {
+        duty_cycle = 0;
+    } else if (duty_cycle > MAX_RADIATOR_DUTY_CYCLE) {
+        duty_cycle = MAX_RADIATOR_DUTY_CYCLE;
+    }
+    return duty_cycle;
 #endif
 }
