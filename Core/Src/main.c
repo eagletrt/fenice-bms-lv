@@ -527,8 +527,8 @@ void cooling_routine() {
         When automatic mode == false the values are controlled by the Steering Wheel
     */
     if (radiator_handle.automatic_mode) {
-        set_radiator_dt(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, get_radiator_dt(temp));
-        set_radiator_dt(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, get_radiator_dt(temp));
+        set_radiator_duty_cycle(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, get_radiator_duty_cycle(temp));
+        set_radiator_duty_cycle(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, get_radiator_duty_cycle(temp));
     } else {
         if (radiator_handle.update_value) {
             local_rad_speed = rads_speed_msg.radiators_speed * (MAX_RADIATOR_DUTY_CYCLE - MIN_RADIATOR_DUTY_CYCLE) +
@@ -545,8 +545,8 @@ void cooling_routine() {
             //     local_rad_speed = MIN_RADIATOR_DUTY_CYCLE;
             // }
 
-            set_radiator_dt(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, local_rad_speed);
-            set_radiator_dt(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, local_rad_speed);
+            set_radiator_duty_cycle(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, local_rad_speed);
+            set_radiator_duty_cycle(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, local_rad_speed);
             radiator_handle.update_value = false;
         }
     }

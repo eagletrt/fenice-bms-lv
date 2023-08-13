@@ -42,7 +42,7 @@ void radiator_init();
 void start_radiator(TIM_HandleTypeDef *rad_tim, uint8_t channel);
 void stop_radiator(TIM_HandleTypeDef *rad_tim, uint8_t channel);
 void start_both_radiator(TIM_HandleTypeDef *rad_tim, uint8_t channel1, uint8_t channel2);
-void set_radiator_dt(TIM_HandleTypeDef *rad_tim, uint8_t channel, float duty_cycle);
-float get_radiator_dt(float temp);
+void set_radiator_duty_cycle(TIM_HandleTypeDef *rad_tim, uint8_t channel, float duty_cycle);
+float get_radiator_duty_cycle(float temp);
 
 #endif
