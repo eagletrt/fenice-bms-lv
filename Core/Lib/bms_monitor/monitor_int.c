@@ -34,6 +34,7 @@ uint8_t voltage_warning_flag                              = 0;
 VOLT_CHANNEL cells                                        = VOLT_CHANNEL_ALL;
 uint8_t nsfw_charger                                      = 0;
 lv_thresholds_t lv_thresholds_handler                     = {0};
+uint8_t over_temps_counter_cycle                          = 1;
 
 void monitor_init() {
     LTC6811_CFGR config;
@@ -218,7 +219,7 @@ uint8_t monitor_print_volt_cli(char *buf) {
 
 void monitor_read_temp() {
     volatile uint16_t raw_temp[3] = {0};
-    uint32_t timeout              = 2;
+    uint32_t timeout              = 5;
     HAL_StatusTypeDef status;
     if (cell_col_index != 255) {
         ltc6811_adax(&monitor_handler, LTC6811_MD_27KHZ_14KHZ, LTC6811_CHG_GPIO_1);
@@ -229,6 +230,7 @@ void monitor_read_temp() {
         //volatile uint32_t delta = HAL_GetTick() - t0;
         if (status != HAL_OK) {
             // throw error!
+            return;
         }
         ltc6811_rdaux(&monitor_handler, LTC6811_AVAR, &raw_temp);
 
@@ -257,6 +259,8 @@ void monitor_read_temp() {
 }
 
 void monitor_temp_conversion() {
+    uint8_t over_temps_counter  = 0;
+    uint8_t under_temps_counter = 0;
     for (int i = 0; i < NTC_COUNT; i++) {
         float val = 0;
         for (int j = 0; j < CELL_TEMPS_ARRAY_SIZE; j++) {
@@ -273,11 +277,15 @@ void monitor_temp_conversion() {
 #endif
         //cell_temps[i] = -25;
 #ifndef SKIP_TEMP_READ
-        uint8_t over_temps_counter  = 0;
-        uint8_t under_temps_counter = 0;
+
+        char buff[60];
         if (cell_temps[i] > MAX_CELLS_ALLOWED_TEMP && cell_temps[i] < 120.0f) {
             over_temps_counter++;
-            error_set(ERROR_CELL_OVER_TEMPERATURE, 0);
+            // if (over_temps_counter > 7) {
+            //     error_set(ERROR_CELL_OVER_TEMPERATURE, 0);
+            //     sprintf(buff, "Temp: %f Number %d\n", cell_temps[i], i);
+            //     printl(buff, NO_HEADER);
+            // }
         } else if (cell_temps[i] < MIN_CELLS_ALLOWED_TEMP) {
             under_temps_counter++;
             error_set(ERROR_CELL_UNDER_TEMPERATURE, 0);
@@ -295,6 +303,12 @@ void monitor_temp_conversion() {
         // }
 
 #endif
+    }
+    if (over_temps_counter > 5) {
+        over_temps_counter_cycle++;
+    }
+    if (over_temps_counter_cycle % 5 == 0) {
+        error_set(ERROR_CELL_OVER_TEMPERATURE, 0);
     }
 }
 
