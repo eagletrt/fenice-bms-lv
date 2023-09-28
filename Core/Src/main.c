@@ -239,7 +239,7 @@ int main(void) {
             bms_error_state();
         } else {
             ADC_Routine();
-            if (HAL_GetTick() - init_timer > 2000) {
+            if (HAL_GetTick() - init_timer > 3000) {
                 measurements_flags_check();
             }
 
