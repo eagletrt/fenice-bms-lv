@@ -136,8 +136,8 @@ HAL_StatusTypeDef can_primary_send(uint16_t id, uint8_t optional_offset) {
 
     if (id == PRIMARY_LV_VERSION_FRAME_ID) {
         primary_lv_version_t version;
-        version.component_version = CAN_COMM_LV_VERSION;
-        version.canlib_build_time = CANLIB_BUILD_TIME;
+        version.component_build_time = CAN_COMM_LV_VERSION;
+        version.canlib_build_time    = CANLIB_BUILD_TIME;
         primary_lv_version_pack(buffer, &version, PRIMARY_LV_VERSION_BYTE_SIZE);
         tx_header.DLC = PRIMARY_LV_VERSION_BYTE_SIZE;
     } else if (id == PRIMARY_LV_ERRORS_FRAME_ID) {

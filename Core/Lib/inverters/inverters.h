@@ -13,7 +13,10 @@
 #define __INVERTERS_H
 
 #include "can_comm.h"
+#include "dac_pump.h"
 #include "main.h"
+#include "radiator.h"
+#include "tim.h"
 
 typedef enum { INV_OFF, INV_RFE_ON, INV_ON } INV_STATUS;
 
@@ -78,6 +81,9 @@ static inline void inverters_loop(Inverters_struct *inv) {
             inv->rfe_on_timestamp = HAL_GetTick();
         } else if (inv->inv_status == INV_RFE_ON && (HAL_GetTick() - inv->rfe_on_timestamp > 500)) {
             mcp23017_set_gpio(&hmcp, MCP23017_PORTB, FRG_EN, GPIO_PIN_SET);
+            dac_pump_store_and_set_value_on_both_channels(&hdac_pump, 2.88, 2.88);
+            set_radiator_duty_cycle(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, 0.32);
+            set_radiator_duty_cycle(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, 0.32);
             inv->inv_status = INV_ON;
         }
 
@@ -86,6 +92,9 @@ static inline void inverters_loop(Inverters_struct *inv) {
         HAL_Delay(500);
         mcp23017_set_gpio(&hmcp, MCP23017_PORTB, FRG_EN, GPIO_PIN_RESET);
         mcp23017_set_gpio(&hmcp, MCP23017_PORTB, DISCHARGE, GPIO_PIN_RESET);
+        dac_pump_store_and_set_value_on_both_channels(&hdac_pump, 0.0, 0.0);
+        set_radiator_duty_cycle(&RAD_L_HTIM, RAD_L_PWM_TIM_CHNL, 0.0);
+        set_radiator_duty_cycle(&RAD_R_HTIM, RAD_R_PWM_TIM_CHNL, 0.0);
         inv->inv_status = INV_OFF;
     }
     if (inv->discharge_pin) {
@@ -107,10 +116,7 @@ static inline void set_inv_igbt_temps(Inverters_struct *inv, float temp, uint8_t
     inv->inv_temps[inv_index] = temp;
 }
 
-static inline void inv_motor_temp_conversion(
-    Inverters_struct *inv,
-    uint16_t motor_temp,
-    uint8_t inv_index) {
+static inline void inv_motor_temp_conversion(Inverters_struct *inv, uint16_t motor_temp, uint8_t inv_index) {
     motor_temp = (motor_temp - 9393.9f) / 55.1f;
     set_inv_motor_temps(inv, motor_temp, inv_index);
 }
@@ -119,7 +125,5 @@ static inline void inv_igbt_temp_conversion(Inverters_struct *inv, uint16_t inv_
     float igbt_temp = inv_temp * 0.005f - 38.0f;
     set_inv_igbt_temps(inv, igbt_temp, inv_index);
 }
-
-
 
 #endif
